@@ -51,13 +51,13 @@ volunteerhub/
 ## Setup
 ### Backend Setup (Node.js + MongoDB)
 
-1. Tải các dependencies
+1. Tải các dependencies:
 ```bash
 $ cd server
 $ npm install
  ```
 
-2. Tạo file `.env` trong server `/server` như sau:
+2. Tạo file `.env` như sau:
 
 ```bash
 PORT=5000
@@ -71,13 +71,13 @@ JWT_SECRET=mysecretkey123
 $ npm run dev
 ```
 
-Backend sẽ chạy ở **[http://localhost:5000](http://localhost:5000)**
+Backend sẽ chạy tại **[http://localhost:5000](http://localhost:5000)**.
 
 ---
 
 ### Frontend Setup (React + Vite)
 
-1. Mở một terminal mới và truy cập đến project
+1. Mở một terminal mới và truy cập đến project:
 
 ```bash
 $ cd volunteerhub
@@ -89,10 +89,10 @@ $ cd volunteerhub
 $ npm install
 ```
 
-4. Chạy dev frontend
+4. Chạy dev frontend:
 
 ```bash
 $ npm run dev
 ```
 
-Frontend sẽ chạy tại **[http://localhost:5173](http://localhost:5173)**
+Frontend sẽ chạy tại **[http://localhost:5173](http://localhost:5173)**.
