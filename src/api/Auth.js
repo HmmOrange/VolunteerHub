@@ -1,9 +1,20 @@
-// Just a placeholder for authentication API calls, for now
-export const loginUser = async (email, password) => {
-  const res = await fetch("http://localhost:5000/api/login", {
+const API_URL = "http://localhost:5000/api/auth";
+
+export const registerUser = async (data) => {
+  const res = await fetch(`${API_URL}/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify(data),
   });
   return res.json();
 };
+
+export const loginUser = async (data) => {
+  const res = await fetch(`${API_URL}/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  return res.json();
+};
+
