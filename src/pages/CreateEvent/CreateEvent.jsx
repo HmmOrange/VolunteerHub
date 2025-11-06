@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Navbar from "../components/Navbar";
-import { createEvent } from "../api/events";
+import HNavbar from "../../components/HNavBar/HNavbar";
+import { createEvent } from "../../api/Events";
 import "./CreateEvent.css";
 
 export default function CreateEvent() {
@@ -25,7 +25,7 @@ export default function CreateEvent() {
 
   return (
     <>
-      <Navbar />
+      <HNavbar />
       <div className="create-event-container">
         <h2>Create New Event</h2>
         <form onSubmit={handleSubmit} className="create-event-form">

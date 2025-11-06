@@ -12,16 +12,20 @@ export default function Navbar() {
   };
 
   return (
+    
     <nav className="navbar">
+      <button onClick={() => console.log(`Role: ${localStorage.getItem("role")}`)} className="nav-btn">
+      hi
+      </button>
       <div className="nav-left" onClick={() => navigate("/dashboard")}>
         VolunteerHub
       </div>
       <div className="nav-right">
         {username ? (
           <>
-            {role === "event" && (
+            {role === "manager" && (
               <button
-                onClick={() => navigate("/create-event")}
+                onClick={() => navigate("/event/create")}
                 className="nav-btn"
               >
                 Create Event

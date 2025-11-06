@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import HNavbar from "../../components/hnavbar/HNavbar"; 
+import HNavbar from "../../components/HNavBar/HNavbar"; 
 import { getAllEvents } from "../../api/Events";
 import "./Dashboard.css";
 
