@@ -20,3 +20,26 @@
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   text-align: left;
 }
+
+.event-actions {
+  margin-top: 10px;
+  display: flex;
+  gap: 10px;
+}
+
+.event-actions button {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.event-actions button:first-child {
+  background-color: #1976d2;
+  color: white;
+}
+
+.event-actions button:last-child {
+  background-color: #e53935;
+  color: white;
+}
