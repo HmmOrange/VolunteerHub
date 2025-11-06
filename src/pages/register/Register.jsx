@@ -42,7 +42,7 @@ export default function Register() {
         <button type="submit">Đăng ký</button>
       </form>
       <button onClick={() => navigate("/")} className="back-home-btn">
-        ← Quay về trang chủ
+        ← Quay về trang trước
       </button>
       {msg && <p className="message">{msg}</p>}
     </div>

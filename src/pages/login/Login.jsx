@@ -13,9 +13,12 @@ export default function Login() {
     const res = await loginUser(form);
     if (res.token) {
       localStorage.setItem("token", res.token);
+      localStorage.setItem("username", res.user.username);
+      localStorage.setItem("role", res.user.role);
+
       setMsg("Đăng nhập thành công! Đang chuyển hướng...");
 
-      // Redirect đến dashboard tại đây nhé
+      setTimeout(() => navigate("/dashboard"), 1000);
     } else {
       setMsg(res.message || "Login failed");
     }
@@ -42,7 +45,7 @@ export default function Login() {
         <button type="submit">Login</button>
       </form>
       <button onClick={() => navigate("/")} className="back-home-btn">
-        ← Quay về trang chủ
+        ← Quay về trang trước
       </button>
       {msg && <p className="message">{msg}</p>}
     </div>

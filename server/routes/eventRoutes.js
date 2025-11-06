@@ -1,10 +1,9 @@
 import express from "express";
-import { createEvent, getEvents } from "../controllers/eventController.js";
-import { protect } from "../middleware/authMiddleware.js";
+import { createEvent, getAllEvents } from "../controllers/eventController.js";
 
 const router = express.Router();
 
-router.get("/", getEvents);
-router.post("/", protect, createEvent);
+router.post("/create", createEvent);
+router.get("/all", getAllEvents);
 
 export default router;
