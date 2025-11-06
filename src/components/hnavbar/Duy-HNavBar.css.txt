@@ -1,16 +1,11 @@
 /* === 1. Khung chính (AppBar) === */
 .hnavbar-appbar {
-  /* Ghi đè style của MUI */
+  /* Ghi đè style của MUI, !important là cần thiết */
   background-color: white !important;
   color: #000000 !important;
   border-bottom: 1px solid #e0e0e0;
+  /* elevation={0} đã tắt box-shadow, nhưng để chắc chắn: */
   box-shadow: none !important;
-
-  /* THÊM MỚI (Rất quan trọng) */
-  position: fixed !important;
-  width: 100% !important;
-  /* z-index phải cao hơn VNavBar (thường là 1200) */
-  z-index: 1201 !important; 
 }
 
 .hnavbar-toolbar {
@@ -20,6 +15,7 @@
 
 /* === 2. Bên trái (Logo & Nút Menu) === */
 .hnavbar-icon-btn {
+  /* Ghi đè màu của IconButton */
   color: #000000 !important;
 }
 
@@ -52,7 +48,7 @@
 
 .hnavbar-search-icon {
   color: gray;
-  margin-right: 8px;
+  margin-right: 8px; /* 1 * 8px (theme.spacing(1)) */
 }
 
 .hnavbar-search-input {
@@ -60,34 +56,33 @@
 }
 
 /* === 4. Bên phải (Nút & Avatar) === */
-.hnavbar-add-btn {
-  color: #49BBBD !important;
-}
-.hnavbar-add-btn:hover {
-  background-color: rgba(73, 187, 189, 0.08) !important;
-}
 .hnavbar-avatar-btn {
-  margin-left: 8px !important;
+  margin-left: 8px !important; /* 1 * 8px */
 }
+
 .hnavbar-avatar {
   width: 32px;
   height: 32px;
-  font-size: 0.9rem;
+  font-size: 0.9rem; /* Chỉnh cỡ chữ cho vừa Avatar */
 }
 
 /* === 5. Menu xổ xuống === */
 .hnavbar-menu-paper {
+  /* Thêm viền/bóng đổ nhẹ cho đẹp */
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   border: 1px solid #e0e0e0;
   border-radius: 8px;
 }
+
 .hnavbar-menu-user {
   font-weight: 500;
-  opacity: 1 !important;
+  /* Ghi đè style 'disabled' của MUI */
+  opacity: 1 !important; 
   color: #333 !important;
 }
 
-/* === 6. Responsive === */
+/* === 6. Responsive (Ẩn logo trên màn hình nhỏ) === */
+/* Tương đương với breakpoint 'sm' (600px) của MUI */
 @media (max-width: 600px) {
   .hnavbar-logo {
     display: none;

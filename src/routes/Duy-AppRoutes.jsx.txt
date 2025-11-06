@@ -1,9 +1,4 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-
-// 1. Import component Layout
-import Layout from "../components/layout/Layout"; 
-
-// Import các trang của bạn
 import Landing from "../pages/Landing/Landing";
 import Register from "../pages/Register/Register";
 import Login from "../pages/Login/Login";
@@ -14,17 +9,11 @@ export default function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* 2. Các trang CÓ layout (HNavBar/VNavBar) */}
-        <Route element={<Layout />}>
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/event/create" element={<CreateEvent />} />
-          {/* Thêm các route khác cần layout tại đây */}
-        </Route>
-
-        {/* 3. Các trang KHÔNG có layout */}
         <Route path="/" element={<Landing />} />
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/event/create" element={<CreateEvent />} />
       </Routes>
     </BrowserRouter>
   );
