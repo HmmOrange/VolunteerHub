@@ -2,7 +2,16 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import HNavbar from "../../components/HNavBar/HNavbar";
 import { createEvent } from "../../api/Events";
-import "./CreateEvent.css";
+
+import {
+  Box,
+  Button,
+  Container,
+  TextField,
+  Typography,
+  Paper,
+  Stack,
+} from "@mui/material";
 
 export default function CreateEvent() {
   const [form, setForm] = useState({
@@ -18,7 +27,7 @@ export default function CreateEvent() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const res = await createEvent({ ...form, username });
-    if (res.message && res.message.includes("success")) {
+    if (res.message && res.message.includes("thành công")) {
       navigate("/dashboard");
     }
   };
@@ -26,39 +35,76 @@ export default function CreateEvent() {
   return (
     <>
       <HNavbar />
-      <div className="create-event-container">
-        <h2>Create New Event</h2>
-        <form onSubmit={handleSubmit} className="create-event-form">
-          <input
-            type="text"
-            placeholder="Event Name"
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-            required
-          />
-          <input
-            type="date"
-            value={form.date}
-            onChange={(e) => setForm({ ...form, date: e.target.value })}
-            required
-          />
-          <input
-            type="text"
-            placeholder="Location"
-            value={form.location}
-            onChange={(e) => setForm({ ...form, location: e.target.value })}
-          />
-          <textarea
-            placeholder="Description"
-            value={form.description}
-            onChange={(e) =>
-              setForm({ ...form, description: e.target.value })
-            }
-            required
-          />
-          <button type="submit">Create Event</button>
-        </form>
-      </div>
+
+      <Container maxWidth="sm" sx={{ mt: 6 }}>
+        <Paper elevation={3} sx={{ p: 4, borderRadius: 3 }}>
+          <Typography
+            variant="h5"
+            component="h2"
+            textAlign="center"
+            fontWeight="bold"
+            mb={3}
+          >
+            Tạo sự kiện mới
+          </Typography>
+
+          <Box component="form" onSubmit={handleSubmit}>
+            <Stack spacing={3}>
+              <TextField
+                label="Tên sự kiện"
+                variant="outlined"
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                required
+                fullWidth
+              />
+
+              <TextField
+                label="Ngày tổ chức"
+                type="date"
+                InputLabelProps={{ shrink: true }}
+                value={form.date}
+                onChange={(e) => setForm({ ...form, date: e.target.value })}
+                required
+                fullWidth
+              />
+
+              <TextField
+                label="Địa điểm"
+                variant="outlined"
+                value={form.location}
+                onChange={(e) => setForm({ ...form, location: e.target.value })}
+                fullWidth
+              />
+
+              <TextField
+                label="Mô tả"
+                variant="outlined"
+                multiline
+                rows={4}
+                value={form.description}
+                onChange={(e) =>
+                  setForm({ ...form, description: e.target.value })
+                }
+                required
+                fullWidth
+              />
+
+              <Button
+                type="submit"
+                variant="contained"
+                size="large"
+                sx={{
+                  backgroundColor: "#1976d2",
+                  "&:hover": { backgroundColor: "#115293" },
+                }}
+              >
+                Tạo sự kiện
+              </Button>
+            </Stack>
+          </Box>
+        </Paper>
+      </Container>
     </>
   );
 }

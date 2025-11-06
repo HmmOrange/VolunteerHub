@@ -1,14 +1,31 @@
 import { useEffect, useState } from "react";
 import Navbar from "../../components/HNavBar/HNavbar";
 import { getAllEvents, deleteEvent, updateEvent } from "../../api/Events";
-import "./Dashboard.css";
+import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  CardActions,
+  Container,
+  Typography,
+  TextField,
+  Stack,
+  Grid,
+  Paper,
+} from "@mui/material";
 
 export default function Dashboard() {
   const username = localStorage.getItem("username");
   const role = localStorage.getItem("role");
   const [events, setEvents] = useState([]);
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({ name: "", date: "", location: "", description: "" });
+  const [form, setForm] = useState({
+    name: "",
+    date: "",
+    location: "",
+    description: "",
+  });
 
   useEffect(() => {
     (async () => {
@@ -46,72 +63,125 @@ export default function Dashboard() {
   return (
     <>
       <Navbar />
-      <div className="dashboard-container">
-        <h1>Xin chào, {username || "Người dùng"}!</h1>
-        <h3>Danh sách sự kiện</h3>
+      <Container maxWidth="md" sx={{ mt: 6 }}>
+        <Typography variant="h4" textAlign="center" fontWeight="bold" gutterBottom>
+          Xin chào, {username || "Người dùng"}!
+        </Typography>
+        <Typography variant="h6" textAlign="center" mb={3}>
+          Danh sách sự kiện
+        </Typography>
 
-        <div className="event-list">
-          {events.length === 0 ? (
-            <p>Chưa có sự kiện nào.</p>
-          ) : (
-            events.map((event) => (
-              <div key={event._id} className="event-card">
-                {editing === event._id ? (
-                  <form onSubmit={handleUpdate} className="edit-form">
-                    <input
-                      type="text"
-                      value={form.name}
-                      onChange={(e) => setForm({ ...form, name: e.target.value })}
-                      required
-                    />
-                    <input
-                      type="date"
-                      value={form.date}
-                      onChange={(e) => setForm({ ...form, date: e.target.value })}
-                      required
-                    />
-                    <input
-                      type="text"
-                      value={form.location}
-                      onChange={(e) => setForm({ ...form, location: e.target.value })}
-                    />
-                    <textarea
-                      value={form.description}
-                      onChange={(e) => setForm({ ...form, description: e.target.value })}
-                    />
-                    <button type="submit">Lưu</button>
-                    <button onClick={() => setEditing(null)} type="button">
-                      Hủy
-                    </button>
-                  </form>
-                ) : (
-                  <>
-                    <h4>{event.name}</h4>
-                    <p>{event.description}</p>
-                    <p>
-                      <b>Địa điểm:</b> {event.location || "Chưa xác định"}
-                    </p>
-                    <p>
-                      <b>Ngày:</b> {new Date(event.date).toLocaleDateString()}
-                    </p>
-                    <small>
-                      Người tạo: {event.createdBy?.username || "Không rõ"} | Đã duyệt:{" "}
-                      {event.approved ? "✅" : "❌"}
-                    </small>
-                    {(role === "manager" ||
-                      event.createdBy?.username === username) && (
-                      <div className="event-actions">
-                        <button onClick={() => handleEdit(event)}>Chỉnh sửa</button>
-                        <button onClick={() => handleDelete(event._id)}>Xóa</button>
-                      </div>
+        {events.length === 0 ? (
+          <Typography textAlign="center">Chưa có sự kiện nào.</Typography>
+        ) : (
+          <Grid container spacing={3}>
+            {events.map((event) => (
+              <Grid item xs={12} key={event._id}>
+                <Card sx={{ p: 2 }}>
+                  <CardContent>
+                    {editing === event._id ? (
+                      <Box component="form" onSubmit={handleUpdate}>
+                        <Stack spacing={2}>
+                          <TextField
+                            label="Tên sự kiện"
+                            value={form.name}
+                            onChange={(e) =>
+                              setForm({ ...form, name: e.target.value })
+                            }
+                            required
+                            fullWidth
+                          />
+                          <TextField
+                            label="Ngày"
+                            type="date"
+                            InputLabelProps={{ shrink: true }}
+                            value={form.date}
+                            onChange={(e) =>
+                              setForm({ ...form, date: e.target.value })
+                            }
+                            required
+                            fullWidth
+                          />
+                          <TextField
+                            label="Địa điểm"
+                            value={form.location}
+                            onChange={(e) =>
+                              setForm({ ...form, location: e.target.value })
+                            }
+                            fullWidth
+                          />
+                          <TextField
+                            label="Mô tả"
+                            multiline
+                            rows={3}
+                            value={form.description}
+                            onChange={(e) =>
+                              setForm({ ...form, description: e.target.value })
+                            }
+                            fullWidth
+                          />
+                          <Stack direction="row" spacing={2}>
+                            <Button variant="contained" type="submit">
+                              Lưu
+                            </Button>
+                            <Button
+                              variant="outlined"
+                              color="error"
+                              onClick={() => setEditing(null)}
+                            >
+                              Hủy
+                            </Button>
+                          </Stack>
+                        </Stack>
+                      </Box>
+                    ) : (
+                      <>
+                        <Typography variant="h6">{event.name}</Typography>
+                        <Typography variant="body2" color="text.secondary" mb={1}>
+                          {event.description}
+                        </Typography>
+                        <Typography variant="body2">
+                          <b>Địa điểm:</b> {event.location || "Chưa xác định"}
+                        </Typography>
+                        <Typography variant="body2">
+                          <b>Ngày:</b> {new Date(event.date).toLocaleDateString()}
+                        </Typography>
+                        <Typography variant="caption" display="block" mt={1}>
+                          Người tạo: {event.createdBy?.username || "Không rõ"} | Đã duyệt:{" "}
+                          {event.approved ? "✅" : "❌"}
+                        </Typography>
+                      </>
                     )}
-                  </>
-                )}
-              </div>
-            ))
-          )}
-        </div>
-      </div>
+                  </CardContent>
+
+                  {(role === "manager" ||
+                    event.createdBy?.username === username) && (
+                    <CardActions>
+                      {editing === event._id ? null : (
+                        <>
+                          <Button
+                            variant="outlined"
+                            onClick={() => handleEdit(event)}
+                          >
+                            Chỉnh sửa
+                          </Button>
+                          <Button
+                            variant="contained"
+                            color="error"
+                            onClick={() => handleDelete(event._id)}
+                          >
+                            Xóa
+                          </Button>
+                        </>
+                      )}
+                    </CardActions>
+                  )}
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        )}
+      </Container>
     </>
   );
 }
