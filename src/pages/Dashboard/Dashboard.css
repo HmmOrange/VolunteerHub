@@ -1,20 +1,31 @@
+/* Style cho Container (từ sx={{ p: 3 }}) */
 .dashboard-container-split {
   padding: 24px !important;
 }
 
+/* Style cho Grid container (từ justifyContent="center") */
 .event-grid-container-split {
   justify-content: center !important;
 }
 
+/* Style cho Card */
 .event-card-split {
-  padding: 0 8px !important;
+  padding: 8px 8px 0px 8px !important; 
   height: 100%;
-  width: 220px !important;
-  margin-left: auto !important;
-  margin-right: auto !important;
+  width: 220px !important; 
+  margin-left: auto !important; 
+  margin-right: auto !important; 
 }
 
+/* Class cho khu vực nút Sửa/Xóa (kéo lên) */
 .event-actions-split {
   padding-top: 0px !important;
-  padding-bottom: 16px !important;
+}
+
+/* Class mới cho thẻ Card có thể bấm */
+.event-card-clickable:hover {
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); 
+  transform: translateY(-2px);
+  transition: all 0.2s ease-in-out;
 }

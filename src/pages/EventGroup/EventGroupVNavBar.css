@@ -1,0 +1,12 @@
+/* Container bên trong VNavBar */
+.event-vnav-container {
+  /* Để trống */
+}
+
+/* Tiêu đề "Đoạn chat" */
+.chat-title {
+  display: block;
+  padding: 12px 16px 4px 16px;
+  font-weight: 600;
+  color: #555;
+}

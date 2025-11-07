@@ -1,0 +1,32 @@
+/* Giấy chứa các Tab */
+.event-group-tabs-paper {
+  border-radius: 8px !important;
+  margin-bottom: 16px; /* Khoảng cách giữa Tab và nội dung */
+}
+
+/* Khu vực nội dung bên dưới Tab */
+.event-group-content-area {
+  /* Để trống */
+}
+
+/* Box tạm cho bài đăng */
+.temp-post-box {
+  width: 800px;
+  height: 600px;
+  /* Tự động căn giữa */
+  margin-left: auto;
+  margin-right: auto;
+  /* Responsive */
+  max-width: 100%; 
+  
+  padding: 16px;
+  border-radius: 8px !important;
+  margin-bottom: 16px; 
+}
+
+/* Style riêng cho tab Thông tin (không cần chiều cao 600px) */
+.info-tab {
+  height: auto;
+  width: auto;
+  max-width: 100%;
+}
