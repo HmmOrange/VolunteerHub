@@ -9,12 +9,11 @@ import {
   NotificationsNoneOutlined as BellIcon,
 } from "@mui/icons-material";
 
-// Import file CSS
 import "./HNavBar.css";
 
 // Chỉ nhận 'onToggleVNavBar'
 export default function HNavbar({ onToggleVNavBar }) { 
-  const navigate = useNavigate(); // <-- Bạn đã có navigate ở đây
+  const navigate = useNavigate();
   const username = localStorage.getItem("username") || "User";
   const [anchorEl, setAnchorEl] = useState(null);
   const isMenuOpen = Boolean(anchorEl);
@@ -36,7 +35,6 @@ export default function HNavbar({ onToggleVNavBar }) {
   // === THAY ĐỔI Ở ĐÂY ===
   // Sửa hàm này để điều hướng
   const handleAddEvent = () => {
-    // console.log("Add Event/Post Clicked"); // <--- Dòng cũ
     navigate("/event/create"); // <--- Dòng mới
   };
   // ======================
@@ -86,7 +84,7 @@ export default function HNavbar({ onToggleVNavBar }) {
         <Stack direction="row" spacing={0.5} alignItems="center">
           <IconButton
             className="hnavbar-icon-btn hnavbar-add-btn"
-            onClick={handleAddEvent} // <-- Hàm này giờ đã trỏ đúng
+            onClick={handleAddEvent}
           >
             <AddIcon />
           </IconButton>

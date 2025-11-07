@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-// KHÔNG CẦN IMPORT NAVBAR/VNAVBAR
 import { createEvent } from "../../api/Events";
 import {
   Box,
@@ -12,9 +11,9 @@ import {
   Stack,
 } from "@mui/material";
 
+import "./CreateEvent.css";
+
 export default function CreateEvent() {
-  // KHÔNG CẦN STATE VNAVBAR
-  
   const [form, setForm] = useState({
     name: "",
     date: "",
@@ -35,11 +34,8 @@ export default function CreateEvent() {
 
   return (
     <>
-      {/* KHÔNG CÓ <HNavbar /> hay <VNavBar /> */}
-      
-      {/* Sửa 'mt: 6' thành 'p: 3' (padding) */}
-      <Container maxWidth="sm" sx={{ p: 3 }}>
-        <Paper elevation={3} sx={{ p: 4, borderRadius: 3 }}>
+      <Container maxWidth="sm" className="create-event-container-split">
+        <Paper elevation={3} className="create-event-paper-split">
           <Typography
             variant="h5"
             component="h2"
@@ -96,10 +92,7 @@ export default function CreateEvent() {
                 type="submit"
                 variant="contained"
                 size="large"
-                sx={{
-                  backgroundColor: "#1976d2",
-                  "&:hover": { backgroundColor: "#115293" },
-                }}
+                className="create-event-submit-btn-split"
               >
                 Tạo sự kiện
               </Button>

@@ -1,13 +1,12 @@
 import { useNavigate } from "react-router-dom";
 import {
   Drawer, Box, List, ListItem, ListItemButton, ListItemIcon,
-  ListItemText, Divider, Typography, Avatar, Toolbar, // Thêm Toolbar
+  ListItemText, Divider, Typography, Avatar, Toolbar,
 } from "@mui/material";
 import {
   HomeOutlined, EventOutlined, ExploreOutlined, CalendarMonthOutlined,
 } from "@mui/icons-material";
 
-// Import file CSS
 import "./VNavBar.css";
 
 export default function VNavBar({ isOpen, drawerWidth }) {
@@ -25,8 +24,6 @@ export default function VNavBar({ isOpen, drawerWidth }) {
 
   const drawerContent = (
     <div>
-      {/* QUAN TRỌNG: Thêm Toolbar để đẩy nội dung VNavBar
-         xuống dưới HNavBar (cao 64px) */}
       <Toolbar /> 
       <Divider />
       
@@ -80,13 +77,12 @@ export default function VNavBar({ isOpen, drawerWidth }) {
 
   return (
     <Drawer
-      variant="persistent" // QUAN TRỌNG: Dùng "persistent"
+      variant="persistent"
       anchor="left"
-      open={isOpen} // Trạng thái đóng/mở
+      open={isOpen}
       sx={{
         width: drawerWidth,
         flexShrink: 0,
-        // Đặt z-index thấp hơn HNavBar
         zIndex: 1200, 
         "& .MuiDrawer-paper": {
           width: drawerWidth,

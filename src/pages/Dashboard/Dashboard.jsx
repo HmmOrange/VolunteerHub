@@ -14,6 +14,8 @@ import {
   Paper,
 } from "@mui/material";
 
+import "./Dashboard.css";
+
 export default function Dashboard() {
   const username = localStorage.getItem("username");
   const role = localStorage.getItem("role");
@@ -61,7 +63,7 @@ export default function Dashboard() {
 
   return (
     <>
-      <Container maxWidth="md" sx={{ p: 3 }}>
+      <Container maxWidth="md" className="dashboard-container-split">
         <Typography variant="h4" textAlign="center" fontWeight="bold" gutterBottom>
           Xin chào, {username || "Người dùng"}!
         </Typography>
@@ -72,15 +74,11 @@ export default function Dashboard() {
         {events.length === 0 ? (
           <Typography textAlign="center">Chưa có sự kiện nào.</Typography>
         ) : (
-          // === 1. Thêm 'justifyContent="center"' để căn giữa các thẻ ===
-          <Grid container spacing={3} justifyContent="center">
+          <Grid container spacing={3} className="event-grid-container-split">
             {events.map((event) => (
-              
-              // === 2. Sửa Grid item để responsive 3 cột ===
               <Grid item xs={12} sm={6} md={4} key={event._id}>
                 
-                {/* === 3. Thêm 'height: "100%"' để các thẻ bằng nhau === */}
-                <Card sx={{ p: 2, height: "100%" }}>
+                <Card className="event-card-split">
                   <CardContent>
                     {editing === event._id ? (
                       <Box component="form" onSubmit={handleUpdate}>
@@ -150,8 +148,10 @@ export default function Dashboard() {
                           <b>Ngày:</b> {new Date(event.date).toLocaleDateString()}
                         </Typography>
                         <Typography variant="caption" display="block" mt={1}>
-                          Người tạo: {event.createdBy?.username || "Không rõ"} | Đã duyệt:{" "}
-                          {event.approved ? "✅" : "❌"}
+                          Người tạo: {event.createdBy?.username || "Không rõ"}
+                        </Typography>
+                        <Typography variant="caption" display="block">
+                          Đã duyệt: {event.approved ? "✅" : "❌"}
                         </Typography>
                       </>
                     )}
@@ -159,7 +159,7 @@ export default function Dashboard() {
 
                   {(role === "manager" ||
                     event.createdBy?.username === username) && (
-                    <CardActions>
+                    <CardActions className="event-actions-split">
                       {editing === event._id ? null : (
                         <>
                           <Button
