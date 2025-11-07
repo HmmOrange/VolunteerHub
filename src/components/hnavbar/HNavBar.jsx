@@ -14,7 +14,7 @@ import "./HNavBar.css";
 
 // Chỉ nhận 'onToggleVNavBar'
 export default function HNavbar({ onToggleVNavBar }) { 
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // <-- Bạn đã có navigate ở đây
   const username = localStorage.getItem("username") || "User";
   const [anchorEl, setAnchorEl] = useState(null);
   const isMenuOpen = Boolean(anchorEl);
@@ -33,9 +33,13 @@ export default function HNavbar({ onToggleVNavBar }) {
     handleProfileMenuClose();
   };
 
+  // === THAY ĐỔI Ở ĐÂY ===
+  // Sửa hàm này để điều hướng
   const handleAddEvent = () => {
-    console.log("Add Event/Post Clicked");
+    // console.log("Add Event/Post Clicked"); // <--- Dòng cũ
+    navigate("/event/create"); // <--- Dòng mới
   };
+  // ======================
 
   const handleNotifications = () => {
     console.log("Show Notifications");
@@ -44,9 +48,8 @@ export default function HNavbar({ onToggleVNavBar }) {
   return (
     <AppBar
       elevation={0}
-      position="fixed" // QUAN TRỌNG: Đổi thành "fixed"
+      position="fixed" 
       className="hnavbar-appbar"
-      // BỎ sx co dãn, nó sẽ tự động rộng 100%
     >
       <Toolbar className="hnavbar-toolbar">
         {/* === 1. BÊN TRÁI === */}
@@ -54,7 +57,7 @@ export default function HNavbar({ onToggleVNavBar }) {
           <IconButton
             edge="start"
             aria-label="open drawer"
-            onClick={onToggleVNavBar} // Gọi hàm từ Layout
+            onClick={onToggleVNavBar} 
             className="hnavbar-icon-btn"
           >
             <MenuIcon />
@@ -83,7 +86,7 @@ export default function HNavbar({ onToggleVNavBar }) {
         <Stack direction="row" spacing={0.5} alignItems="center">
           <IconButton
             className="hnavbar-icon-btn hnavbar-add-btn"
-            onClick={handleAddEvent}
+            onClick={handleAddEvent} // <-- Hàm này giờ đã trỏ đúng
           >
             <AddIcon />
           </IconButton>
