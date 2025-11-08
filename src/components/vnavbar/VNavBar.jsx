@@ -9,7 +9,8 @@ import {
 
 import "./VNavBar.css";
 
-export default function VNavBar({ isOpen, drawerWidth }) {
+// Nhận props mới: 'drawerVariant' và 'onClose'
+export default function VNavBar({ isOpen, drawerWidth, drawerVariant, onClose }) {
   const navigate = useNavigate();
 
   const shortcuts = [
@@ -20,6 +21,10 @@ export default function VNavBar({ isOpen, drawerWidth }) {
 
   const handleNavigate = (path) => {
     navigate(path);
+    // Nếu là 'temporary' (mobile), tự động đóng VNav sau khi click
+    if (drawerVariant === 'temporary') {
+      onClose();
+    }
   };
 
   const drawerContent = (
@@ -77,9 +82,12 @@ export default function VNavBar({ isOpen, drawerWidth }) {
 
   return (
     <Drawer
-      variant="persistent"
+      // Sử dụng props mới
+      variant={drawerVariant} // Thay 'persistent' bằng prop
       anchor="left"
       open={isOpen}
+      onClose={onClose} // Dùng khi là 'temporary'
+      
       sx={{
         width: drawerWidth,
         flexShrink: 0,
@@ -91,6 +99,8 @@ export default function VNavBar({ isOpen, drawerWidth }) {
           backgroundColor: "#fff", 
         },
       }}
+      // (Quan trọng) Đảm bảo đóng VNav khi bấm vào nội dung (chỉ áp dụng cho temporary)
+      onClick={drawerVariant === 'temporary' ? onClose : undefined}
     >
       {drawerContent}
     </Drawer>

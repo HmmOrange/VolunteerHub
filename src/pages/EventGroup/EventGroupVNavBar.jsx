@@ -31,17 +31,29 @@ const mockChats = [
   { id: 3, name: "Truyền thông" },
 ];
 
-export default function EventGroupVNavBar({ isOpen, drawerWidth, eventId }) {
+// Nhận props mới: 'drawerVariant' và 'onClose'
+export default function EventGroupVNavBar({ isOpen, drawerWidth, eventId, drawerVariant, onClose }) {
   const [eventData, setEventData] = useState(mockEventData);
   
   // (Sau này dùng eventId để fetch data)
   // useEffect(() => { ... }, [eventId]);
 
+  const handleNavigate = () => {
+    // (Logic điều hướng chat...)
+    // Nếu là 'temporary' (mobile), tự động đóng VNav sau khi click
+    if (drawerVariant === 'temporary') {
+      onClose();
+    }
+  };
+
   return (
     <Drawer
-      variant="persistent"
+      // Sử dụng props mới
+      variant={drawerVariant} // Thay 'persistent' bằng prop
       anchor="left"
       open={isOpen}
+      onClose={onClose} // Dùng khi là 'temporary'
+
       sx={{
         width: drawerWidth,
         flexShrink: 0,
@@ -57,7 +69,11 @@ export default function EventGroupVNavBar({ isOpen, drawerWidth, eventId }) {
       <Toolbar />
       <Divider />
       
-      <Box className="event-vnav-container">
+      {/* Thêm onClick ở đây để đóng VNav khi bấm vào (chỉ áp dụng cho temporary) */}
+      <Box 
+        className="event-vnav-container"
+        onClick={drawerVariant === 'temporary' ? onClose : undefined}
+      >
         
         <Box sx={{ px: 2, pb: 2, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           {/* Avatar sự kiện (ảnh đại diện) */}
@@ -89,7 +105,7 @@ export default function EventGroupVNavBar({ isOpen, drawerWidth, eventId }) {
         </Typography>
         <List dense>
           {mockChats.map((chat) => (
-            <ListItemButton key={chat.id}>
+            <ListItemButton key={chat.id} onClick={handleNavigate}>
               <ListItemIcon sx={{ minWidth: '40px' }}>
                 <Avatar sx={{ width: 28, height: 28, bgcolor: 'primary.light' }}>
                   <ChatOutlined sx={{ fontSize: '1rem' }} />

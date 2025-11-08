@@ -10,7 +10,7 @@
 
 /* Style cho Card */
 .event-card-split {
-  padding: 8px 8px 0px 8px !important; 
+  padding: 8px 8px 0 8px !important; 
   height: 100%;
   width: 220px !important; 
   margin-left: auto !important; 
@@ -20,6 +20,8 @@
 /* Class cho khu vực nút Sửa/Xóa (kéo lên) */
 .event-actions-split {
   padding-top: 0px !important;
+  padding-bottom: 16px !important;
+  margin-top: -4px !important;
 }
 
 /* Class mới cho thẻ Card có thể bấm */
