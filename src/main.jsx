@@ -6,7 +6,7 @@ import { viVN } from "@mui/material/locale";
 
 const theme = createTheme({
   palette: {
-    mode: "light", // or "dark"
+    mode: "light", // or "dark" TEST
     primary: { main: "#4169e1" },
     secondary: { main: "#b50bd3" },
   },
