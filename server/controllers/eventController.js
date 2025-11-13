@@ -3,13 +3,22 @@ import User from "../models/User.js";
 
 export const createEvent = async (req, res) => {
   try {
-    const { name, date, location, description, username } = req.body;
+    const { name, slug, date, location, description, username } = req.body;
 
     const user = await User.findOne({ username });
     if (!user) return res.status(400).json({ message: "Không tìm thấy người dùng" });
 
+    const finalSlug = slug && slug.trim().length > 0
+      ? slug.toLowerCase().replace(/\s+/g, "-")
+      : name.toLowerCase().replace(/\s+/g, "-");
+
+    const exists = await Event.findOne({ slug: finalSlug });
+    if (exists)
+      return res.status(400).json({ message: "Slug đã tồn tại" });
+
     const newEvent = new Event({
       name,
+      slug: finalSlug,
       date,
       location,
       description,
@@ -17,11 +26,16 @@ export const createEvent = async (req, res) => {
     });
 
     await newEvent.save();
-    res.status(201).json({ message: "Tạo sự kiện thành công!" });
+
+    res.status(201).json({
+      message: "Tạo Event thành công",
+      slug: newEvent.slug,
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
+
 
 export const getAllEvents = async (req, res) => {
   try {
@@ -34,9 +48,9 @@ export const getAllEvents = async (req, res) => {
 
 export const updateEvent = async (req, res) => {
   try {
-    const { eventId, username, name, date, location, description } = req.body;
+    const { slug, username, name, date, location, description } = req.body;
     const user = await User.findOne({ username });
-    const event = await Event.findById(eventId);
+    const event = await Event.findById(slug);
 
     if (!event) return res.status(404).json({ message: "Không tìm thấy sự kiện" });
     if (!user) return res.status(404).json({ message: "Không tìm thấy người dùng" });
@@ -59,9 +73,9 @@ export const updateEvent = async (req, res) => {
 
 export const deleteEvent = async (req, res) => {
   try {
-    const { eventId, username } = req.body;
+    const { slug, username } = req.body;
     const user = await User.findOne({ username });
-    const event = await Event.findById(eventId);
+    const event = await Event.findById(slug);
 
     if (!event) return res.status(404).json({ message: "Không tìm thấy sự kiện" });
     if (!user) return res.status(404).json({ message: "Không tìm thấy người dùng" });
@@ -70,8 +84,19 @@ export const deleteEvent = async (req, res) => {
       return res.status(403).json({ message: "Bạn không có quyền xóa sự kiện này" });
     }
 
-    await Event.findByIdAndDelete(eventId);
+    await Event.findByIdAndDelete(slug);
     res.json({ message: "Xóa sự kiện thành công!" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+export const getEventBySlug = async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const event = await Event.findOne({ slug }).populate("createdBy", "username");
+    if (!event) return res.status(404).json({ message: "Không tìm thấy event" });
+    res.json(event);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
