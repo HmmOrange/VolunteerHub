@@ -1,8 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import HNavbar from "../../components/HNavBar/HNavbar";
 import { createEvent } from "../../api/Events";
-
 import {
   Box,
   Button,
@@ -12,6 +10,8 @@ import {
   Paper,
   Stack,
 } from "@mui/material";
+
+import "./CreateEvent.css";
 
 export default function CreateEvent() {
   const [form, setForm] = useState({
@@ -34,10 +34,8 @@ export default function CreateEvent() {
 
   return (
     <>
-      <HNavbar />
-
-      <Container maxWidth="sm" sx={{ mt: 6 }}>
-        <Paper elevation={3} sx={{ p: 4, borderRadius: 3 }}>
+      <Container maxWidth="sm" className="create-event-container-split">
+        <Paper elevation={3} className="create-event-paper-split">
           <Typography
             variant="h5"
             component="h2"
@@ -94,10 +92,7 @@ export default function CreateEvent() {
                 type="submit"
                 variant="contained"
                 size="large"
-                sx={{
-                  backgroundColor: "#1976d2",
-                  "&:hover": { backgroundColor: "#115293" },
-                }}
+                className="create-event-submit-btn-split"
               >
                 Tạo sự kiện
               </Button>

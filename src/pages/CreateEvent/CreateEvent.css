@@ -1,33 +1,16 @@
-.create-event-container {
-  max-width: 500px;
-  margin: 50px auto;
-  padding: 20px;
-  text-align: center;
+.create-event-container-split {
+  padding: 24px !important;
 }
 
-.create-event-form {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+.create-event-paper-split {
+  padding: 32px !important; 
+  border-radius: 12px !important; 
 }
 
-.create-event-form input,
-.create-event-form textarea {
-  padding: 10px;
-  font-size: 15px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
+.create-event-submit-btn-split {
+  background-color: #1976d2 !important;
 }
 
-.create-event-form button {
-  background-color: #1976d2;
-  color: white;
-  border: none;
-  padding: 10px;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.create-event-form button:hover {
-  background-color: #0d47a1;
+.create-event-submit-btn-split:hover {
+  background-color: #115293 !important;
 }

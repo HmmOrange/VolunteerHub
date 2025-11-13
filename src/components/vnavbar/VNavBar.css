@@ -1,0 +1,13 @@
+.vnavbar-shortcut-title {
+  padding: 12px 16px 4px 16px;
+  display: block;
+  color: #555;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.vnavbar-shortcut-avatar {
+  width: 28px;
+  height: 28px;
+  margin-left: 4px;
+}
