@@ -14,6 +14,20 @@ export const getAllEvents = async () => {
   return res.json();
 };
 
+// === HÀM MỚI BẮT BUỘC PHẢI THÊM ===
+// Hàm này lấy 1 sự kiện bằng ID
+export const getEventById = async ({ eventId }) => {
+  // Hàm này sẽ gọi đến: GET http://localhost:5000/api/events/[ID_CUA_SU_KIEN]
+  const res = await fetch(`${API_URL}/${eventId}`);
+  
+  if (!res.ok) {
+    throw new Error(`Failed to fetch event with ID ${eventId}`);
+  }
+  
+  return res.json();
+};
+// ===================================
+
 export const updateEvent = async (data) => {
   const res = await fetch(`${API_URL}/update`, {
     method: "PUT",

@@ -76,3 +76,30 @@ export const deleteEvent = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+// === THÊM HÀM MỚI NÀY VÀO CUỐI FILE ===
+export const getEventById = async (req, res) => {
+  try {
+    const eventId = req.params.id; // Lấy ID từ URL (vd: /api/events/12345)
+
+    // Tìm sự kiện bằng ID và populate người tạo (giống hệt getAllEvents)
+    const event = await Event.findById(eventId)
+                             .populate("createdBy", "username role"); 
+
+    if (!event) {
+      return res.status(404).json({ message: "Event not found" });
+    }
+
+    // Trả về dữ liệu sự kiện
+    res.status(200).json(event);
+
+  } catch (error) {
+    console.error("Error fetching event by ID:", error);
+    // Xử lý lỗi nếu ID không hợp lệ
+    if (error.kind === 'ObjectId') {
+        return res.status(400).json({ message: "Invalid Event ID format" });
+    }
+    res.status(500).json({ message: "Server error" });
+  }
+};
+// =======================================
