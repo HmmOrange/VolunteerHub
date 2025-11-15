@@ -23,9 +23,20 @@ export default function CreateEvent() {
 
   const navigate = useNavigate();
   const username = localStorage.getItem("username");
+  
+  // 1. Lấy role của người dùng
+  const role = localStorage.getItem("role");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // 2. Thêm logic kiểm tra quyền ngay tại đây
+    if (role !== 'manager') {
+      alert("Bạn cần là manager để tạo sự kiện.");
+      return; // Dừng hàm, không cho submit
+    }
+
+    // 3. Code này chỉ chạy nếu role LÀ 'manager'
     const res = await createEvent({ ...form, username });
     if (res.message && res.message.includes("thành công")) {
       navigate("/dashboard");
@@ -46,6 +57,7 @@ export default function CreateEvent() {
             Tạo sự kiện mới
           </Typography>
 
+          {/* Form này sẽ gọi handleSubmit đã được cập nhật */}
           <Box component="form" onSubmit={handleSubmit}>
             <Stack spacing={3}>
               <TextField
