@@ -14,12 +14,13 @@ import {
   ListItemText,
   CircularProgress,
   Modal, 
+  Backdrop, // Giữ lại Backdrop
+  Fade, // Giữ lại Fade
+  // Thêm Dialog
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  Backdrop, // Giữ lại Backdrop
-  Fade, // Giữ lại Fade
 } from "@mui/material";
 import {
   MoreHoriz as MoreIcon,
@@ -37,7 +38,7 @@ export default function PostCard({ post }) {
   const currentUserId = localStorage.getItem("userId"); 
   const currentUsername = localStorage.getItem("username");
 
-  // State cho Like (Lấy từ API)
+  // State cho Like
   const [likes, setLikes] = useState(post.likes || []); 
   const isLiked = likes.includes(currentUserId);
   const likeCount = likes.length;
@@ -64,7 +65,6 @@ export default function PostCard({ post }) {
     if (isLoadingComments) return; 
     setIsLoadingComments(true);
     try {
-      // API của bạn đang sắp xếp ASC (cũ nhất trước)
       const data = await getCommentsByPost(post._id);
       setComments(data);
     } catch (error) {
@@ -78,13 +78,13 @@ export default function PostCard({ post }) {
     const newShowState = !showComments;
     setShowComments(newShowState);
     if (newShowState && comments.length === 0) {
-      fetchComments(); 
+      fetchComments();
     }
   };
   
   // Callback khi bình luận mới được tạo
   const handleCommentPosted = (newComment) => {
-    setComments([...comments, newComment]); // Thêm vào cuối mảng
+    setComments([...comments, newComment]); 
     setCommentCount(prevCount => prevCount + 1); 
   };
 
@@ -141,6 +141,7 @@ export default function PostCard({ post }) {
   return (
     <> 
       <Paper className="post-card-paper" elevation={0} variant="outlined">
+        
         {/* Header */}
         <Box className="post-header">
           <Avatar sx={{ bgcolor: '#49BBBD' }}> 
@@ -225,13 +226,10 @@ export default function PostCard({ post }) {
         </Box>
 
         {/* === SỬA LẠI KHỐI NÀY THEO YÊU CẦU CỦA BẠN === */}
-        {/* Hiển thị khu vực bình luận inline */}
         {showComments && (
           <>
             <Divider />
             <Box className="post-comments" sx={{ pb: 2 }}>
-              
-              {/* 1. Đổi tiêu đề */}
               <Typography variant="body2" fontWeight="bold" sx={{ mb: -2 }}>
                 Bình luận gần đây
               </Typography>
@@ -241,44 +239,46 @@ export default function PostCard({ post }) {
                 <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
                   <CircularProgress size={24} />
                 </Box>
-              ) : (
+                
+              // 1. THÊM KIỂM TRA comments.length === 0
+              ) : comments.length === 0 ? (
+                <Typography textAlign="center" sx={{ mt: 3, color: 'text.secondary', fontStyle: 'italic' }}>
+                  Bài đăng này chưa có bình luận nào
+                </Typography>
+                
+              // 2. Nếu có bình luận, hiển thị bình luận gần nhất
+              ) : ( 
                 <List dense sx={{ mt: 3 }}>
-                  
-                  {/* 2. Logic chỉ hiển thị bình luận gần nhất */}
-                  {comments.length > 0 && 
-                    (() => {
-                      // API của bạn trả về sort ASC (cũ nhất trước)
-                      // nên bình luận gần nhất là cái cuối cùng.
-                      const recentComment = comments[comments.length - 1]; 
-                      
-                      return (
-                        <ListItem key={recentComment._id} sx={{ p: 0, alignItems: 'flex-start' }}>
-                          <ListItemAvatar sx={{ minWidth: 40, mt: 0.5 }}>
-                            <Avatar sx={{ width: 32, height: 32 }}>
-                              {recentComment.createdBy?.username?.charAt(0).toUpperCase() || 'U'}
-                            </Avatar>
-                          </ListItemAvatar>
-                          <Box sx={{ bgcolor: '#f0f2f5', borderRadius: '16px', p: '8px 12px', width: '100%', ml: 0.5}}>
-                            <ListItemText 
-                              primary={
-                                // Thêm Timestamp
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                  <Typography component="span" variant="body2" fontWeight="bold" sx={{mt: -1}}>
-                                    {recentComment.createdBy?.username}
-                                  </Typography>
-                                  <Typography variant="caption" color="text.secondary" sx={{mt: -0.5}}>
-                                    {new Date(recentComment.createdAt).toLocaleString('vi-VN')}
-                                  </Typography>
-                                </Box>
-                              }
-                              secondary={recentComment.content}
-                            />
-                          </Box>
-                        </ListItem>
-                      );
-                    })() // IIFE (Immediately Invoked Function Expression)
-                  }
-                  
+                  {(() => {
+                    // API của bạn trả về sort ASC (cũ nhất trước)
+                    // nên bình luận gần nhất là cái cuối cùng.
+                    const recentComment = comments[comments.length - 1]; 
+                    
+                    return (
+                      <ListItem key={recentComment._id} sx={{ p: 0, alignItems: 'flex-start' }}>
+                        <ListItemAvatar sx={{ minWidth: 40, mt: 0.5 }}>
+                          <Avatar sx={{ width: 32, height: 32 }}>
+                            {recentComment.createdBy?.username?.charAt(0).toUpperCase() || 'U'}
+                          </Avatar>
+                        </ListItemAvatar>
+                        <Box sx={{ bgcolor: '#f0f2f5', borderRadius: '16px', p: '8px 12px', width: '100%', ml: 0.5}}>
+                          <ListItemText 
+                            primary={
+                              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <Typography component="span" variant="body2" fontWeight="bold" sx={{mt: -1}}>
+                                  {recentComment.createdBy?.username}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary" sx={{mt: -0.5}}>
+                                  {new Date(recentComment.createdAt).toLocaleString('vi-VN')}
+                                </Typography>
+                              </Box>
+                            }
+                            secondary={recentComment.content}
+                          />
+                        </Box>
+                      </ListItem>
+                    );
+                  })()}
                 </List>
               )}
 
@@ -289,7 +289,7 @@ export default function PostCard({ post }) {
         )}
       </Paper>
 
-      {/* Modal (Lightbox) xem ảnh (SỬA LẠI THEO CODE GỐC) */}
+      {/* Modal (Lightbox) xem ảnh */}
       <Modal
         open={lightboxOpen}
         onClose={handleCloseLightbox}
@@ -297,7 +297,7 @@ export default function PostCard({ post }) {
         BackdropComponent={Backdrop}
         BackdropProps={{
           timeout: 500,
-          sx: { backgroundColor: 'rgba(0,0,0,0.5)' } // Nền mờ 50%
+          sx: { backgroundColor: 'rgba(0,0,0,0.5)' } 
         }}
       >
         <Fade in={lightboxOpen}>
@@ -377,10 +377,10 @@ export default function PostCard({ post }) {
                      <ListItemText 
                        primary={
                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                           <Typography component="span" variant="body2" fontWeight="bold" sx={{mt: -1}}>
+                           <Typography component="span" variant="body2" fontWeight="bold">
                              {comment.createdBy?.username}
                            </Typography>
-                           <Typography variant="caption" color="text.secondary" sx={{mt: -0.5}}>
+                           <Typography variant="caption" color="text.secondary">
                              {new Date(comment.createdAt).toLocaleString('vi-VN')}
                            </Typography>
                          </Box>

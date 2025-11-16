@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom"; // 1. Import useParams
+import { useParams } from "react-router-dom"; // 1. Giữ useParams
 import {
   Drawer,
   Box,
@@ -11,12 +11,12 @@ import {
   ListItemIcon,
   ListItemText,
   Avatar,
-  CircularProgress, // Thêm vòng xoay tải
+  CircularProgress, 
 } from "@mui/material";
 import { ChatOutlined, Public, Lock } from "@mui/icons-material";
 
-// 2. Import hàm API mới
-import { getEventById } from "../../api/Events";
+// 2. Sửa import (quan trọng)
+import { getEventBySlug } from "../../api/Events"; // Đổi từ getEventById
 import "./EventGroupVNavBar.css";
 import eventGroupAvatar from "../../assets/img/event_group.jpg";
 
@@ -29,23 +29,25 @@ const mockChats = [
 
 // Nhận props từ Layout
 export default function EventGroupVNavBar({ isOpen, drawerWidth, drawerVariant, onClose }) {
-  const { eventId } = useParams(); // 3. Lấy eventId từ URL
-  const [eventData, setEventData] = useState(null); // 4. Bắt đầu với state rỗng
+  // 3. Lấy slug từ URL (thay vì eventId)
+  const { slug } = useParams(); 
+  const [eventData, setEventData] = useState(null); 
   
-  // 5. Dùng useEffect để gọi API khi eventId thay đổi
+  // 4. Dùng useEffect để gọi API bằng slug
   useEffect(() => {
-    if (eventId) {
-      setEventData(null); // Xóa dữ liệu cũ
+    if (slug) { // 5. Kiểm tra slug
+      setEventData(null); 
       (async () => {
         try {
-          const data = await getEventById({ eventId }); 
+          // 6. Gọi API mới
+          const data = await getEventBySlug({ slug }); 
           setEventData(data);
         } catch (error) {
           console.error("Failed to fetch event data:", error);
         }
       })();
     }
-  }, [eventId]); // Phụ thuộc vào eventId
+  }, [slug]); // 7. Phụ thuộc vào slug
 
   const handleNavigate = () => {
     // (Logic điều hướng chat...)
@@ -75,14 +77,11 @@ export default function EventGroupVNavBar({ isOpen, drawerWidth, drawerVariant, 
       <Toolbar />
       <Divider />
       
-      {/* 6. Thêm kiểm tra 'loading' */}
       {!eventData ? (
-        // Nếu đang tải
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 200 }}>
           <CircularProgress />
         </Box>
       ) : (
-        // Nếu đã tải xong
         <Box 
           className="event-vnav-container"
           onClick={drawerVariant === 'temporary' ? onClose : undefined}
@@ -103,7 +102,6 @@ export default function EventGroupVNavBar({ isOpen, drawerWidth, drawerVariant, 
               ) : (
                 <Lock sx={{ fontSize: '1rem', mr: 0.5 }} />
               )}
-              {/* Sử dụng volunteers.length từ CSDL */}
               <Typography variant="body2" color="text.secondary">
                 {eventData.privacy === 'Public' ? "Sự kiện Công khai" : "Sự kiện Riêng tư"} • {eventData.volunteers?.length || 0} thành viên
               </Typography>

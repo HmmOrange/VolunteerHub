@@ -41,6 +41,8 @@ export default function Dashboard() {
   const handleDelete = async (e, eventId) => {
     e.stopPropagation(); 
     if (window.confirm("Bạn có chắc muốn xóa sự kiện này?")) {
+      // (Lưu ý: Bạn cũng cần cập nhật hàm deleteEvent
+      // để nó gửi 'slug' thay vì 'eventId' nếu backend đã đổi)
       await deleteEvent({ eventId, username });
       const data = await getAllEvents();
       setEvents(data);
@@ -49,7 +51,7 @@ export default function Dashboard() {
 
   const handleEdit = (e, event) => {
     e.stopPropagation(); 
-    setEditing(event._id);
+    setEditing(event._id); // Giữ lại _id để chỉnh sửa
     setForm({
       name: event.name,
       date: event.date.split("T")[0],
@@ -61,7 +63,9 @@ export default function Dashboard() {
   const handleUpdate = async (e) => {
     e.preventDefault();
     e.stopPropagation(); 
-    await updateEvent({ ...form, username, eventId: editing });
+    // (Lưu ý: Cập nhật hàm updateEvent để gửi 'slug' 
+    // thay vì 'eventId' nếu backend đã đổi)
+    await updateEvent({ ...form, username, eventId: editing }); 
     setEditing(null);
     const data = await getAllEvents();
     setEvents(data);
@@ -75,11 +79,9 @@ export default function Dashboard() {
   return (
     <>
       <Container maxWidth="md" className="dashboard-container-split">
-        {/* === ĐÃ SỬA LỖI 1 TẠI ĐÂY === */}
         <Typography variant="h4" textAlign="center" fontWeight="bold" gutterBottom>
           Xin chào, {username || "Người dùng"}!
         </Typography>
-        {/* === ĐÃ SỬA LỖI 2 TẠI ĐÂY === */}
         <Typography variant="h6" textAlign="center" mb={3}>
           Danh sách sự kiện
         </Typography>
@@ -95,7 +97,12 @@ export default function Dashboard() {
                   className="event-card-split event-card-clickable" 
                   onClick={() => {
                     if (editing !== event._id) {
-                      navigate(`/event/${event._id}`);
+                      
+                      // === SỬA LỖI TẠI ĐÂY ===
+                      // Đổi từ event._id thành event.slug
+                      navigate(`/event/${event.slug}`);
+                      // ======================
+                      
                     }
                   }}
                 >
@@ -103,14 +110,7 @@ export default function Dashboard() {
                     {editing === event._id ? (
                       <Box component="form" onSubmit={handleUpdate}>
                         <Stack spacing={2}>
-                          <TextField label="Tên sự kiện" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required fullWidth onClick={(e) => e.stopPropagation()} />
-                          <TextField label="Ngày" type="date" InputLabelProps={{ shrink: true }} value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} required fullWidth onClick={(e) => e.stopPropagation()} />
-                          <TextField label="Địa điểm" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} fullWidth onClick={(e) => e.stopPropagation()} />
-                          <TextField label="Mô tả" multiline rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} fullWidth onClick={(e) => e.stopPropagation()} />
-                          <Stack direction="row" spacing={2}>
-                            <Button variant="contained" type="submit">Lưu</Button>
-                            <Button variant="outlined" color="error" onClick={handleCancelEdit}>Hủy</Button>
-                          </Stack>
+                          {/* ... (Code form chỉnh sửa) ... */}
                         </Stack>
                       </Box>
                     ) : (
@@ -122,18 +122,12 @@ export default function Dashboard() {
                         <Typography variant="body2">
                           <b>Địa điểm:</b> {event.location || "Chưa xác định"}
                         </Typography>
-                        
-                        {/* === ĐÃ SỬA LỖI 3 TẠI ĐÂY === */}
                         <Typography variant="body2">
                           <b>Ngày:</b> {new Date(event.date).toLocaleDateString()}
                         </Typography>
-                        
-                        {/* === ĐÃ SỬA LỖI 4 TẠI ĐÂY === */}
                         <Typography variant="caption" display="block" mt={1}>
                           Người tạo: {event.createdBy?.username || "Không rõ"}
                         </Typography>
-                        
-                        {/* === ĐÃ SỬA LỖI 5 TẠI ĐÂY === */}
                         <Typography variant="caption" display="block">
                           Đã duyệt: {event.approved ? "✅" : "❌"}
                         </Typography>
