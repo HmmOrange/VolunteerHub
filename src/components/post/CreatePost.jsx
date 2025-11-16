@@ -16,35 +16,34 @@ import {
   ImageOutlined as ImageIcon,
   PersonAddOutlined as TagIcon,
   LocationOnOutlined as LocationIcon,
-  Close as CloseIcon, // Thêm icon Đóng
+  Close as CloseIcon, 
 } from "@mui/icons-material";
 import "./Post.css"; 
 
-import { createPost } from "../../api/Posts"; 
+// 1. Import cả 2 API
+import { createPost, uploadImage } from "../../api/Posts"; 
 
 export default function CreatePost({ eventId, onPostCreated }) {
   const navigate = useNavigate();
   const username = localStorage.getItem("username") || "Người dùng";
   
-  // State chính: true = Form đầy đủ, false = Box đơn giản
   const [isExpanded, setIsExpanded] = useState(false); 
   
-  // State cho nội dung
   const [postContent, setPostContent] = useState("");
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   
-  // State cho upload ảnh
+  // State: imageFile (File thật), imagePreview (link blob:)
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
-  const [triggerUpload, setTriggerUpload] = useState(false); // Dùng để kích hoạt upload
+  
+  const [triggerUpload, setTriggerUpload] = useState(false); 
   const fileInputRef = useRef(null);
 
-  // Hook để kích hoạt file input sau khi component expand
   useEffect(() => {
     if (isExpanded && triggerUpload) {
       fileInputRef.current.click();
-      setTriggerUpload(false); // Reset trigger
+      setTriggerUpload(false); 
     }
   }, [isExpanded, triggerUpload]);
 
@@ -52,8 +51,8 @@ export default function CreatePost({ eventId, onPostCreated }) {
   const handleImageChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      setImageFile(file);
-      setImagePreview(URL.createObjectURL(file));
+      setImageFile(file); // Lưu file thật vào state
+      setImagePreview(URL.createObjectURL(file)); // Tạo link blob: để xem trước
     }
   };
 
@@ -61,65 +60,80 @@ export default function CreatePost({ eventId, onPostCreated }) {
   const handleCancel = () => {
     setIsExpanded(false);
     setPostContent("");
-    setImageFile(null);
-    setImagePreview(null);
+    setImageFile(null); // Xóa file
+    setImagePreview(null); // Xóa link xem trước
     setIsAnonymous(false);
   };
 
   // Gửi bài đăng
   const handleSubmit = async () => {
+    // Kiểm tra xem eventId đã có chưa
+    if (!eventId) {
+      alert("Đang tải dữ liệu sự kiện, vui lòng thử lại sau giây lát.");
+      return;
+    }
+    
     setIsLoading(true);
+    let finalImageUrl = null; // URL ảnh sẽ lưu vào CSDL
+
     try {
-      // (Tương lai: Bạn sẽ upload 'imageFile' lên server
-      // và nhận về một 'imageUrl')
-      
+      // 1. Kiểm tra xem có file ảnh không
+      if (imageFile) {
+        // 2. Nếu có, tạo FormData
+        const formData = new FormData();
+        formData.append('image', imageFile); // 'image' phải khớp với tên ở route
+
+        // 3. Gọi API upload
+        const uploadRes = await uploadImage(formData);
+        finalImageUrl = uploadRes.imageUrl; // Lấy URL thật
+      }
+
+      // 4. Gọi API createPost với URL thật (hoặc null)
       const newPost = await createPost({
         content: postContent,
         isAnonymous,
         eventId,
         username,
-        // (Tạm thời dùng ảnh preview, sau này dùng imageUrl thật)
-        imageUrl: imagePreview, 
+        imageUrl: finalImageUrl, // Gửi URL thật về CSDL
       });
 
       onPostCreated(newPost); // Gửi post lên EventGroup
-      handleCancel(); // Reset form về trạng thái đơn giản
+      handleCancel(); // Reset form
+
     } catch (error) {
-      console.error("Failed to create post:", error);
+      console.error("Không thể tạo bài đăng:", error);
       alert("Không thể tạo bài đăng, vui lòng thử lại.");
     }
+    
     setIsLoading(false);
   };
-
+  
   // === RENDER TRẠNG THÁI ĐƠN GIẢN ===
-  // (Khi isExpanded = false)
   if (!isExpanded) {
     return (
       <Paper className="create-post-trigger-paper" elevation={0} variant="outlined">
         <Box sx={{ display: 'flex', alignItems: 'center', p: 1.5 }}>
           <Avatar 
             sx={{ bgcolor: '#49BBBD', cursor: 'pointer' }} 
-            onClick={() => navigate('/profile')} // (Chuyển đến trang profile sau)
+            onClick={() => navigate('/profile')} 
           >
             {username.charAt(0).toUpperCase()}
           </Avatar>
           
-          {/* Nút input giả */}
           <Button
             fullWidth
             variant="outlined"
             className="fake-input-button"
-            onClick={() => setIsExpanded(true)} // Mở form đầy đủ
+            onClick={() => setIsExpanded(true)} 
           >
             Hãy đăng gì đó, {username}...
           </Button>
 
-          {/* Các nút icon */}
           <IconButton 
             color="success"
             onClick={() => {
-              setTriggerUpload(true); // Đặt trigger
-              setIsExpanded(true);    // Mở form
+              setTriggerUpload(true); 
+              setIsExpanded(true);    
             }}
           >
             <ImageIcon />
@@ -136,13 +150,12 @@ export default function CreatePost({ eventId, onPostCreated }) {
   }
 
   // === RENDER TRẠNG THÁI ĐẦY ĐỦ (FORM) ===
-  // (Khi isExpanded = true)
   return (
     <Paper className="create-post-paper" elevation={0} variant="outlined">
-      {/* Header (Giống ảnh mockup 2) */}
+      {/* Header */}
       <Box className="create-post-header">
         <Typography variant="h6" fontWeight="bold">Tạo bài viết</Typography>
-        <IconButton onClick={handleCancel} sx={{ position: 'absolute', right: 8, top: 8 }}>
+        <IconButton onClick={handleCancel} sx={{ position: 'absolute', right: -4, top: -4 }}>
           <CloseIcon />
         </IconButton>
       </Box>
@@ -160,21 +173,27 @@ export default function CreatePost({ eventId, onPostCreated }) {
         </Box>
       </Box>
 
+      {/* === SỬA TẠI ĐÂY === */}
       {/* Ô nhập nội dung */}
       <TextField
         variant="standard"
         fullWidth
-        multiline
-        rows={4}
+        multiline // Giữ lại: cho phép nhiều dòng
+        // Xóa: rows={4} (vì đây là cố định)
+        maxRows={10} // Thêm: Giới hạn chiều cao (ví dụ 10 dòng)
+                     // TextField sẽ tự động giãn nở đến 10 dòng
+                     // sau đó mới hiện thanh cuộn
         placeholder="Bạn đang nghĩ gì?"
         InputProps={{ disableUnderline: true }}
         className="create-post-textfield"
         value={postContent}
         onChange={(e) => setPostContent(e.target.value)}
-        autoFocus // Tự động focus vào đây
+        autoFocus 
       />
+      {/* ================= */}
 
-      {/* Hiển thị ảnh xem trước */}
+
+      {/* Hiển thị ảnh xem trước (dùng link blob:) */}
       {imagePreview && (
         <Box sx={{ my: 2, position: 'relative' }}>
           <img src={imagePreview} alt="Xem trước" style={{ width: '100%', borderRadius: '8px' }} />

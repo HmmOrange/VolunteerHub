@@ -12,7 +12,7 @@ import {
   CircularProgress,
 } from "@mui/material";
 
-// Import API (Sửa getEventById -> getEventBySlug)
+// Import API
 import { getEventBySlug } from "../../api/Events"; 
 import { getPostsByEvent } from "../../api/Posts"; 
 
@@ -24,22 +24,18 @@ import PostCard from "../../components/post/PostCard";
 import "./EventGroup.css"; 
 
 export default function EventGroup() {
-  // 1. Sửa useParams (từ eventId -> slug)
   const { slug } = useParams(); 
-  
-  const [eventData, setEventData] = useState(null); // State cho thông tin sự kiện
-  const [posts, setPosts] = useState([]); // State mới cho bài đăng
+  const [eventData, setEventData] = useState(null); 
+  const [posts, setPosts] = useState([]); 
   const [currentTab, setCurrentTab] = useState(0); 
-
   const [isLoadingPosts, setIsLoadingPosts] = useState(true);
 
-  // 2. Sửa Hook để tải THÔNG TIN SỰ KIỆN (dùng slug)
+  // Hook để tải EventData (dùng slug)
   useEffect(() => {
     if (slug) {
-      setEventData(null); // Xóa dữ liệu cũ
+      setEventData(null); 
       (async () => {
         try {
-          // Gọi bằng slug
           const data = await getEventBySlug({ slug }); 
           setEventData(data);
         } catch (error) {
@@ -47,18 +43,15 @@ export default function EventGroup() {
         }
       })();
     }
-  }, [slug]); // Phụ thuộc vào slug
+  }, [slug]); 
 
-  // 3. Sửa Hook để tải CÁC BÀI ĐĂNG
+  // Hook để tải Posts (dùng eventId từ eventData)
   useEffect(() => {
-    // Chờ eventData (từ hook trên) tải xong.
     if (currentTab === 0 && eventData?._id) { 
-      const eventId = eventData._id; // Lấy _id từ eventData
-      
+      const eventId = eventData._id; 
       setIsLoadingPosts(true);
       (async () => {
         try {
-          // getPostsByEvent vẫn dùng eventId (chính xác)
           const data = await getPostsByEvent(eventId);
           setPosts(data);
         } catch (error) {
@@ -68,14 +61,31 @@ export default function EventGroup() {
         setIsLoadingPosts(false);
       })();
     }
-  }, [eventData, currentTab]); // Phụ thuộc vào eventData
+  }, [eventData, currentTab]); 
 
   const handleTabChange = (event, newValue) => {
     setCurrentTab(newValue);
   };
 
+  // Callback khi post mới được tạo
   const handlePostCreated = (newPost) => {
     setPosts([newPost, ...posts]); 
+  };
+
+  // === THÊM HÀM NÀY (DELETE) ===
+  // Hàm này được gọi từ PostCard khi xóa thành công
+  const handlePostDeleted = (deletedPostId) => {
+    // Lọc và xóa post ra khỏi state
+    setPosts(posts.filter(post => post._id !== deletedPostId));
+  };
+
+  // === THÊM HÀM NÀY (UPDATE) ===
+  // Hàm này được gọi từ PostCard khi sửa thành công
+  const handlePostUpdated = (updatedPost) => {
+    // Cập nhật nội dung của post trong state
+    setPosts(posts.map(post => 
+      post._id === updatedPost._id ? updatedPost : post
+    ));
   };
 
   return (
@@ -120,11 +130,9 @@ export default function EventGroup() {
         {currentTab === 0 && (
           <>
             <CreatePost 
-              eventId={eventData?._id} // Truyền _id xuống
+              eventId={eventData?._id} 
               onPostCreated={handlePostCreated} 
             />
-            
-            {/* <Divider sx={{ mb: 2 }} /> */}
             
             {isLoadingPosts ? (
               <Box sx={{ display: 'flex', justifyContent: 'center', p: 5 }}>
@@ -133,8 +141,14 @@ export default function EventGroup() {
             ) : posts.length === 0 ? (
               <Typography textAlign="center">Chưa có bài đăng nào.</Typography>
             ) : (
+              // === CẬP NHẬT TRONG .map() ===
               posts.map((post) => (
-                <PostCard key={post._id} post={post} />
+                <PostCard 
+                  key={post._id} 
+                  post={post} 
+                  onPostDeleted={handlePostDeleted} // <-- Thêm prop
+                  onPostUpdated={handlePostUpdated} // <-- Thêm prop
+                />
               ))
             )}
           </>
@@ -180,7 +194,6 @@ export default function EventGroup() {
           </Paper>
         )}
       </Box>
-
     </Container>
   );
 }

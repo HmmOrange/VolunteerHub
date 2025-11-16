@@ -5,8 +5,12 @@ import { connectDB } from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import eventRoutes from "./routes/eventRoutes.js";
 import postRoutes from "./routes/postRoutes.js"; 
-// 1. Import route mới
 import commentRoutes from "./routes/commentRoutes.js";
+
+// === THÊM 2 DÒNG NÀY ===
+import path from "path";
+import { fileURLToPath } from "url";
+// =========================
 
 dotenv.config();
 const app = express();
@@ -15,6 +19,16 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// === THÊM 3 DÒNG NÀY ===
+// Lấy __dirname trong ES Modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Biến thư mục 'uploads' thành thư mục tĩnh
+// Giờ đây, ảnh có thể được truy cập qua: http://localhost:5000/uploads/ten_anh.png
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+// =========================
+
 // Connect DB
 connectDB();
 
@@ -22,7 +36,6 @@ connectDB();
 app.use("/api/auth", authRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/posts", postRoutes); 
-// 2. Thêm route mới
 app.use("/api/comments", commentRoutes);
 
 // Start server

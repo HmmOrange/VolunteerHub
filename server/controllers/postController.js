@@ -38,7 +38,7 @@ export const createPost = async (req, res) => {
 
     const newPost = new Post({
       content,
-      imageUrl,
+      imageUrl: imageUrl,
       isAnonymous,
       eventId,
       createdBy: user._id,
@@ -54,12 +54,21 @@ export const createPost = async (req, res) => {
   }
 };
 
-// === THÊM HÀM MỚI NÀY VÀO CUỐI FILE ===
-// POST /api/posts/:postId/like
-export const likePost = async (req, res) => {
+// ... (Hàm likePost của bạn) ...
+export const likePost = async (req, res) => { /* ... */ };
+
+// ... (Hàm getLikesByPost của bạn) ...
+export const getLikesByPost = async (req, res) => { /* ... */ };
+
+// ... (Hàm uploadImage của bạn) ...
+export const uploadImage = async (req, res) => { /* ... */ };
+
+
+// === THÊM HÀM MỚI (UPDATE) ===
+export const updatePost = async (req, res) => {
   try {
     const { postId } = req.params;
-    const { username } = req.body; // Lấy username từ người gửi request
+    const { username, content } = req.body; // Chỉ cho phép sửa nội dung
 
     const user = await User.findOne({ username });
     if (!user) return res.status(404).json({ message: "Không tìm thấy người dùng" });
@@ -67,44 +76,55 @@ export const likePost = async (req, res) => {
     const post = await Post.findById(postId);
     if (!post) return res.status(404).json({ message: "Không tìm thấy bài đăng" });
 
-    const userId = user._id;
+    // Kiểm tra quyền: Hoặc là manager, hoặc là người tạo
+    const isOwner = post.createdBy.toString() === user._id.toString();
+    const isManager = user.role === 'manager';
 
-    // Kiểm tra xem người dùng đã like bài đăng này chưa
-    // (Dùng .toString() để so sánh ObjectId)
-    const isLiked = post.likes.find((id) => id.toString() === userId.toString());
-
-    if (isLiked) {
-      // Nếu đã like -> unlike (xóa ID khỏi mảng)
-      post.likes = post.likes.filter((id) => id.toString() !== userId.toString());
-    } else {
-      // Nếu chưa like -> like (thêm ID vào mảng)
-      post.likes.push(userId);
+    if (!isOwner && !isManager) {
+      return res.status(403).json({ message: "Bạn không có quyền sửa bài đăng này" });
     }
 
+    post.content = content;
     await post.save();
-
-    // Trả về mảng likes mới (chỉ chứa ID)
-    res.status(200).json(post.likes); 
+    
+    // Trả về bài đăng đã cập nhật (đã populate)
+    const updatedPost = await Post.findById(postId).populate("createdBy", "username");
+    const commentCount = await Comment.countDocuments({ postId: post._id });
+    
+    res.status(200).json({ ...updatedPost.toObject(), commentCount: commentCount });
 
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
-// GET /api/posts/:postId/likes
-export const getLikesByPost = async (req, res) => {
+// === THÊM HÀM MỚI (DELETE) ===
+export const deletePost = async (req, res) => {
   try {
     const { postId } = req.params;
-    
-    const post = await Post.findById(postId)
-                           .populate("likes", "username"); // Populate mảng 'likes' và chỉ lấy 'username'
+    const { username } = req.body;
 
-    if (!post) {
-      return res.status(404).json({ message: "Post not found" });
+    const user = await User.findOne({ username });
+    if (!user) return res.status(404).json({ message: "Không tìm thấy người dùng" });
+
+    const post = await Post.findById(postId);
+    if (!post) return res.status(404).json({ message: "Không tìm thấy bài đăng" });
+
+    // Kiểm tra quyền: Hoặc là manager, hoặc là người tạo
+    const isOwner = post.createdBy.toString() === user._id.toString();
+    const isManager = user.role === 'manager';
+
+    if (!isOwner && !isManager) {
+      return res.status(403).json({ message: "Bạn không có quyền xóa bài đăng này" });
     }
 
-    res.status(200).json(post.likes); 
+    // Xóa tất cả bình luận liên quan (Tùy chọn nhưng nên làm)
+    await Comment.deleteMany({ postId: postId });
+    
+    // Xóa bài đăng
+    await Post.findByIdAndDelete(postId);
 
+    res.status(200).json({ message: "Xóa bài đăng thành công" });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

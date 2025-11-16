@@ -14,13 +14,17 @@ import {
   ListItemText,
   CircularProgress,
   Modal, 
-  Backdrop, // Giữ lại Backdrop
-  Fade, // Giữ lại Fade
-  // Thêm Dialog
+  Backdrop, 
+  Fade, 
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
+  // 1. Imports mới
+  Menu,
+  MenuItem,
+  TextField,
+  Stack,
 } from "@mui/material";
 import {
   MoreHoriz as MoreIcon,
@@ -30,13 +34,16 @@ import {
 
 // Import API
 import { getCommentsByPost } from "../../api/Comments";
-import { likePost, getLikesByPost } from "../../api/Posts"; 
+// 2. Import API mới
+import { likePost, getLikesByPost, deletePost, updatePost } from "../../api/Posts"; 
 import CommentInput from "./CommentInput"; 
 import "./Post.css";
 
-export default function PostCard({ post }) {
+// 3. Thêm props mới
+export default function PostCard({ post, onPostDeleted, onPostUpdated }) {
   const currentUserId = localStorage.getItem("userId"); 
   const currentUsername = localStorage.getItem("username");
+  const role = localStorage.getItem("role"); // Lấy role
 
   // State cho Like
   const [likes, setLikes] = useState(post.likes || []); 
@@ -46,7 +53,7 @@ export default function PostCard({ post }) {
   // State cho bình luận
   const [comments, setComments] = useState([]);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
-  const [showComments, setShowComments] = useState(false); // Bật/tắt ô nhập
+  const [showComments, setShowComments] = useState(false); 
   const [commentCount, setCommentCount] = useState(post.commentCount || 0);
 
   // State cho Lightbox (xem ảnh)
@@ -60,7 +67,17 @@ export default function PostCard({ post }) {
   // State cho Dialog (danh sách bình luận)
   const [commentListOpen, setCommentListOpen] = useState(false);
 
-  // Hàm tải bình luận
+  // === 4. THÊM STATE MỚI (CHỈNH SỬA & MENU) ===
+  const [anchorEl, setAnchorEl] = useState(null); // State cho menu 3 chấm
+  const [isEditing, setIsEditing] = useState(false); // State bật/tắt chế độ sửa
+  const [editedContent, setEditedContent] = useState(post.content); // Nội dung trong form sửa
+
+  // 5. Kiểm tra quyền
+  const isOwner = post.createdBy?.username === currentUsername;
+  const isManager = role === 'manager';
+  const canEditOrDelete = isOwner || isManager;
+
+  // ... (Các hàm fetchComments, handleToggleComments, handleCommentPosted, handleLike) ...
   const fetchComments = async () => {
     if (isLoadingComments) return; 
     setIsLoadingComments(true);
@@ -73,7 +90,6 @@ export default function PostCard({ post }) {
     setIsLoadingComments(false);
   };
 
-  // Xử lý khi bấm nút "Bình luận"
   const handleToggleComments = () => {
     const newShowState = !showComments;
     setShowComments(newShowState);
@@ -82,13 +98,11 @@ export default function PostCard({ post }) {
     }
   };
   
-  // Callback khi bình luận mới được tạo
   const handleCommentPosted = (newComment) => {
     setComments([...comments, newComment]); 
     setCommentCount(prevCount => prevCount + 1); 
   };
 
-  // Hàm Like (Gọi API)
   const handleLike = async () => {
     if (!currentUserId || !currentUsername) {
       alert("Bạn cần đăng nhập để thích bài viết.");
@@ -106,11 +120,9 @@ export default function PostCard({ post }) {
     }
   };
 
-  // Hàm cho Lightbox (xem ảnh)
+  // ... (Các hàm Lightbox, Dialog Like, Dialog Comment) ...
   const handleImageClick = () => setLightboxOpen(true);
   const handleCloseLightbox = () => setLightboxOpen(false);
-
-  // Hàm cho Dialog (danh sách like)
   const handleOpenLikeList = async () => {
     setLikeListOpen(true);
     if (likeList.length === 0 && likeCount > 0) {
@@ -125,8 +137,6 @@ export default function PostCard({ post }) {
     }
   };
   const handleCloseLikeList = () => setLikeListOpen(false);
-
-  // Hàm cho Dialog (danh sách bình luận)
   const handleOpenCommentList = () => {
     setCommentListOpen(true);
     if (comments.length === 0) {
@@ -134,6 +144,56 @@ export default function PostCard({ post }) {
     }
   };
   const handleCloseCommentList = () => setCommentListOpen(false);
+
+  // === 6. THÊM CÁC HÀM MỚI (MENU, EDIT, DELETE) ===
+  const handleMenuOpen = (event) => {
+    event.stopPropagation();
+    setAnchorEl(event.currentTarget);
+  };
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  // Xử lý Xóa
+  const handleDelete = async () => {
+    handleMenuClose();
+    if (window.confirm("Bạn có chắc muốn xóa bài đăng này?")) {
+      try {
+        await deletePost(post._id, currentUsername);
+        onPostDeleted(post._id); // Báo cho EventGroup.jsx xóa bài
+      } catch (error) {
+        console.error("Lỗi khi xóa bài đăng:", error);
+        alert("Xóa bài đăng thất bại.");
+      }
+    }
+  };
+
+  // Bật chế độ sửa
+  const handleEditClick = () => {
+    handleMenuClose();
+    setIsEditing(true);
+  };
+
+  // Hủy sửa
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditedContent(post.content); // Reset nội dung
+  };
+
+  // Gửi nội dung đã sửa
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+    try {
+      // Gửi nội dung mới
+      const updatedPost = await updatePost(post._id, currentUsername, editedContent);
+      onPostUpdated(updatedPost); // Báo cho EventGroup.jsx cập nhật
+      setIsEditing(false); // Tắt chế độ sửa
+    } catch (error) {
+      console.error("Lỗi khi cập nhật bài đăng:", error);
+      alert("Cập nhật thất bại.");
+    }
+  };
+  // =============================================
 
   const userInitial = post.createdBy?.username?.charAt(0).toUpperCase() || 'A';
   const displayName = post.isAnonymous ? "Người dùng ẩn danh" : post.createdBy?.username;
@@ -153,18 +213,43 @@ export default function PostCard({ post }) {
               {new Date(post.createdAt).toLocaleString('vi-VN')}
             </Typography>
           </Box>
-          <IconButton sx={{ ml: 'auto' }}>
-            <MoreIcon />
-          </IconButton>
+          
+          {/* 7. Sửa Icon 3 chấm (Chỉ hiển thị nếu có quyền) */}
+          {canEditOrDelete && !isEditing && ( // Ẩn khi đang sửa
+            <IconButton sx={{ ml: 'auto' }} onClick={handleMenuOpen}>
+              <MoreIcon />
+            </IconButton>
+          )}
         </Box>
 
-        {/* Nội dung (Caption) */}
-        <Typography variant="body1" className="post-content">
-          {post.content}
-        </Typography>
+        {/* === 8. SỬA KHỐI NÀY (NỘI DUNG) === */}
+        {isEditing ? (
+          // Chế độ CHỈNH SỬA
+          <Box component="form" onSubmit={handleUpdate} sx={{ my: 1 }}>
+            <TextField
+              fullWidth
+              multiline
+              variant="outlined"
+              value={editedContent}
+              onChange={(e) => setEditedContent(e.target.value)}
+              autoFocus
+            />
+            <Stack direction="row" spacing={1} sx={{ mt: 1, justifyContent: 'flex-end' }}>
+              <Button onClick={handleCancelEdit} size="small">Hủy</Button>
+              <Button type="submit" variant="contained" size="small">Lưu</Button>
+            </Stack>
+          </Box>
+        ) : (
+          // Chế độ XEM
+          <Typography variant="body1" className="post-content">
+            {post.content}
+          </Typography>
+        )}
+        {/* ================================== */}
 
-        {/* Ảnh (Nếu có) */}
-        {post.imageUrl && (
+
+        {/* Ảnh (Nếu có) (Ẩn khi đang sửa) */}
+        {!isEditing && post.imageUrl && (
           <Box className="post-image-container">
             <CardMedia
               component="img"
@@ -177,56 +262,60 @@ export default function PostCard({ post }) {
           </Box>
         )}
 
-        {/* Thống kê (Like, Comment) */}
-        <Box className="post-stats">
-          <Typography 
-            variant="body2" 
-            color="text.secondary" 
-            onClick={handleOpenLikeList}
-            sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
-          >
-            {likeCount} lượt thích
-          </Typography>
-          <Typography 
-            variant="body2" 
-            color="text.secondary"
-            onClick={handleOpenCommentList} 
-            sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
-          >
-            {commentCount} bình luận 
-          </Typography>
-        </Box>
-
+        {/* Thống kê (Like, Comment) (Ẩn khi đang sửa) */}
+        {!isEditing && (
+          <Box className="post-stats">
+            <Typography 
+              variant="body2" 
+              color="text.secondary" 
+              onClick={handleOpenLikeList}
+              sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
+            >
+              {likeCount} lượt thích
+            </Typography>
+            <Typography 
+              variant="body2" 
+              color="text.secondary"
+              onClick={handleOpenCommentList} 
+              sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
+            >
+              {commentCount} bình luận 
+            </Typography>
+          </Box>
+        )}
+        
         <Divider/>
 
-        {/* Nút (Like, Comment) */}
-        <Box className="post-actions">
-          <Button 
-            startIcon={<LikeIcon />} 
-            onClick={handleLike}
-            sx={{
-              color: isLiked ? '#49BBBD' : '#65676b',
-              fontWeight: isLiked ? 'bold' : 'normal',
-              flex: 1 
-            }}
-          >
-            Thích
-          </Button>
-          <Button 
-            startIcon={<CommentIcon />} 
-            onClick={handleToggleComments} 
-            sx={{
-              color: showComments ? '#49BBBD' : '#65676b',
-              fontWeight: showComments ? 'bold' : 'normal',
-              flex: 1 
-            }}
-          >
-            Bình luận
-          </Button>
-        </Box>
+        {/* Nút (Like, Comment) (Ẩn khi đang sửa) */}
+        {!isEditing && (
+          <Box className="post-actions">
+            <Button 
+              startIcon={<LikeIcon />} 
+              onClick={handleLike}
+              sx={{
+                color: isLiked ? '#49BBBD' : '#65676b',
+                fontWeight: isLiked ? 'bold' : 'normal',
+                flex: 1 
+              }}
+            >
+              Thích
+            </Button>
+            <Button 
+              startIcon={<CommentIcon />} 
+              onClick={handleToggleComments} 
+              sx={{
+                color: showComments ? '#49BBBD' : '#65676b',
+                fontWeight: showComments ? 'bold' : 'normal',
+                flex: 1 
+              }}
+            >
+              Bình luận
+            </Button>
+          </Box>
+        )}
 
-        {/* === SỬA LẠI KHỐI NÀY THEO YÊU CẦU CỦA BẠN === */}
-        {showComments && (
+        {/* Khu vực bình luận (Ẩn khi đang sửa) */}
+        {!isEditing && showComments && (
           <>
             <Divider />
             <Box className="post-comments" sx={{ pb: 2 }}>
@@ -234,26 +323,18 @@ export default function PostCard({ post }) {
                 Bình luận gần đây
               </Typography>
 
-              {/* Hiển thị loading hoặc danh sách bình luận */}
               {isLoadingComments ? (
                 <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
                   <CircularProgress size={24} />
                 </Box>
-                
-              // 1. THÊM KIỂM TRA comments.length === 0
               ) : comments.length === 0 ? (
                 <Typography textAlign="center" sx={{ mt: 3, color: 'text.secondary', fontStyle: 'italic' }}>
                   Bài đăng này chưa có bình luận nào
                 </Typography>
-                
-              // 2. Nếu có bình luận, hiển thị bình luận gần nhất
               ) : ( 
                 <List dense sx={{ mt: 3 }}>
                   {(() => {
-                    // API của bạn trả về sort ASC (cũ nhất trước)
-                    // nên bình luận gần nhất là cái cuối cùng.
                     const recentComment = comments[comments.length - 1]; 
-                    
                     return (
                       <ListItem key={recentComment._id} sx={{ p: 0, alignItems: 'flex-start' }}>
                         <ListItemAvatar sx={{ minWidth: 40, mt: 0.5 }}>
@@ -282,12 +363,23 @@ export default function PostCard({ post }) {
                 </List>
               )}
 
-              {/* Component nhập bình luận */}
               <CommentInput postId={post._id} onCommentPosted={handleCommentPosted} />
             </Box>
           </>
         )}
-      </Paper>
+      </Paper> 
+
+      {/* === 9. THÊM MENU VÀO ĐÂY === */}
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleMenuClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <MenuItem onClick={handleEditClick}>Chỉnh sửa</MenuItem>
+        <MenuItem onClick={handleDelete} sx={{ color: 'error.main' }}>Xóa</MenuItem>
+      </Menu>
 
       {/* Modal (Lightbox) xem ảnh */}
       <Modal
