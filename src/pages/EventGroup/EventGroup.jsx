@@ -9,19 +9,29 @@ import {
   Tab,
   Container, 
   Button, 
-  CircularProgress, // Thêm vòng xoay tải
+  CircularProgress, // Vòng xoay tải
 } from "@mui/material";
 
-// 1. Import hàm API mới
-import { getEventById } from "../../api/Events";
+// Import API
+import { getEventById } from "../../api/Events"; 
+import { getPostsByEvent } from "../../api/Posts"; // API mới cho bài đăng
+
+// Import components
+import CreatePost from "../../components/post/CreatePost";
+import PostCard from "../../components/post/PostCard";
+
+// Import file CSS
 import "./EventGroup.css"; 
 
 export default function EventGroup() {
   const { eventId } = useParams(); 
-  const [eventData, setEventData] = useState(null); // 2. Bắt đầu với state rỗng
+  const [eventData, setEventData] = useState(null); // State cho thông tin sự kiện
+  const [posts, setPosts] = useState([]); // State mới cho bài đăng
   const [currentTab, setCurrentTab] = useState(0); 
 
-  // 3. Dùng useEffect để gọi API
+  const [isLoadingPosts, setIsLoadingPosts] = useState(true);
+
+  // Hook để tải THÔNG TIN SỰ KIỆN (cho Tab "Thông tin")
   useEffect(() => {
     if (eventId) {
       setEventData(null); // Xóa dữ liệu cũ
@@ -36,8 +46,32 @@ export default function EventGroup() {
     }
   }, [eventId]);
 
+  // Hook để tải CÁC BÀI ĐĂNG (cho Tab "Bài đăng")
+  useEffect(() => {
+    // Chỉ tải khi eventId tồn tại VÀ đang ở Tab "Bài đăng" (tab 0)
+    if (eventId && currentTab === 0) { 
+      setIsLoadingPosts(true);
+      (async () => {
+        try {
+          const data = await getPostsByEvent(eventId);
+          setPosts(data);
+        } catch (error) {
+          console.error("Failed to fetch posts:", error);
+          setPosts([]); // Đặt mảng rỗng nếu lỗi
+        }
+        setIsLoadingPosts(false);
+      })();
+    }
+  }, [eventId, currentTab]); // Chạy lại khi eventId hoặc Tab thay đổi
+
   const handleTabChange = (event, newValue) => {
     setCurrentTab(newValue);
+  };
+
+  // Hàm này được gọi bởi <CreatePost /> sau khi tạo post thành công
+  const handlePostCreated = (newPost) => {
+    // Thêm post mới (đã được populate từ API) vào đầu danh sách
+    setPosts([newPost, ...posts]); 
   };
 
   return (
@@ -78,27 +112,39 @@ export default function EventGroup() {
       {/* Nội dung các Tabs */}
       <Box className="event-group-content-area">
         
-        {/* Tab 0: Bài đăng (Vẫn giữ tạm) */}
+        {/* Tab 0: Bài đăng */}
         {currentTab === 0 && (
           <>
-            <Paper className="temp-post-box" elevation={0} variant="outlined">
-              <Typography variant="h6">Nội dung Bài đăng (Post)</Typography>
-              <Typography>(Sau này sẽ lấy từ collection 'posts')</Typography>
-            </Paper>
-            {/* (Các bài đăng khác) ... */}
+            {/* Component tạo bài đăng */}
+            <CreatePost eventId={eventId} onPostCreated={handlePostCreated} />
+            
+            {/* <Divider sx={{ mb: 2 }} /> */}
+            
+            {/* Hiển thị danh sách bài đăng */}
+            {isLoadingPosts ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', p: 5 }}>
+                <CircularProgress />
+              </Box>
+            ) : posts.length === 0 ? (
+              <Typography textAlign="center">Chưa có bài đăng nào.</Typography>
+            ) : (
+              posts.map((post) => (
+                <PostCard key={post._id} post={post} />
+              ))
+            )}
           </>
         )}
 
-        {/* Tab 1: Thông tin (Sửa tại đây) */}
+        {/* Tab 1: Thông tin */}
         {currentTab === 1 && (
           <Paper className="temp-post-box info-tab" elevation={0} variant="outlined">
-            {/* 4. Thêm kiểm tra 'loading' */}
+            {/* Thêm kiểm tra 'loading' */}
             {!eventData ? (
               <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 200 }}>
                 <CircularProgress />
               </Box>
             ) : (
-              // 5. Render dữ liệu thật (bỏ 'Đã duyệt')
+              // Render dữ liệu thật
               <>
                 <Typography variant="h6" gutterBottom>Thông tin sự kiện</Typography>
                 <Divider sx={{ mb: 2 }} />

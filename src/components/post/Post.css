@@ -1,0 +1,137 @@
+/* === BOX ĐƠN GIẢN (TRIGGER) === */
+.create-post-trigger-paper {
+  /* Giống width của PostCard */
+  width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 100%; 
+  border-radius: 8px !important;
+  margin-bottom: 16px;
+}
+.fake-input-button {
+  flex-grow: 1;
+  border-radius: 20px !important;
+  border: 1px solid #ddd !important;
+  background-color: #f0f2f5 !important;
+  color: #65676b !important;
+  text-align: left !important;
+  justify-content: flex-start !important;
+  padding-left: 16px !important;
+  margin: 0 12px !important;
+  text-transform: none !important; /* Bỏ viết hoa */
+  font-weight: normal !important;
+}
+.fake-input-button:hover {
+  background-color: #e4e6e9 !important;
+}
+
+/* === FORM ĐẦY ĐỦ (EXPANDED) === */
+.create-post-paper {
+  /* Giống width của PostCard */
+  width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 100%; 
+  
+  padding: 16px;
+  border-radius: 8px !important;
+  margin-bottom: 16px;
+}
+.create-post-header {
+  position: relative;
+  padding-bottom: 12px;
+  text-align: center;
+}
+.create-post-user-info {
+  display: flex;
+  align-items: center;
+  padding: 12px 0;
+}
+.create-post-textfield {
+  padding: 8px 0 !important;
+}
+.create-post-textfield textarea {
+  font-size: 1.25rem;
+}
+.create-post-anonymous {
+  padding: 4px 0;
+}
+.create-post-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 8px 16px;
+  margin-top: 8px;
+  margin-bottom: 16px;
+}
+
+
+/* === POST CARD (Hiển thị) === */
+.post-card-paper {
+  width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 100%; 
+  border-radius: 8px !important;
+  margin-bottom: 16px;
+  /* Giữ padding gốc của bạn */
+  padding: 16px 16px 0px 16px; 
+}
+.post-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.post-content {
+  /* Giữ margin gốc của bạn */
+  margin-bottom: 4px; 
+  white-space: pre-wrap; /* Giữ định dạng xuống dòng */
+}
+
+/* === PHẦN CSS MỚI TỪ TÔI (ĐÃ THÊM) === */
+/* 1. Container cho ảnh */
+.post-image-container {
+  width: 100%;
+  max-height: 600px; /* Giới hạn chiều cao (cho ảnh dọc) */
+  background-color: #000; /* Nền đen cho "letterbox" */
+  border-radius: 8px;
+  margin-top: 12px;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+/* 2. Bản thân ảnh */
+.post-image {
+  width: 100%;
+  height: auto;
+  max-height: 600px; /* Phải khớp với container */
+  object-fit: contain; /* Đây là chìa khóa: thu nhỏ ảnh, giữ tỷ lệ */
+  
+  /* Reset lại margin/radius vì container đã lo */
+  border-radius: 0px !important; 
+  margin-top: 0px !important;
+  margin-bottom: 0px !important;
+}
+/* ================================= */
+
+.post-stats {
+  display: flex;
+  justify-content: space-between;
+  /* Giữ padding gốc của bạn */
+  padding: 8px 4px; 
+}
+.post-actions {
+  display: flex;
+  justify-content: space-around;
+  /* Giữ padding gốc của bạn */
+  padding: 4px 0; 
+}
+.post-comments {
+  /* Giữ padding gốc của bạn */
+  padding-top: 12px; 
+}

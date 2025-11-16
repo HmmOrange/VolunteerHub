@@ -10,17 +10,26 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const res = await loginUser(form);
-    if (res.token) {
-      localStorage.setItem("token", res.token);
-      localStorage.setItem("username", res.user.username);
-      localStorage.setItem("role", res.user.role);
+    try { // Thêm try...catch
+      const res = await loginUser(form);
+      
+      if (res.token) {
+        // === SỬA KHỐI NÀY ===
+        localStorage.setItem("token", res.token);
+        localStorage.setItem("userId", res.user.id); // <-- THÊM DÒNG NÀY
+        localStorage.setItem("username", res.user.username);
+        localStorage.setItem("role", res.user.role);
+        // ===================
 
-      setMsg("Đăng nhập thành công! Đang chuyển hướng...");
+        setMsg("Đăng nhập thành công! Đang chuyển hướng...");
 
-      setTimeout(() => navigate("/dashboard"), 1000);
-    } else {
-      setMsg(res.message || "Login failed");
+        setTimeout(() => navigate("/dashboard"), 1000);
+      } else {
+        setMsg(res.message || "Login failed");
+      }
+    } catch (error) {
+      // Hiển thị lỗi nếu API trả về 400 hoặc 500
+      setMsg(error.response?.data?.message || "Đăng nhập thất bại, đã xảy ra lỗi");
     }
   };
 
