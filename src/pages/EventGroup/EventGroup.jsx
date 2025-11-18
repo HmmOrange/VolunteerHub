@@ -286,8 +286,9 @@ export default function EventGroup() {
                     {getSortedMembers().map((member) => {
                         const role = member.role ? member.role.toLowerCase() : 'volunteer'; 
                         const isCreator = member._id === eventData.createdBy._id;
-                        const isSystemAdmin = role === 'admin';
-                        const isManagerRole = role === 'manager';
+                        const isAdmin = role === 'admin';
+                        const isManager = role === 'manager';
+                        const isVolunteer = role === 'volunteer';
 
                         return (
                             <ListItem 
@@ -313,13 +314,13 @@ export default function EventGroup() {
                                                 {member.username}
                                             </Typography>
 
-                                            {isSystemAdmin && (
+                                            {isAdmin && (
                                                 <Chip label="Admin" size="small" variant="outlined" sx={{ color: '#d32f2f', borderColor: '#d32f2f', height: 20, fontSize: '0.7rem' }} />
                                             )}
-                                            {isCreator && (
+                                            {isCreator && isManager && (
                                                 <Chip label="Quản lý" size="small" variant="outlined" sx={{ color: '#49BBBD', borderColor: '#49BBBD', height: 20, fontSize: '0.7rem' }} />
                                             )}
-                                            {!isSystemAdmin && !isManagerRole && (
+                                            {isVolunteer || (!isCreator && isManager) && (
                                                 <Chip label="Thành viên" size="small" variant="outlined" sx={{ color: 'text.secondary', borderColor: '#e0e0e0', height: 20, fontSize: '0.7rem' }} />
                                             )}
                                         </Stack>
