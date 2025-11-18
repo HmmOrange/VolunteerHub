@@ -3,7 +3,7 @@ import User from "../models/User.js";
 import Event from "../models/Event.js";
 import Comment from "../models/Comment.js"; 
 
-// ... (Hàm getPostsByEvent của bạn) ...
+// 1. Lấy tất cả bài đăng của sự kiện
 export const getPostsByEvent = async (req, res) => {
   try {
     const { eventId } = req.params;
@@ -28,7 +28,7 @@ export const getPostsByEvent = async (req, res) => {
   }
 };
 
-// ... (Hàm createPost của bạn) ...
+// 2. Tạo bài đăng mới
 export const createPost = async (req, res) => {
   try {
     const { content, imageUrl, isAnonymous, username, eventId } = req.body;
@@ -54,21 +54,11 @@ export const createPost = async (req, res) => {
   }
 };
 
-// ... (Hàm likePost của bạn) ...
-export const likePost = async (req, res) => { /* ... */ };
-
-// ... (Hàm getLikesByPost của bạn) ...
-export const getLikesByPost = async (req, res) => { /* ... */ };
-
-// ... (Hàm uploadImage của bạn) ...
-export const uploadImage = async (req, res) => { /* ... */ };
-
-
-// === THÊM HÀM MỚI (UPDATE) ===
-export const updatePost = async (req, res) => {
+// 3. Like / Unlike bài đăng
+export const likePost = async (req, res) => {
   try {
     const { postId } = req.params;
-    const { username, content } = req.body; // Chỉ cho phép sửa nội dung
+    const { username } = req.body; 
 
     const user = await User.findOne({ username });
     if (!user) return res.status(404).json({ message: "Không tìm thấy người dùng" });
@@ -76,7 +66,78 @@ export const updatePost = async (req, res) => {
     const post = await Post.findById(postId);
     if (!post) return res.status(404).json({ message: "Không tìm thấy bài đăng" });
 
-    // Kiểm tra quyền: Hoặc là manager, hoặc là người tạo
+    const userId = user._id;
+
+    // Kiểm tra xem user đã like chưa (so sánh string ID)
+    const isLiked = post.likes.some(id => id.toString() === userId.toString());
+
+    if (isLiked) {
+      // Nếu đã like -> Xóa khỏi mảng
+      post.likes = post.likes.filter(id => id.toString() !== userId.toString());
+    } else {
+      // Nếu chưa like -> Thêm vào mảng
+      post.likes.push(userId);
+    }
+
+    await post.save();
+    res.status(200).json(post.likes); 
+
+  } catch (err) {
+    console.error("Lỗi likePost:", err);
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// 4. Lấy danh sách người đã like (cho Dialog)
+export const getLikesByPost = async (req, res) => {
+  try {
+    const { postId } = req.params;
+    
+    const post = await Post.findById(postId)
+                           .populate("likes", "username"); // Chỉ lấy username của người like
+
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    res.status(200).json(post.likes); 
+
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// 5. Upload ảnh (trả về URL)
+export const uploadImage = async (req, res) => {
+  try {
+    // Kiểm tra file từ Multer
+    if (!req.file) {
+      return res.status(400).json({ message: "Chưa chọn file" });
+    }
+
+    // Tạo đường dẫn ảnh: http://localhost:5000/uploads/ten_file.png
+    const imageUrl = `${req.protocol}://${req.get("host")}/uploads/${req.file.filename}`;
+    
+    res.status(200).json({ imageUrl: imageUrl });
+
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// 6. Cập nhật nội dung bài đăng
+export const updatePost = async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const { username, content } = req.body; 
+
+    const user = await User.findOne({ username });
+    if (!user) return res.status(404).json({ message: "Không tìm thấy người dùng" });
+
+    const post = await Post.findById(postId);
+    if (!post) return res.status(404).json({ message: "Không tìm thấy bài đăng" });
+
+    // Kiểm tra quyền
     const isOwner = post.createdBy.toString() === user._id.toString();
     const isManager = user.role === 'manager';
 
@@ -87,7 +148,6 @@ export const updatePost = async (req, res) => {
     post.content = content;
     await post.save();
     
-    // Trả về bài đăng đã cập nhật (đã populate)
     const updatedPost = await Post.findById(postId).populate("createdBy", "username");
     const commentCount = await Comment.countDocuments({ postId: post._id });
     
@@ -98,7 +158,7 @@ export const updatePost = async (req, res) => {
   }
 };
 
-// === THÊM HÀM MỚI (DELETE) ===
+// 7. Xóa bài đăng
 export const deletePost = async (req, res) => {
   try {
     const { postId } = req.params;
@@ -110,7 +170,7 @@ export const deletePost = async (req, res) => {
     const post = await Post.findById(postId);
     if (!post) return res.status(404).json({ message: "Không tìm thấy bài đăng" });
 
-    // Kiểm tra quyền: Hoặc là manager, hoặc là người tạo
+    // Kiểm tra quyền
     const isOwner = post.createdBy.toString() === user._id.toString();
     const isManager = user.role === 'manager';
 
@@ -118,7 +178,7 @@ export const deletePost = async (req, res) => {
       return res.status(403).json({ message: "Bạn không có quyền xóa bài đăng này" });
     }
 
-    // Xóa tất cả bình luận liên quan (Tùy chọn nhưng nên làm)
+    // Xóa tất cả bình luận liên quan
     await Comment.deleteMany({ postId: postId });
     
     // Xóa bài đăng

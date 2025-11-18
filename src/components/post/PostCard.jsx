@@ -469,10 +469,10 @@ export default function PostCard({ post, onPostDeleted, onPostUpdated }) {
                      <ListItemText 
                        primary={
                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                           <Typography component="span" variant="body2" fontWeight="bold">
+                           <Typography component="span" variant="body2" fontWeight="bold" sx={{mt: -1}}>
                              {comment.createdBy?.username}
                            </Typography>
-                           <Typography variant="caption" color="text.secondary">
+                           <Typography variant="caption" color="text.secondary" sx={{mt: -0.5}}>
                              {new Date(comment.createdAt).toLocaleString('vi-VN')}
                            </Typography>
                          </Box>
