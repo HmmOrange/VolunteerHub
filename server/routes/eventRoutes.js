@@ -4,7 +4,10 @@ import {
   getAllEvents, 
   updateEvent, 
   deleteEvent, 
-  getEventBySlug
+  getEventBySlug,
+  joinEvent,
+  leaveEvent,
+  removeMember
 } from "../controllers/eventController.js";
 
 const router = express.Router();
@@ -14,5 +17,8 @@ router.get("/all", getAllEvents);
 router.put("/update", updateEvent);
 router.delete("/delete", deleteEvent);
 router.get("/:slug", getEventBySlug);
+router.post("/join", joinEvent);
+router.post("/leave", leaveEvent);
+router.post("/remove-member", removeMember);
 
 export default router;

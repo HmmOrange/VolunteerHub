@@ -117,7 +117,7 @@ export default function EventGroupVNavBar({ isOpen, drawerWidth, drawerVariant, 
             {mockChats.map((chat) => (
               <ListItemButton key={chat.id} onClick={handleNavigate}>
                 <ListItemIcon sx={{ minWidth: '40px' }}>
-                  <Avatar sx={{ width: 28, height: 28, bgcolor: 'primary.light' }}>
+                  <Avatar sx={{ width: 28, height: 28, bgcolor: '#49BBBD' }}>
                     <ChatOutlined sx={{ fontSize: '1rem' }} />
                   </Avatar>
                 </ListItemIcon>

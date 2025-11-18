@@ -14,22 +14,13 @@ export const getAllEvents = async () => {
   return res.json();
 };
 
-// === THAY THẾ HÀM CŨ BẰNG HÀM NÀY ===
-// Hàm này lấy 1 sự kiện bằng SLUG
 export const getEventBySlug = async ({ slug }) => {
-  // Hàm này sẽ gọi đến: GET http://localhost:5000/api/events/ten-su-kien
   const res = await fetch(`${API_URL}/${slug}`);
-  
-  if (!res.ok) {
-    throw new Error(`Failed to fetch event with slug ${slug}`);
-  }
-  
+  if (!res.ok) throw new Error(`Failed to fetch event with slug ${slug}`);
   return res.json();
 };
-// ===================================
 
 export const updateEvent = async (data) => {
-  // LƯU Ý: Đảm bảo data gửi lên chứa 'slug' thay vì 'eventId'
   const res = await fetch(`${API_URL}/update`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
@@ -39,11 +30,37 @@ export const updateEvent = async (data) => {
 };
 
 export const deleteEvent = async (data) => {
-  // LƯU Ý: Đảm bảo data gửi lên chứa 'slug' thay vì 'eventId'
   const res = await fetch(`${API_URL}/delete`, {
     method: "DELETE",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
+  });
+  return res.json();
+};
+
+export const joinEvent = async ({ eventId, userId }) => {
+  const res = await fetch(`${API_URL}/join`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ eventId, userId }),
+  });
+  return res.json();
+};
+
+export const leaveEvent = async ({ eventId, userId }) => {
+  const res = await fetch(`${API_URL}/leave`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ eventId, userId }),
+  });
+  return res.json();
+};
+
+export const removeMember = async ({ eventId, memberId, managerId }) => {
+  const res = await fetch(`${API_URL}/remove-member`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ eventId, memberId, managerId }),
   });
   return res.json();
 };
