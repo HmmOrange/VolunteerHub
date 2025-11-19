@@ -33,7 +33,8 @@ import "./EventGroup.css";
 
 export default function EventGroup() {
   const { slug } = useParams(); 
-  const currentUserId = localStorage.getItem("userId"); 
+  const currentUserId = localStorage.getItem("userId");
+  const currentUserRole = localStorage.getItem("role");
 
   const [eventData, setEventData] = useState(null); 
   const [posts, setPosts] = useState([]); 
@@ -294,7 +295,7 @@ export default function EventGroup() {
                             <ListItem 
                                 key={member._id}
                                 secondaryAction={
-                                    currentUserIsCreator && member._id !== currentUserId && (
+                                    currentUserIsCreator && currentUserRole === 'manager' && member._id !== currentUserId && (
                                         <IconButton edge="end" aria-label="delete" onClick={() => handleKickMember(member._id)}>
                                             <CloseIcon color="disabled" fontSize="small" />
                                         </IconButton>
@@ -314,14 +315,17 @@ export default function EventGroup() {
                                                 {member.username}
                                             </Typography>
 
+                                            {isCreator && (
+                                                <Chip label="Người tổ chức" size="small" variant="outlined" sx={{ color: '#9c27b0', borderColor: '#9c27b0', height: 20, fontSize: '0.7rem' }} />
+                                            )}
                                             {isAdmin && (
                                                 <Chip label="Admin" size="small" variant="outlined" sx={{ color: '#d32f2f', borderColor: '#d32f2f', height: 20, fontSize: '0.7rem' }} />
                                             )}
-                                            {isCreator && isManager && (
+                                            {isManager && (
                                                 <Chip label="Quản lý" size="small" variant="outlined" sx={{ color: '#49BBBD', borderColor: '#49BBBD', height: 20, fontSize: '0.7rem' }} />
                                             )}
-                                            {isVolunteer || (!isCreator && isManager) && (
-                                                <Chip label="Thành viên" size="small" variant="outlined" sx={{ color: 'text.secondary', borderColor: '#e0e0e0', height: 20, fontSize: '0.7rem' }} />
+                                            {isVolunteer && (
+                                                <Chip label="Tình nguyện viên" size="small" variant="outlined" sx={{ color: 'text.secondary', borderColor: '#e0e0e0', height: 20, fontSize: '0.7rem' }} />
                                             )}
                                         </Stack>
                                     }
