@@ -37,6 +37,12 @@ export const login = async (req, res) => {
     const match = await bcrypt.compare(password, user.password);
     if (!match) return res.status(400).json({ message: "Thông tin đăng nhập không hợp lệ" });
 
+    if (user.isLocked) {
+      return res.status(403).json({ 
+        message: "Tài khoản của bạn đang bị khóa, vui lòng liên hệ admin để biết thêm chi tiết" 
+      });
+    }
+
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1d" });
 
     res.json({ 

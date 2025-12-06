@@ -10,53 +10,62 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    try { // Thêm try...catch
+    setMsg(""); // Xóa thông báo cũ trước khi gọi API mới
+
+    try {
       const res = await loginUser(form);
       
+      // Nếu chạy đến đây tức là không có lỗi (Auth.js đã kiểm tra res.ok)
       if (res.token) {
-        // === SỬA KHỐI NÀY ===
         localStorage.setItem("token", res.token);
-        localStorage.setItem("userId", res.user.id); // <-- THÊM DÒNG NÀY
+        localStorage.setItem("userId", res.user.id);
         localStorage.setItem("username", res.user.username);
         localStorage.setItem("role", res.user.role);
-        // ===================
 
         setMsg("Đăng nhập thành công! Đang chuyển hướng...");
 
         setTimeout(() => navigate("/dashboard"), 1000);
-      } else {
-        setMsg(res.message || "Login failed");
       }
     } catch (error) {
-      // Hiển thị lỗi nếu API trả về 400 hoặc 500
-      setMsg(error.response?.data?.message || "Đăng nhập thất bại, đã xảy ra lỗi");
+      console.error("Login Error:", error);
+      
+      // === SỬA LỖI TẠI ĐÂY ===
+      // Auth.js ném ra Error("Message từ backend"), nên ta chỉ cần lấy error.message
+      // Không dùng error.response?.data... (đó là cú pháp của Axios)
+      setMsg(error.message || "Đăng nhập thất bại, đã xảy ra lỗi");
     }
   };
 
   return (
     <div className="login-container">
-      <h2>Login</h2>
+      <h2>Đăng nhập</h2>
       <form onSubmit={handleSubmit} className="login-form">
         <input
           type="text"
-          placeholder="Email/Tên đăng nhập"
+          placeholder="Email hoặc Tên đăng nhập"
           value={form.identifier}
           onChange={(e) => setForm({ ...form, identifier: e.target.value })}
           required
         />
         <input
           type="password"
-          placeholder="Password"
+          placeholder="Mật khẩu"
           value={form.password}
           onChange={(e) => setForm({ ...form, password: e.target.value })}
           required
         />
-        <button type="submit">Login</button>
+        <button type="submit">Đăng nhập</button>
       </form>
       <button onClick={() => navigate("/")} className="back-home-btn">
         ← Quay về trang trước
       </button>
-      {msg && <p className="message">{msg}</p>}
+      
+      {/* Hiển thị msg với màu đỏ nếu là lỗi */}
+      {msg && (
+        <p className="message" style={{ color: msg.includes("thành công") ? "green" : "red" }}>
+          {msg}
+        </p>
+      )}
     </div>
   );
 }

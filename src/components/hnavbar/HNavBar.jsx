@@ -15,6 +15,7 @@ import "./HNavBar.css";
 export default function HNavbar({ onToggleVNavBar }) { 
   const navigate = useNavigate();
   const username = localStorage.getItem("username") || "User";
+  const role = localStorage.getItem("role");
   const [anchorEl, setAnchorEl] = useState(null);
   const isMenuOpen = Boolean(anchorEl);
 
@@ -28,16 +29,17 @@ export default function HNavbar({ onToggleVNavBar }) {
   };
 
   const handleProfile = () => {
-    console.log("Navigate to Profile Page");
     handleProfileMenuClose();
   };
 
-  // === THAY ĐỔI Ở ĐÂY ===
-  // Sửa hàm này để điều hướng
   const handleAddEvent = () => {
-    navigate("/event/create"); // <--- Dòng mới
+    navigate("/event/create");
   };
-  // ======================
+
+  const handleUserList = () => {
+    handleProfileMenuClose();
+    navigate("/admin/users");
+  };
 
   const handleNotifications = () => {
     console.log("Show Notifications");
@@ -115,6 +117,12 @@ export default function HNavbar({ onToggleVNavBar }) {
             Xin chào, {username}
           </MenuItem>
           <MenuItem onClick={handleProfile}>Thông tin cá nhân</MenuItem>
+
+          {/* === HIỂN THỊ CÓ ĐIỀU KIỆN === */}
+          {role === 'admin' && (
+            <MenuItem onClick={handleUserList}>Danh sách người dùng</MenuItem>
+          )}
+
           <MenuItem onClick={handleLogout}>Đăng xuất</MenuItem>
         </Menu>
       </Toolbar>
