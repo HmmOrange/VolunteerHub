@@ -9,9 +9,16 @@ import {
   Typography,
   Paper,
   Stack,
+  FormControl,
+  FormLabel,
+  RadioGroup,
+  FormControlLabel,
+  Radio,
 } from "@mui/material";
 
 import "./CreateEvent.css";
+
+const PRIMARY_COLOR = "#49BBBD";
 
 export default function CreateEvent() {
   const [form, setForm] = useState({
@@ -19,99 +26,167 @@ export default function CreateEvent() {
     date: "",
     location: "",
     description: "",
+    privacy: "Public",
+    question: "",
   });
 
   const navigate = useNavigate();
   const username = localStorage.getItem("username");
-  
-  // 1. Lấy role của người dùng
   const role = localStorage.getItem("role");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // 2. Thêm logic kiểm tra quyền ngay tại đây
-    if (role !== 'manager') {
+
+    if (role !== "manager") {
       alert("Bạn cần là manager để tạo sự kiện.");
-      return; // Dừng hàm, không cho submit
+      return;
     }
 
-    // 3. Code này chỉ chạy nếu role LÀ 'manager'
-    const res = await createEvent({ ...form, username });
-    if (res.message && res.message.includes("thành công")) {
+    const res = await createEvent({
+      ...form,
+      username,
+    });
+
+    if (res?.message?.includes("thành công")) {
       navigate("/dashboard");
     }
   };
 
   return (
-    <>
-      <Container maxWidth="sm" className="create-event-container-split">
-        <Paper elevation={3} className="create-event-paper-split">
-          <Typography
-            variant="h5"
-            component="h2"
-            textAlign="center"
-            fontWeight="bold"
-            mb={3}
-          >
-            Tạo sự kiện mới
-          </Typography>
+    <Container maxWidth="sm" className="create-event-container-split">
+      <Paper elevation={3} className="create-event-paper-split">
+        <Typography
+          variant="h5"
+          textAlign="center"
+          fontWeight="bold"
+          mb={3}
+        >
+          Tạo sự kiện mới
+        </Typography>
 
-          {/* Form này sẽ gọi handleSubmit đã được cập nhật */}
-          <Box component="form" onSubmit={handleSubmit}>
-            <Stack spacing={3}>
-              <TextField
-                label="Tên sự kiện"
-                variant="outlined"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                required
-                fullWidth
-              />
+        <Box component="form" onSubmit={handleSubmit}>
+          <Stack spacing={3}>
+            {/* Tên sự kiện */}
+            <TextField
+              label="Tên sự kiện"
+              value={form.name}
+              onChange={(e) =>
+                setForm({ ...form, name: e.target.value })
+              }
+              required
+              fullWidth
+            />
 
-              <TextField
-                label="Ngày tổ chức"
-                type="date"
-                InputLabelProps={{ shrink: true }}
-                value={form.date}
-                onChange={(e) => setForm({ ...form, date: e.target.value })}
-                required
-                fullWidth
-              />
+            {/* Ngày */}
+            <TextField
+              label="Ngày tổ chức"
+              type="date"
+              InputLabelProps={{ shrink: true }}
+              value={form.date}
+              onChange={(e) =>
+                setForm({ ...form, date: e.target.value })
+              }
+              required
+              fullWidth
+            />
 
-              <TextField
-                label="Địa điểm"
-                variant="outlined"
-                value={form.location}
-                onChange={(e) => setForm({ ...form, location: e.target.value })}
-                fullWidth
-              />
+            {/* Địa điểm */}
+            <TextField
+              label="Địa điểm"
+              value={form.location}
+              onChange={(e) =>
+                setForm({ ...form, location: e.target.value })
+              }
+              fullWidth
+            />
 
-              <TextField
-                label="Mô tả"
-                variant="outlined"
-                multiline
-                rows={4}
-                value={form.description}
+            {/* Mô tả */}
+            <TextField
+              label="Mô tả"
+              multiline
+              rows={4}
+              value={form.description}
+              onChange={(e) =>
+                setForm({ ...form, description: e.target.value })
+              }
+              required
+              fullWidth
+            />
+
+            {/* 🔐 QUYỀN RIÊNG TƯ */}
+            <FormControl>
+              <FormLabel>
+                Quyền riêng tư
+              </FormLabel>
+
+              <RadioGroup
+                row
+                value={form.privacy}
                 onChange={(e) =>
-                  setForm({ ...form, description: e.target.value })
+                  setForm({ ...form, privacy: e.target.value })
                 }
-                required
+              >
+                <FormControlLabel
+                  value="Public"
+                  label="Công khai"
+                  control={
+                    <Radio
+                      sx={{
+                        color: PRIMARY_COLOR,
+                        "&.Mui-checked": {
+                          color: PRIMARY_COLOR,
+                        },
+                      }}
+                    />
+                  }
+                />
+                <FormControlLabel
+                  value="Private"
+                  label="Riêng tư"
+                  control={
+                    <Radio
+                      sx={{
+                        color: PRIMARY_COLOR,
+                        "&.Mui-checked": {
+                          color: PRIMARY_COLOR,
+                        },
+                      }}
+                    />
+                  }
+                />
+              </RadioGroup>
+            </FormControl>
+
+            {/* ❓ CÂU HỎI */}
+            {form.privacy === "Private" && (
+              <TextField
+                label="Câu hỏi cho thành viên"
+                placeholder="Ví dụ: Tại sao bạn muốn tham gia sự kiện này?"
+                value={form.question}
+                onChange={(e) =>
+                  setForm({ ...form, question: e.target.value })
+                }
                 fullWidth
               />
+            )}
 
-              <Button
-                type="submit"
-                variant="contained"
-                size="large"
-                className="create-event-submit-btn-split"
-              >
-                Tạo sự kiện
-              </Button>
-            </Stack>
-          </Box>
-        </Paper>
-      </Container>
-    </>
+            {/* Submit */}
+            <Button
+              type="submit"
+              variant="contained"
+              size="large"
+              sx={{
+                backgroundColor: PRIMARY_COLOR,
+                "&:hover": {
+                  backgroundColor: "#3aa6a8",
+                },
+              }}
+            >
+              Tạo sự kiện
+            </Button>
+          </Stack>
+        </Box>
+      </Paper>
+    </Container>
   );
 }

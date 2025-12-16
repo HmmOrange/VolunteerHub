@@ -10,12 +10,11 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setMsg(""); // Xóa thông báo cũ trước khi gọi API mới
+    setMsg("");
 
     try {
       const res = await loginUser(form);
       
-      // Nếu chạy đến đây tức là không có lỗi (Auth.js đã kiểm tra res.ok)
       if (res.token) {
         localStorage.setItem("token", res.token);
         localStorage.setItem("userId", res.user.id);
@@ -28,10 +27,6 @@ export default function Login() {
       }
     } catch (error) {
       console.error("Login Error:", error);
-      
-      // === SỬA LỖI TẠI ĐÂY ===
-      // Auth.js ném ra Error("Message từ backend"), nên ta chỉ cần lấy error.message
-      // Không dùng error.response?.data... (đó là cú pháp của Axios)
       setMsg(error.message || "Đăng nhập thất bại, đã xảy ra lỗi");
     }
   };
@@ -60,7 +55,6 @@ export default function Login() {
         ← Quay về trang trước
       </button>
       
-      {/* Hiển thị msg với màu đỏ nếu là lỗi */}
       {msg && (
         <p className="message" style={{ color: msg.includes("thành công") ? "green" : "red" }}>
           {msg}

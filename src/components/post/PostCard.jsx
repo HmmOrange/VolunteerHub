@@ -451,13 +451,13 @@ export default function PostCard({ post, onPostDeleted, onPostUpdated }) {
       {/* Dialog (danh sách bình luận) */}
       <Dialog open={commentListOpen} onClose={handleCloseCommentList} fullWidth>
         <DialogTitle>Bình luận</DialogTitle>
-        <DialogContent>
+        <DialogContent sx={{pb: 0}}>
           {isLoadingComments ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
               <CircularProgress />
             </Box>
           ) : (
-            <List dense>
+            <List dense sx={{ pb: 0}}>
               {comments.map((comment) => (
                  <ListItem key={comment._id} sx={{ p: 0, alignItems: 'flex-start', mb: 1 }}>
                    <ListItemAvatar sx={{ minWidth: 40, mt: 0.5 }}>
