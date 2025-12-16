@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import slugify from "slugify";
 
 const recurrenceSchema = new mongoose.Schema(
   {
@@ -63,5 +64,15 @@ const eventSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+eventSchema.pre("validate", function (next) {
+  if (!this.slug && this.name) {
+    this.slug = slugify(this.name, { lower: true, strict: true });
+  }
+  if (this.slug) {
+    this.slug = slugify(this.slug, { lower: true, strict: true });
+  }
+  next();
+});
 
 export default mongoose.model("Event", eventSchema);

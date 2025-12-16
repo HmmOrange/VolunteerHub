@@ -6,6 +6,7 @@ export const createEvent = async (req, res) => {
   try {
     const {
       name,
+      slug, 
       date,
       startTime,
       endTime,
@@ -70,7 +71,13 @@ export const createEvent = async (req, res) => {
       .replace(/[^\w\s-]/g, "")
       .replace(/\s+/g, "-");
 
-    const finalSlug = `${baseSlug}-${Date.now()}`;
+    const finalSlug = slug && slug.trim().length > 0
+      ? slug.toLowerCase().replace(/\s+/g, "-")
+      : name.toLowerCase().replace(/\s+/g, "-");
+
+    const exists = await Event.findOne({ slug: finalSlug });
+    if (exists)
+      return res.status(400).json({ message: "Slug đã tồn tại" });
 
     const newEvent = new Event({
       name,
@@ -96,8 +103,6 @@ export const createEvent = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
-
-
 
 // ---------------------- GET ALL EVENTS ----------------------
 export const getAllEvents = async (req, res) => {
@@ -302,7 +307,13 @@ export const removeMember = async (req, res) => {
 // ---------------------- UPDATE EVENT ----------------------
 export const updateEvent = async (req, res) => {
   try {
+<<<<<<< HEAD
     const { slug, username, name, date, location, description, privacy, question } = req.body;
+=======
+    const { slug, username, name, date, location, description } = req.body;
+    const user = await User.findOne({ username });
+    const event = await Event.findById(slug);
+>>>>>>> c55f7d1fcbbc37d4213bbf78069bb08ada02cad2
 
     const user = await User.findOne({ username });
     if (!user) return res.status(404).json({ message: "Không tìm thấy người dùng" });
@@ -333,6 +344,11 @@ export const updateEvent = async (req, res) => {
 export const deleteEvent = async (req, res) => {
   try {
     const { slug, username } = req.body;
+<<<<<<< HEAD
+=======
+    const user = await User.findOne({ username });
+    const event = await Event.findById(slug);
+>>>>>>> c55f7d1fcbbc37d4213bbf78069bb08ada02cad2
 
     const user = await User.findOne({ username });
     if (!user) return res.status(404).json({ message: "Không tìm thấy người dùng" });
@@ -344,17 +360,22 @@ export const deleteEvent = async (req, res) => {
       return res.status(403).json({ message: "Bạn không có quyền xóa sự kiện này" });
     }
 
+<<<<<<< HEAD
     // Xoá mọi JoinRequest liên quan trước khi xoá event
     await JoinRequest.deleteMany({ event: event._id });
 
     await Event.findOneAndDelete({ slug });
 
+=======
+    await Event.findByIdAndDelete(slug);
+>>>>>>> c55f7d1fcbbc37d4213bbf78069bb08ada02cad2
     res.json({ message: "Xóa sự kiện thành công!" });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
+<<<<<<< HEAD
 // ---------------------- GET PENDING REQUESTS ----------------------
 // Lấy tất cả join request có status 'pending' cho 1 event (dành cho tab quản lý)
 export const getPendingRequests = async (req, res) => {
@@ -411,4 +432,15 @@ export const respondToJoinRequest = async (req, res) => {
     console.error("Lỗi duyệt yêu cầu:", err);
     res.status(500).json({ message: err.message });
   }
+=======
+export const getEventBySlug = async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const event = await Event.findOne({ slug }).populate("createdBy", "username");
+    if (!event) return res.status(404).json({ message: "Không tìm thấy event" });
+    res.json(event);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+>>>>>>> c55f7d1fcbbc37d4213bbf78069bb08ada02cad2
 };
