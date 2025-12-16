@@ -2,24 +2,68 @@ import Event from "../models/Event.js";
 import User from "../models/User.js";
 import JoinRequest from "../models/JoinRequest.js";
 
-// ---------------------- CREATE EVENT ----------------------
 export const createEvent = async (req, res) => {
   try {
     const {
       name,
       date,
+      startTime,
+      endTime,
       location,
       description,
       username,
-      privacy,
-      question,
+      recurrence,
     } = req.body;
 
-    // Kiểm tra user có tồn tại
+    if (!startTime) {
+      return res
+        .status(400)
+        .json({ message: "Giờ bắt đầu là bắt buộc" });
+    }
+
+    if (endTime && endTime <= startTime) {
+      return res
+        .status(400)
+        .json({ message: "Giờ kết thúc phải sau giờ bắt đầu" });
+    }
+
     const user = await User.findOne({ username });
     if (!user) return res.status(400).json({ message: "Không tìm thấy người dùng" });
 
-    // Tạo slug an toàn + chống trùng bằng timestamp
+    // ---- RECURRENCE VALIDATION (MINIMAL) ----
+    let recurrenceData = null;
+    if (recurrence?.enabled) {
+      const { frequency, interval, daysOfWeek, endDate } = recurrence;
+
+      const allowed = ["daily", "weekly", "monthly"];
+      if (!allowed.includes(frequency)) {
+        return res.status(400).json({ message: "Tần suất không hợp lệ" });
+      }
+
+      if (!Number.isInteger(interval) || interval < 1) {
+        return res.status(400).json({ message: "Khoảng lặp không hợp lệ" });
+      }
+
+      if (
+        frequency === "weekly" &&
+        (!Array.isArray(daysOfWeek) ||
+          daysOfWeek.some((d) => d < 0 || d > 6))
+      ) {
+        return res
+          .status(400)
+          .json({ message: "Ngày trong tuần không hợp lệ" });
+      }
+
+      recurrenceData = {
+        enabled: true,
+        frequency,
+        interval,
+        daysOfWeek: daysOfWeek || [],
+        endDate: endDate || null,
+      };
+    }
+
+    // ---- SLUG ----
     const baseSlug = name
       .toLowerCase()
       .trim()
@@ -32,12 +76,13 @@ export const createEvent = async (req, res) => {
       name,
       slug: finalSlug,
       date,
+      startTime,
+      endTime,
       location,
       description,
       createdBy: user._id,
       volunteers: [user._id],
-      privacy: privacy || "Public",
-      question: question || "Tại sao bạn muốn tham gia sự kiện này?",
+      recurrence: recurrenceData,
     });
 
     await newEvent.save();
@@ -48,14 +93,11 @@ export const createEvent = async (req, res) => {
       eventId: newEvent._id,
     });
   } catch (err) {
-    if (err.code === 11000) {
-      return res
-        .status(400)
-        .json({ message: "Lỗi hệ thống: Slug bị trùng, vui lòng thử lại." });
-    }
     res.status(500).json({ message: err.message });
   }
 };
+
+
 
 // ---------------------- GET ALL EVENTS ----------------------
 export const getAllEvents = async (req, res) => {

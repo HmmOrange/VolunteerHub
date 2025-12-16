@@ -8,6 +8,7 @@ import Dashboard from "../pages/Dashboard/Dashboard";
 import CreateEvent from "../pages/CreateEvent/CreateEvent";
 import EventGroup from "../pages/EventGroup/EventGroup";
 import UserList from "../pages/UserList/UserList";
+import Events from "../pages/Events/Events";
 
 export default function AppRoutes() {
   return (
@@ -16,10 +17,10 @@ export default function AppRoutes() {
         {/* Các trang CÓ layout (HNavBar/VNavBar) */}
         <Route element={<Layout />}>
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/events" element={<Events />} />
           <Route path="/event/create" element={<CreateEvent />} />
           <Route path="/event/:slug" element={<EventGroup />} />
           <Route path="/admin/users" element={<UserList />} />
-
         </Route>
 
         {/* Các trang KHÔNG có layout */}
