@@ -26,7 +26,7 @@ export const register = async (req, res) => {
 
 export const login = async (req, res) => {
   try {
-    const { identifier, password } = req.body; // identifier = email OR username
+    const { identifier, password } = req.body; 
 
     const user = await User.findOne({
       $or: [{ email: identifier }, { username: identifier }],
@@ -37,11 +37,25 @@ export const login = async (req, res) => {
     const match = await bcrypt.compare(password, user.password);
     if (!match) return res.status(400).json({ message: "Thông tin đăng nhập không hợp lệ" });
 
+    if (user.isLocked) {
+      return res.status(403).json({ 
+        message: "Tài khoản của bạn đang bị khóa, vui lòng liên hệ admin để biết thêm chi tiết" 
+      });
+    }
+
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1d" });
 
-    res.json({ token, user: { email: user.email, username: user.username, role: user.role} });
+    res.json({ 
+      token, 
+      user: { 
+        id: user._id,
+        email: user.email, 
+        username: user.username, 
+        role: user.role 
+      } 
+    });
+
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
-

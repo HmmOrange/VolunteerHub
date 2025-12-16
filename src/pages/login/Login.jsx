@@ -10,44 +10,56 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const res = await loginUser(form);
-    if (res.token) {
-      localStorage.setItem("token", res.token);
-      localStorage.setItem("username", res.user.username);
-      localStorage.setItem("role", res.user.role);
+    setMsg("");
 
-      setMsg("Đăng nhập thành công! Đang chuyển hướng...");
+    try {
+      const res = await loginUser(form);
+      
+      if (res.token) {
+        localStorage.setItem("token", res.token);
+        localStorage.setItem("userId", res.user.id);
+        localStorage.setItem("username", res.user.username);
+        localStorage.setItem("role", res.user.role);
 
-      setTimeout(() => navigate("/dashboard"), 1000);
-    } else {
-      setMsg(res.message || "Login failed");
+        setMsg("Đăng nhập thành công! Đang chuyển hướng...");
+
+        setTimeout(() => navigate("/dashboard"), 1000);
+      }
+    } catch (error) {
+      console.error("Login Error:", error);
+      setMsg(error.message || "Đăng nhập thất bại, đã xảy ra lỗi");
     }
   };
 
   return (
     <div className="login-container">
-      <h2>Login</h2>
+      <h2>Đăng nhập</h2>
       <form onSubmit={handleSubmit} className="login-form">
         <input
           type="text"
-          placeholder="Email/Tên đăng nhập"
+          placeholder="Email hoặc Tên đăng nhập"
           value={form.identifier}
           onChange={(e) => setForm({ ...form, identifier: e.target.value })}
           required
         />
         <input
           type="password"
-          placeholder="Password"
+          placeholder="Mật khẩu"
           value={form.password}
           onChange={(e) => setForm({ ...form, password: e.target.value })}
           required
         />
-        <button type="submit">Login</button>
+        <button type="submit">Đăng nhập</button>
       </form>
       <button onClick={() => navigate("/")} className="back-home-btn">
         ← Quay về trang trước
       </button>
-      {msg && <p className="message">{msg}</p>}
+      
+      {msg && (
+        <p className="message" style={{ color: msg.includes("thành công") ? "green" : "red" }}>
+          {msg}
+        </p>
+      )}
     </div>
   );
 }

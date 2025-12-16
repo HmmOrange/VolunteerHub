@@ -10,8 +10,21 @@ export default function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const res = await registerUser(form);
-    setMsg(res.message || "Đăng ký thành công");
+    setMsg("");
+
+    try {
+      const res = await registerUser(form);
+      setMsg("Đăng ký thành công! Đang chuyển đến trang đăng nhập...");
+      
+      setTimeout(() => {
+        navigate("/login");
+      }, 1500);
+
+    } catch (error) {
+      // Hiển thị lỗi cụ thể từ Backend (vd: Tên đăng nhập đã được sử dụng)
+      console.error("Lỗi đăng ký:", error);
+      setMsg(error.message); 
+    }
   };
 
   return (
@@ -19,7 +32,7 @@ export default function Register() {
       <h2>Register</h2>
       <form onSubmit={handleSubmit} className="register-form">
         <input
-          type="text"
+          type="text" // Email nên để type="email" để validate sơ bộ
           placeholder="Email"
           value={form.email}
           onChange={(e) => setForm({ ...form, email: e.target.value })}
@@ -44,7 +57,9 @@ export default function Register() {
       <button onClick={() => navigate("/")} className="back-home-btn">
         ← Quay về trang trước
       </button>
-      {msg && <p className="message">{msg}</p>}
+      
+      {/* Hiển thị thông báo. Nếu là lỗi thì nên CSS màu đỏ */}
+      {msg && <p className="message" style={{ color: msg.includes("thành công") ? "green" : "red" }}>{msg}</p>}
     </div>
   );
 }

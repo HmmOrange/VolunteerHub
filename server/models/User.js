@@ -6,6 +6,7 @@ const userSchema = new mongoose.Schema({
   password: { type: String, required: true },
   createdAt: { type: Date, default: Date.now },
   role: { type: String, enum: ["volunteer", "manager", "admin"], default: "volunteer" },
+  isLocked: { type: Boolean, default: false },
 });
 
 export default mongoose.model("User", userSchema);

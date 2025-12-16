@@ -1,174 +1,191 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom"; 
-import { getAllEvents, deleteEvent, updateEvent } from "../../api/Events";
+import { getAllEvents } from "../../api/Events";
+import { getPostsByEvent } from "../../api/Posts";
 import {
-  Box,
-  Button,
   Card,
   CardContent,
-  CardActions,
   Container,
   Typography,
-  TextField,
   Stack,
   Grid,
   Paper,
 } from "@mui/material";
 
-// Import file CSS tương ứng
 import "./Dashboard.css";
+import PostCard from "../../components/post/PostCard";
 
 export default function Dashboard() {
   const navigate = useNavigate(); 
   const username = localStorage.getItem("username");
-  const role = localStorage.getItem("role");
-  const [events, setEvents] = useState([]);
-  const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({
-    name: "",
-    date: "",
-    location: "",
-    description: "",
-  });
+  const userId = localStorage.getItem("userId");
+
+  const [upcomingJoinedEvents, setUpcomingJoinedEvents] = useState([]);
+  const [feedPosts, setFeedPosts] = useState([]);
 
   useEffect(() => {
+    if (!userId) return;
+
     (async () => {
-      const data = await getAllEvents();
-      setEvents(data);
+      const events = await getAllEvents();
+
+      const now = new Date();
+      const today = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate()
+      );
+
+      // ===== JOINED EVENTS =====
+      const joinedEvents = events.filter((event) =>
+        event.volunteers?.some((v) =>
+          typeof v === "string"
+            ? v === userId
+            : v._id?.toString() === userId
+        )
+      );
+
+      // ===== UPCOMING (DATE + TIME) =====
+      const upcoming = joinedEvents.filter((event) => {
+        if (!event.date) return false;
+
+        const eventDate = new Date(event.date);
+
+        // Future date
+        if (eventDate > today) return true;
+
+        // Same day → compare time
+        if (eventDate.getTime() === today.getTime()) {
+          if (!event.startTime) return true;
+
+          const [h, m] = event.startTime.split(":").map(Number);
+          const eventTime = new Date(today);
+          eventTime.setHours(h, m, 0, 0);
+
+          return eventTime >= now;
+        }
+
+        return false;
+      });
+
+      // Sort by date then startTime
+      upcoming.sort((a, b) => {
+        const d1 = new Date(a.date);
+        const d2 = new Date(b.date);
+
+        if (d1.getTime() !== d2.getTime()) {
+          return d1 - d2;
+        }
+
+        return (a.startTime || "").localeCompare(b.startTime || "");
+      });
+
+      setUpcomingJoinedEvents(upcoming);
+
+      // ===== POSTS FEED (JOINED EVENTS) =====
+      const postsArrays = await Promise.all(
+        joinedEvents.map((event) => getPostsByEvent(event._id))
+      );
+
+      const sortedPosts = postsArrays
+        .flat()
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+      setFeedPosts(sortedPosts);
     })();
-  }, []);
+  }, [userId]);
 
-  const handleDelete = async (e, eventId) => {
-    e.stopPropagation(); 
-    if (window.confirm("Bạn có chắc muốn xóa sự kiện này?")) {
-      await deleteEvent({ eventId, username });
-      const data = await getAllEvents();
-      setEvents(data);
-    }
+  const renderTime = (start, end) => {
+    if (!start) return "Không rõ thời gian";
+    return end ? `${start} – ${end}` : start;
   };
 
-  const handleEdit = (e, event) => {
-    e.stopPropagation(); 
-    setEditing(event._id);
-    setForm({
-      name: event.name,
-      date: event.date.split("T")[0],
-      location: event.location,
-      description: event.description,
-    });
+  // ===== PostCard callbacks =====
+  const handlePostDeleted = (postId) => {
+    setFeedPosts((prev) => prev.filter((p) => p._id !== postId));
   };
 
-  const handleUpdate = async (e) => {
-    e.preventDefault();
-    e.stopPropagation(); 
-    await updateEvent({ ...form, username, eventId: editing });
-    setEditing(null);
-    const data = await getAllEvents();
-    setEvents(data);
-  };
-
-  const handleCancelEdit = (e) => {
-    e.stopPropagation();
-    setEditing(null);
+  const handlePostUpdated = (updatedPost) => {
+    setFeedPosts((prev) =>
+      prev.map((p) => (p._id === updatedPost._id ? updatedPost : p))
+    );
   };
 
   return (
-    <>
-      <Container maxWidth="md" className="dashboard-container-split">
-        {/* === ĐÃ SỬA LỖI 1 TẠI ĐÂY === */}
-        <Typography variant="h4" textAlign="center" fontWeight="bold" gutterBottom>
-          Xin chào, {username || "Người dùng"}!
-        </Typography>
-        {/* === ĐÃ SỬA LỖI 2 TẠI ĐÂY === */}
-        <Typography variant="h6" textAlign="center" mb={3}>
-          Danh sách sự kiện
+    <Container maxWidth="lg" className="dashboard-container-split">
+      <Typography variant="h4" textAlign="center" fontWeight="bold" gutterBottom>
+        Xin chào, {username || "Người dùng"}!
+      </Typography>
+
+      {/* ================= UPCOMING JOINED EVENTS ================= */}
+      <Paper elevation={2} sx={{ p: 3, mb: 4 }}>
+        <Typography variant="h6" fontWeight="bold" mb={2}>
+          Sự kiện sắp diễn ra bạn đã tham gia
         </Typography>
 
-        {events.length === 0 ? (
-          <Typography textAlign="center">Chưa có sự kiện nào.</Typography>
+        {upcomingJoinedEvents.length === 0 ? (
+          <Typography color="text.secondary">
+            Bạn không có sự kiện sắp diễn ra
+          </Typography>
         ) : (
-          <Grid container spacing={3} className="event-grid-container-split">
-            {events.map((event) => (
+          <Grid container spacing={2}>
+            {upcomingJoinedEvents.map((event) => (
               <Grid item xs={12} sm={6} md={4} key={event._id}>
-                
-                <Card 
-                  className="event-card-split event-card-clickable" 
-                  onClick={() => {
-                    if (editing !== event._id) {
-                      navigate(`/event/${event._id}`);
-                    }
-                  }}
+                <Card
+                  className="event-card-clickable"
+                  onClick={() => navigate(`/event/${event.slug}`)}
                 >
                   <CardContent>
-                    {editing === event._id ? (
-                      <Box component="form" onSubmit={handleUpdate}>
-                        <Stack spacing={2}>
-                          <TextField label="Tên sự kiện" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required fullWidth onClick={(e) => e.stopPropagation()} />
-                          <TextField label="Ngày" type="date" InputLabelProps={{ shrink: true }} value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} required fullWidth onClick={(e) => e.stopPropagation()} />
-                          <TextField label="Địa điểm" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} fullWidth onClick={(e) => e.stopPropagation()} />
-                          <TextField label="Mô tả" multiline rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} fullWidth onClick={(e) => e.stopPropagation()} />
-                          <Stack direction="row" spacing={2}>
-                            <Button variant="contained" type="submit">Lưu</Button>
-                            <Button variant="outlined" color="error" onClick={handleCancelEdit}>Hủy</Button>
-                          </Stack>
-                        </Stack>
-                      </Box>
-                    ) : (
-                      <>
-                        <Typography variant="h6">{event.name}</Typography>
-                        <Typography variant="body2" color="text.secondary" mb={1}>
-                          {event.description}
-                        </Typography>
-                        <Typography variant="body2">
-                          <b>Địa điểm:</b> {event.location || "Chưa xác định"}
-                        </Typography>
-                        
-                        {/* === ĐÃ SỬA LỖI 3 TẠI ĐÂY === */}
-                        <Typography variant="body2">
-                          <b>Ngày:</b> {new Date(event.date).toLocaleDateString()}
-                        </Typography>
-                        
-                        {/* === ĐÃ SỬA LỖI 4 TẠI ĐÂY === */}
-                        <Typography variant="caption" display="block" mt={1}>
-                          Người tạo: {event.createdBy?.username || "Không rõ"}
-                        </Typography>
-                        
-                        {/* === ĐÃ SỬA LỖI 5 TẠI ĐÂY === */}
-                        <Typography variant="caption" display="block">
-                          Đã duyệt: {event.approved ? "✅" : "❌"}
-                        </Typography>
-                      </>
-                    )}
-                  </CardContent>
+                    <Typography variant="h6">{event.name}</Typography>
 
-                  {(role === "manager" ||
-                    event.createdBy?.username === username) && (
-                    <CardActions className="event-actions-split">
-                      {editing === event._id ? null : (
-                        <>
-                          <Button
-                            variant="outlined"
-                            onClick={(e) => handleEdit(e, event)}
-                          >
-                            Chỉnh sửa
-                          </Button>
-                          <Button
-                            variant="contained"
-                            color="error"
-                            onClick={(e) => handleDelete(e, event._id)}
-                          >
-                            Xóa
-                          </Button>
-                        </>
-                      )}
-                    </CardActions>
-                  )}
+                    <Typography variant="body2" color="text.secondary" mb={1}>
+                      {event.description}
+                    </Typography>
+
+                    <Typography variant="body2">
+                      <b>Địa điểm:</b> {event.location || "Chưa xác định"}
+                    </Typography>
+
+                    <Typography variant="body2">
+                      <b>Ngày:</b>{" "}
+                      {new Date(event.date).toLocaleDateString()}
+                    </Typography>
+
+                    <Typography variant="body2">
+                      <b>Thời gian:</b>{" "}
+                      {renderTime(event.startTime, event.endTime)}
+                    </Typography>
+                  </CardContent>
                 </Card>
               </Grid>
             ))}
           </Grid>
         )}
-      </Container>
-    </>
+      </Paper>
+
+      {/* ================= EVENT POSTS FEED ================= */}
+      <Paper elevation={2} sx={{ p: 3, mb: 4 }}>
+        <Typography variant="h6" fontWeight="bold" mb={2}>
+          Bài viết từ các sự kiện bạn đã tham gia
+        </Typography>
+
+        {feedPosts.length === 0 ? (
+          <Typography color="text.secondary">
+            Chưa có bài viết nào
+          </Typography>
+        ) : (
+          <Stack spacing={2}>
+            {feedPosts.map((post) => (
+              <PostCard
+                key={post._id}
+                post={post}
+                onPostDeleted={handlePostDeleted}
+                onPostUpdated={handlePostUpdated}
+              />
+            ))}
+          </Stack>
+        )}
+      </Paper>
+    </Container>
   );
 }

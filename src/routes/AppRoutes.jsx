@@ -6,9 +6,9 @@ import Register from "../pages/Register/Register";
 import Login from "../pages/Login/Login";
 import Dashboard from "../pages/Dashboard/Dashboard";
 import CreateEvent from "../pages/CreateEvent/CreateEvent";
-
-// 1. IMPORT VỚI TÊN FILE MỚI
-import EventGroup from "../pages/EventGroup/EventGroup"; // Đổi từ EventGroupPage
+import EventGroup from "../pages/EventGroup/EventGroup";
+import UserList from "../pages/UserList/UserList";
+import Events from "../pages/Events/Events";
 
 export default function AppRoutes() {
   return (
@@ -17,11 +17,10 @@ export default function AppRoutes() {
         {/* Các trang CÓ layout (HNavBar/VNavBar) */}
         <Route element={<Layout />}>
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/events" element={<Events />} />
           <Route path="/event/create" element={<CreateEvent />} />
-          
-          {/* 2. SỬ DỤNG COMPONENT VỚI TÊN MỚI */}
-          <Route path="/event/:eventId" element={<EventGroup />} />
-
+          <Route path="/event/:slug" element={<EventGroup />} />
+          <Route path="/admin/users" element={<UserList />} />
         </Route>
 
         {/* Các trang KHÔNG có layout */}

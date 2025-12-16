@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useParams } from "react-router-dom"; // 1. Giữ useParams
 import {
   Drawer,
   Box,
@@ -10,37 +11,46 @@ import {
   ListItemIcon,
   ListItemText,
   Avatar,
+  CircularProgress, 
 } from "@mui/material";
 import { ChatOutlined, Public, Lock } from "@mui/icons-material";
 
-// Import CSS
+// 2. Sửa import (quan trọng)
+import { getEventBySlug } from "../../api/Events"; // Đổi từ getEventById
 import "./EventGroupVNavBar.css";
-
-// Import ảnh avatar
 import eventGroupAvatar from "../../assets/img/event_group.jpg";
 
-// Dữ liệu giả lập
-const mockEventData = {
-  name: "TeamTree",
-  privacy: "Public",
-  memberCount: 123,
-};
+// (Giữ lại mockChats)
 const mockChats = [
   { id: 1, name: "TeamTree" },
   { id: 2, name: "Hậu cần" },
   { id: 3, name: "Truyền thông" },
 ];
 
-// Nhận props mới: 'drawerVariant' và 'onClose'
-export default function EventGroupVNavBar({ isOpen, drawerWidth, eventId, drawerVariant, onClose }) {
-  const [eventData, setEventData] = useState(mockEventData);
+// Nhận props từ Layout
+export default function EventGroupVNavBar({ isOpen, drawerWidth, drawerVariant, onClose }) {
+  // 3. Lấy slug từ URL (thay vì eventId)
+  const { slug } = useParams(); 
+  const [eventData, setEventData] = useState(null); 
   
-  // (Sau này dùng eventId để fetch data)
-  // useEffect(() => { ... }, [eventId]);
+  // 4. Dùng useEffect để gọi API bằng slug
+  useEffect(() => {
+    if (slug) { // 5. Kiểm tra slug
+      setEventData(null); 
+      (async () => {
+        try {
+          // 6. Gọi API mới
+          const data = await getEventBySlug({ slug }); 
+          setEventData(data);
+        } catch (error) {
+          console.error("Failed to fetch event data:", error);
+        }
+      })();
+    }
+  }, [slug]); // 7. Phụ thuộc vào slug
 
   const handleNavigate = () => {
     // (Logic điều hướng chat...)
-    // Nếu là 'temporary' (mobile), tự động đóng VNav sau khi click
     if (drawerVariant === 'temporary') {
       onClose();
     }
@@ -48,12 +58,10 @@ export default function EventGroupVNavBar({ isOpen, drawerWidth, eventId, drawer
 
   return (
     <Drawer
-      // Sử dụng props mới
-      variant={drawerVariant} // Thay 'persistent' bằng prop
+      variant={drawerVariant}
       anchor="left"
       open={isOpen}
-      onClose={onClose} // Dùng khi là 'temporary'
-
+      onClose={onClose}
       sx={{
         width: drawerWidth,
         flexShrink: 0,
@@ -69,53 +77,56 @@ export default function EventGroupVNavBar({ isOpen, drawerWidth, eventId, drawer
       <Toolbar />
       <Divider />
       
-      {/* Thêm onClick ở đây để đóng VNav khi bấm vào (chỉ áp dụng cho temporary) */}
-      <Box 
-        className="event-vnav-container"
-        onClick={drawerVariant === 'temporary' ? onClose : undefined}
-      >
-        
-        <Box sx={{ px: 2, pb: 2, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          {/* Avatar sự kiện (ảnh đại diện) */}
-          <Avatar 
-            src={eventGroupAvatar} 
-            alt="Event Avatar" 
-            sx={{ width: 279, height: 125, mb: 1.5 }} 
-            variant="square" 
-          />
-          <Typography variant="h5" fontWeight="bold" textAlign="center">
-            {eventData.name} (Sự kiện)
-          </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5 }}>
-            {eventData.privacy === 'Public' ? (
-              <Public sx={{ fontSize: '1rem', mr: 0.5 }} />
-            ) : (
-              <Lock sx={{ fontSize: '1rem', mr: 0.5 }} />
-            )}
-            <Typography variant="body2" color="text.secondary">
-              {eventData.privacy === 'Public' ? "Sự kiện Công khai" : "Sự kiện Riêng tư"} • {eventData.memberCount} thành viên
-            </Typography>
-          </Box>
+      {!eventData ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 200 }}>
+          <CircularProgress />
         </Box>
-        
-        <Divider />
-        
-        <Typography variant="overline" className="chat-title">
-          Đoạn chat
-        </Typography>
-        <List dense>
-          {mockChats.map((chat) => (
-            <ListItemButton key={chat.id} onClick={handleNavigate}>
-              <ListItemIcon sx={{ minWidth: '40px' }}>
-                <Avatar sx={{ width: 28, height: 28, bgcolor: 'primary.light' }}>
-                  <ChatOutlined sx={{ fontSize: '1rem' }} />
-                </Avatar>
-              </ListItemIcon>
-              <ListItemText primary={chat.name} />
-            </ListItemButton>
-          ))}
-        </List>
-      </Box>
+      ) : (
+        <Box 
+          className="event-vnav-container"
+          onClick={drawerVariant === 'temporary' ? onClose : undefined}
+        >
+          <Box sx={{ px: 2, pb: 2, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <Avatar 
+              src={eventGroupAvatar} 
+              alt="Event Avatar" 
+              sx={{ width: 279, height: 125, mb: 1.5 }} 
+              variant="square" 
+            />
+            <Typography variant="h5" fontWeight="bold" textAlign="center">
+              {eventData.name}
+            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5 }}>
+              {eventData.privacy === 'Public' ? (
+                <Public sx={{ fontSize: '1rem', mr: 0.5 }} />
+              ) : (
+                <Lock sx={{ fontSize: '1rem', mr: 0.5 }} />
+              )}
+              <Typography variant="body2" color="text.secondary">
+                {eventData.privacy === 'Public' ? "Sự kiện Công khai" : "Sự kiện Riêng tư"} • {eventData.volunteers?.length || 0} thành viên
+              </Typography>
+            </Box>
+          </Box>
+          
+          <Divider />
+          
+          <Typography variant="overline" className="chat-title">
+            Đoạn chat
+          </Typography>
+          <List dense>
+            {mockChats.map((chat) => (
+              <ListItemButton key={chat.id} onClick={handleNavigate}>
+                <ListItemIcon sx={{ minWidth: '40px' }}>
+                  <Avatar sx={{ width: 28, height: 28, bgcolor: '#49BBBD' }}>
+                    <ChatOutlined sx={{ fontSize: '1rem' }} />
+                  </Avatar>
+                </ListItemIcon>
+                <ListItemText primary={chat.name} />
+              </ListItemButton>
+            ))}
+          </List>
+        </Box>
+      )}
     </Drawer>
   );
 }
