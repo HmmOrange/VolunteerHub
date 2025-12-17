@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   Box, Typography, Paper, Divider, Tabs, Tab, Container, Button,
   CircularProgress, List, ListItem, ListItemAvatar, Avatar, ListItemText,
@@ -8,7 +8,7 @@ import {
 } from "@mui/material";
 import { Close as CloseIcon, LockOutlined, Edit as EditIcon } from "@mui/icons-material";
 
-// Import API
+// Import API (Giữ nguyên đường dẫn của bạn)
 import {
   getEventBySlug, joinEvent, leaveEvent, removeMember,
   getPendingRequests, respondToJoinRequest, updateEvent
@@ -47,13 +47,19 @@ export default function EventGroup() {
     privacy: "Public", question: ""
   });
 
-  // === CALCULATED VARIABLES ===
-  // 1. Xác định chính xác Creator
+  // === CALCULATED VARIABLES (LOGIC QUYỀN HẠN) ===
+  
+  // 1. Kiểm tra xem người dùng hiện tại có đang nằm trong danh sách thành viên không
+  // (Dùng để chặn trường hợp đã rời nhóm nhưng vẫn hiện nút sửa)
+  const currentUserInEvent = eventData?.volunteers?.find(v => (v._id || v) === currentUserId);
+
+  // 2. Kiểm tra có phải người tạo gốc không
   const currentUserIsCreator = eventData?.createdBy?._id === currentUserId || eventData?.createdBy === currentUserId;
 
-  // 2. Xác định Role (để hiển thị Chip ở Tab Thành viên)
-  const currentUserInEvent = eventData?.volunteers?.find(v => (v._id || v) === currentUserId);
-  const currentUserRole = currentUserInEvent?.role ? currentUserInEvent.role.toLowerCase() : (currentUserIsCreator ? 'manager' : 'volunteer');
+  // 3. Biến isOwner (Thay thế isManager cũ)
+  // Ý nghĩa: Là người có quyền quản trị (Sửa, Duyệt, Xóa tv).
+  // Điều kiện: PHẢI đang ở trong nhóm (currentUserInEvent) VÀ (Là Creator HOẶC có role là 'manager')
+  const isOwner = currentUserInEvent && (currentUserIsCreator || currentUserInEvent.role === 'manager');
 
   // === 1. FETCH EVENT DATA ===
   useEffect(() => {
@@ -64,13 +70,14 @@ export default function EventGroup() {
           setEventData(data);
 
           if (data.volunteers) {
-            const joined = data.volunteers.some(v => (v._id || v) === currentUserId);
+            // Check xem đã tham gia chưa
+            const joined = data.volunteers.some(v => (v._id ? v._id.toString() : v.toString()) === currentUserId);
             setIsJoined(joined);
             
-            // Logic check Request Status
             if (joined) {
                 setRequestStatus('joined');
             } else {
+                // Check trạng thái request
                 if (data.requestStatus) {
                     setRequestStatus(data.requestStatus);
                 } else if (data.requests && Array.isArray(data.requests)) {
@@ -83,9 +90,14 @@ export default function EventGroup() {
                 }
             }
 
-            // Chỉ Creator mới lấy danh sách request để hiển thị Badge
-            const isCreator = data.createdBy?._id === currentUserId || data.createdBy === currentUserId;
-            if (isCreator && data.requests && Array.isArray(data.requests)) {
+            // Nếu là Admin (isOwner logic tại thời điểm fetch) -> Lấy Requests
+            // Ta tính lại logic này cục bộ vì state isOwner chưa cập nhật ngay trong useEffect này
+            const userIsAdminLocal = joined && (
+                (data.createdBy?._id || data.createdBy) === currentUserId || 
+                data.volunteers.some(v => (v._id === currentUserId || v === currentUserId) && v.role === 'manager')
+            );
+            
+            if (userIsAdminLocal && data.requests && Array.isArray(data.requests)) {
                 setPendingRequests(data.requests);
             }
           }
@@ -118,18 +130,18 @@ export default function EventGroup() {
     }
   }, [eventData, currentTab, isJoined]);
 
-  // === 3. FETCH REQUESTS (Chỉ Creator) ===
+  // === 3. FETCH REQUESTS (Chỉ Owner) ===
   useEffect(() => {
-    // Chỉ chạy nếu là Creator và đang ở Tab 3
-    if (eventData?._id && currentUserIsCreator && currentTab === 3) {
+    // Sử dụng biến isOwner đã đổi tên
+    if (eventData?.slug && isOwner && currentTab === 3) {
       (async () => {
         try {
-          const data = await getPendingRequests(eventData._id);
+          const data = await getPendingRequests(eventData.slug);
           setPendingRequests(data);
         } catch (error) { }
       })();
     }
-  }, [eventData, currentTab, currentUserIsCreator]);
+  }, [eventData, currentTab, isOwner]);
 
   // === HANDLERS ===
   const handleEditClick = () => {
@@ -139,7 +151,7 @@ export default function EventGroup() {
       location: eventData.location,
       date: new Date(eventData.date).toISOString().split('T')[0],
       privacy: eventData.privacy || "Public",
-      question: eventData.question || ""
+      question: eventData.question || "Tại sao bạn muốn tham gia sự kiện này?"
     });
     setOpenEditModal(true);
   };
@@ -147,11 +159,37 @@ export default function EventGroup() {
   const handleUpdateEvent = async () => {
     try {
       if (!currentUserUsername) return alert("Vui lòng đăng nhập lại.");
-      const updatePayload = { ...editForm, slug: eventData.slug, username: currentUserUsername };
+      
+      // Check quyền Owner
+      if (!isOwner) return alert("Bạn không có quyền chỉnh sửa.");
+
+      // XỬ LÝ CÂU HỎI MẶC ĐỊNH
+      let questionToSend = editForm.question;
+      // Nếu là Private và để trống câu hỏi -> gán mặc định
+      if (editForm.privacy === 'Private' && (!questionToSend || questionToSend.trim() === "")) {
+          questionToSend = "Tại sao bạn muốn tham gia sự kiện này?";
+      }
+
+      const updatePayload = { 
+          ...editForm, 
+          question: questionToSend,
+          slug: eventData.slug, 
+          username: currentUserUsername 
+      };
+
       const updated = await updateEvent(updatePayload);
-      setEventData(updated);
+      
+      // Merge dữ liệu để không mất thông tin populate
+      setEventData(prev => ({
+        ...updated,
+        createdBy: prev.createdBy,
+        volunteers: prev.volunteers,
+        requests: prev.requests 
+      }));
+
       setOpenEditModal(false);
       alert("Cập nhật thành công!");
+      window.location.reload();
     } catch (error) { alert("Lỗi: " + error.message); }
   };
 
@@ -169,7 +207,8 @@ export default function EventGroup() {
         return alert("Vui lòng trả lời câu hỏi");
     }
     try {
-      const res = await joinEvent({ eventId: eventData._id, userId: currentUserId, answer });
+      const res = await joinEvent({ slug: eventData.slug, userId: currentUserId, answer });
+      
       if (res.status === 'pending') {
         alert(res.message);
         setRequestStatus('pending');
@@ -190,20 +229,60 @@ export default function EventGroup() {
   };
 
   const handleLeaveEvent = async () => {
-    if(window.confirm("Rời sự kiện?")) {
-      try { 
-          await leaveEvent({eventId: eventData._id, userId: currentUserId}); 
-          setIsJoined(false); 
-          setRequestStatus(null);
-          window.location.reload();
-      } catch(e){ alert(e.message) }
+    // TRƯỜNG HỢP ĐẶC BIỆT: Owner rời nhóm Private
+    if (isOwner && eventData.privacy === 'Private') {
+      const confirmSpecial = window.confirm(
+        "CẢNH BÁO: Bạn đang là Quản trị viên của nhóm Riêng tư.\n" +
+        "Nếu bạn rời đi, nhóm sẽ tự động chuyển thành Công khai.\n" +
+        "Bạn có chắc chắn muốn thực hiện?"
+      );
+      
+      if (!confirmSpecial) return; // Nếu user chọn Cancel thì dừng lại
+
+      // 1. Thực hiện chuyển sang Public trước
+      try {
+        await updateEvent({
+          slug: eventData.slug,
+          privacy: 'Public',
+          username: currentUserUsername // Cần username để backend check quyền
+        });
+        
+        // Cập nhật state tạm để giao diện phản hồi ngay
+        setEventData(prev => ({ ...prev, privacy: 'Public' }));
+      } catch (err) {
+        console.error("Lỗi khi chuyển sang Public:", err);
+        alert("Có lỗi khi chuyển trạng thái nhóm. Vui lòng thử lại.");
+        return; // Dừng lại nếu không chuyển được Public
+      }
+    } 
+    // TRƯỜNG HỢP BÌNH THƯỜNG
+    else {
+      if (!window.confirm("Bạn chắc chắn muốn rời sự kiện này?")) return;
+    }
+
+    // 2. Thực hiện rời nhóm (Chung cho cả 2 trường hợp)
+    try { 
+      await leaveEvent({ slug: eventData.slug, userId: currentUserId }); 
+      
+      setIsJoined(false); 
+      setRequestStatus(null);
+      
+      alert("Đã rời sự kiện thành công.");
+      
+      // Reload trang để cập nhật lại toàn bộ quyền hạn và giao diện
+      window.location.reload();
+    } catch(e) { 
+      alert("Lỗi khi rời nhóm: " + e.message); 
     }
   };
 
   const handleRespondToRequest = async (requestId, action) => {
     try {
+        if (!isOwner) return alert("Không có quyền duyệt thành viên.");
+
         await respondToJoinRequest({ requestId, action, managerId: currentUserId });
         setPendingRequests(prev => prev.filter(r => r._id !== requestId));
+        
         if (action === 'approve') { 
              const d = await getEventBySlug({ slug, userId: currentUserId }); 
              setEventData(d); 
@@ -214,8 +293,9 @@ export default function EventGroup() {
   const handleKickMember = async (memberId) => {
     if(window.confirm("Mời thành viên này ra khỏi nhóm?")) {
        try { 
-           await removeMember({eventId: eventData._id, memberId, managerId: currentUserId}); 
-           setEventData(p => ({...p, volunteers: p.volunteers.filter(v=>v._id!==memberId)})); 
+           if (!isOwner) return alert("Không có quyền xóa thành viên.");
+           await removeMember({ slug: eventData.slug, memberId, managerId: currentUserId }); 
+           setEventData(p => ({...p, volunteers: p.volunteers.filter(v => (v._id || v) !== memberId)})); 
        } catch(e){ alert(e.message) }
     }
   };
@@ -245,8 +325,8 @@ export default function EventGroup() {
             <Tab label="Bài đăng" />
             <Tab label="Thông tin" />
             <Tab label="Thành viên" />
-            {/* CHỈ CREATOR MỚI THẤY TAB YÊU CẦU */}
-            {currentUserIsCreator && (
+            {/* Chỉ hiển thị tab yêu cầu với Owner */}
+            {isOwner && (
               <Tab label={<Badge badgeContent={pendingRequests.length} color="error">Yêu cầu tham gia</Badge>} />
             )}
           </Tabs>
@@ -292,9 +372,8 @@ export default function EventGroup() {
           <Paper sx={{ mt: 2, p: 2 }} variant="outlined">
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Typography variant="h6">Thông tin sự kiện</Typography>
-                
-                {/* CHỈ CREATOR MỚI THẤY NÚT CHỈNH SỬA */}
-                {currentUserIsCreator && (
+                {/* Chỉ Owner mới thấy nút chỉnh sửa */}
+                {isOwner && (
                 <Button startIcon={<EditIcon />} variant="contained" size="small" onClick={handleEditClick} sx={{ bgcolor: '#49BBBD', color: 'white', '&:hover': { bgcolor: '#3da8aa' } }}>
                     Chỉnh sửa
                 </Button>
@@ -307,10 +386,9 @@ export default function EventGroup() {
                 <Typography><b>Địa điểm:</b> {eventData.location}</Typography>
                 <Typography><b>Ngày tổ chức:</b> {new Date(eventData.date).toLocaleDateString('vi-VN')}</Typography>
                 <Typography><b>Quyền riêng tư:</b> {eventData.privacy === 'Private' ? 'Riêng tư' : 'Công khai'}</Typography>
-                <Typography><b>Người tạo:</b> {eventData.createdBy?.username}</Typography>
+                <Typography><b>Người tạo:</b> {eventData.createdBy?.username || "Không xác định"}</Typography>
                 
-                {/* CHỈ CREATOR MỚI THẤY CÂU HỎI */}
-                {currentUserIsCreator && eventData.privacy === 'Private' && eventData.question && (
+                {isOwner && eventData.privacy === 'Private' && eventData.question && (
                     <Typography sx={{ mt: 1 }}><b>Câu hỏi tham gia:</b> {eventData.question}</Typography>
                 )}
             </Stack>
@@ -330,19 +408,20 @@ export default function EventGroup() {
             ) : (
                 <List>
                     {getSortedMembers().map((member) => {
+                        const memberId = member._id || member;
                         const role = member.role ? member.role.toLowerCase() : 'volunteer'; 
-                        const isCreator = member._id === eventData.createdBy._id || member._id === eventData.createdBy;
+                        const memberIsCreator = memberId === (eventData.createdBy?._id || eventData.createdBy);
                         const isAdmin = role === 'admin';
                         const isManagerRole = role === 'manager';
                         const isVolunteer = role === 'volunteer';
 
                         return (
                             <ListItem 
-                                key={member._id}
+                                key={memberId}
                                 secondaryAction={
-                                    // Creator xóa mọi người, Manager xóa volunteer. Không ai xóa được Creator.
-                                    (currentUserIsCreator || (currentUserRole === 'manager' && !isCreator && !isManagerRole)) && member._id !== currentUserId && (
-                                        <IconButton edge="end" aria-label="delete" onClick={() => handleKickMember(member._id)}>
+                                    // Chỉ Owner mới được xóa thành viên, và không được xóa chính mình
+                                    isOwner && memberId !== currentUserId && (
+                                        <IconButton edge="end" aria-label="delete" onClick={() => handleKickMember(memberId)}>
                                             <CloseIcon color="disabled" fontSize="small" />
                                         </IconButton>
                                     )
@@ -360,15 +439,10 @@ export default function EventGroup() {
                                             <Typography variant="body1" sx={{ color: "text.primary" }}>
                                                 {member.username}
                                             </Typography>
-
-                                            {isCreator && (
-                                                <Chip label="Người tổ chức" size="small" variant="outlined" sx={{ color: '#9c27b0', borderColor: '#9c27b0', height: 20, fontSize: '0.7rem' }} />
-                                            )}
+                                            {memberIsCreator && <Chip label="Người tổ chức" size="small" variant="outlined" sx={{ color: '#9c27b0', borderColor: '#9c27b0', height: 20, fontSize: '0.7rem' }} />}
+                                            {isManagerRole && <Chip label="Quản lý" size="small" variant="outlined" sx={{ color: '#49BBBD', borderColor: '#49BBBD', height: 20, fontSize: '0.7rem' }} />}
                                             {isAdmin && (
                                                 <Chip label="Admin" size="small" variant="outlined" sx={{ color: '#d32f2f', borderColor: '#d32f2f', height: 20, fontSize: '0.7rem' }} />
-                                            )}
-                                            {isManagerRole && (
-                                                <Chip label="Quản lý" size="small" variant="outlined" sx={{ color: '#49BBBD', borderColor: '#49BBBD', height: 20, fontSize: '0.7rem' }} />
                                             )}
                                             {isVolunteer && (
                                                 <Chip label="Tình nguyện viên" size="small" variant="outlined" sx={{ color: 'text.secondary', borderColor: '#e0e0e0', height: 20, fontSize: '0.7rem' }} />
@@ -385,8 +459,8 @@ export default function EventGroup() {
           </Paper>
         )}
 
-        {/* TAB 3: REQUESTS (CHỈ CREATOR) */}
-        {currentTab === 3 && currentUserIsCreator && (
+        {/* TAB 3: REQUESTS (CHỈ OWNER) */}
+        {currentTab === 3 && isOwner && (
           <Paper sx={{ mt: 2 }} variant="outlined">
             <Typography variant="h6" sx={{ p: 2 }}>Yêu cầu tham gia ({pendingRequests.length})</Typography>
             <Divider />
@@ -421,7 +495,7 @@ export default function EventGroup() {
         )}
       </Box>
 
-      {/* MODAL JOIN - Cập nhật giao diện mới */}
+      {/* MODAL JOIN */}
       <Dialog open={openJoinModal} onClose={() => setOpenJoinModal(false)} maxWidth="sm" fullWidth>
         <DialogTitle>Trả lời câu hỏi tham gia</DialogTitle>
         <DialogContent sx={{ pb: 0}}>
@@ -453,7 +527,13 @@ export default function EventGroup() {
               </RadioGroup>
             </FormControl>
             {editForm.privacy === 'Private' && (
-              <TextField label="Câu hỏi tham gia" fullWidth value={editForm.question} onChange={(e) => setEditForm({...editForm, question: e.target.value})} />
+              <TextField 
+                label="Câu hỏi tham gia" 
+                fullWidth 
+                value={editForm.question} 
+                placeholder="Tại sao bạn muốn tham gia sự kiện này?"
+                onChange={(e) => setEditForm({...editForm, question: e.target.value})} 
+              />
             )}
           </Stack>
         </DialogContent>

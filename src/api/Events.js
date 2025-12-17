@@ -6,7 +6,16 @@ export const createEvent = async (data) => {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  return res.json();
+
+  // Quan trọng: Parse JSON trước
+  const result = await res.json();
+
+  // Nếu status không phải 2xx (ví dụ 400, 500) thì throw lỗi kèm message từ backend
+  if (!res.ok) {
+    throw new Error(result.message || "Lỗi không xác định khi tạo sự kiện");
+  }
+
+  return result;
 };
 
 export const getAllEvents = async () => {
@@ -24,6 +33,7 @@ export const getEventBySlug = async ({ slug, userId }) => {
   return res.json();
 };
 
+// Update: Giữ nguyên, đảm bảo updateData có chứa field 'slug'
 export const updateEvent = async (updateData) => {
   const res = await fetch(`${API_URL}/update`, {
     method: "PUT",
@@ -38,6 +48,7 @@ export const updateEvent = async (updateData) => {
   return json;
 };
 
+// Delete: Backend cần slug và username
 export const deleteEvent = async (data) => {
   const res = await fetch(`${API_URL}/delete`, {
     method: "DELETE",
@@ -47,22 +58,25 @@ export const deleteEvent = async (data) => {
   return res.json();
 };
 
-export const joinEvent = async ({ eventId, userId, answer }) => {
+// --- CÁC HÀM DƯỚI ĐÂY ĐÃ SỬA ĐỂ DÙNG SLUG ---
+
+export const joinEvent = async ({ slug, userId, answer }) => {
   const res = await fetch(`${API_URL}/join`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ eventId, userId, answer }), // Gửi kèm answer
+    body: JSON.stringify({ slug, userId, answer }), // Đổi eventId thành slug
   });
 
   const json = await res.json();
   if (!res.ok) {
     throw new Error(json.message || "Lỗi khi tham gia sự kiện");
   }
-  return json; // Trả về { message, status: 'joined' | 'pending' }
+  return json; 
 };
 
-export const getPendingRequests = async (eventId) => {
-  const res = await fetch(`${API_URL}/${eventId}/requests`, {
+export const getPendingRequests = async (slug) => {
+  // URL đổi thành /:slug/requests
+  const res = await fetch(`${API_URL}/${slug}/requests`, {
     method: "GET",
     headers: { "Content-Type": "application/json" },
   });
@@ -71,9 +85,10 @@ export const getPendingRequests = async (eventId) => {
   if (!res.ok) {
     throw new Error(json.message || "Lỗi tải danh sách yêu cầu");
   }
-  return json; // Trả về mảng các request
+  return json;
 };
 
+// Hàm này giữ nguyên requestId (ID của request riêng biệt, không cần slug)
 export const respondToJoinRequest = async ({ requestId, action, managerId }) => {
   const res = await fetch(`${API_URL}/request/respond`, {
     method: "POST",
@@ -88,20 +103,26 @@ export const respondToJoinRequest = async ({ requestId, action, managerId }) => 
   return json;
 };
 
-export const leaveEvent = async ({ eventId, userId }) => {
+export const leaveEvent = async ({ slug, userId }) => {
   const res = await fetch(`${API_URL}/leave`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ eventId, userId }),
+    body: JSON.stringify({ slug, userId }), // Đổi eventId thành slug
   });
-  return res.json();
+  
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.message || "Lỗi khi rời sự kiện");
+  return json;
 };
 
-export const removeMember = async ({ eventId, memberId, managerId }) => {
+export const removeMember = async ({ slug, memberId, managerId }) => {
   const res = await fetch(`${API_URL}/remove-member`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ eventId, memberId, managerId }),
+    body: JSON.stringify({ slug, memberId, managerId }), // Đổi eventId thành slug
   });
-  return res.json();
+  
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.message || "Lỗi khi xóa thành viên");
+  return json;
 };
