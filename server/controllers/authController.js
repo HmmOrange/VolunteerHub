@@ -5,32 +5,24 @@ import jwt from "jsonwebtoken";
 // ---------------------- REGISTER ----------------------
 export const register = async (req, res) => {
   try {
-    let { email, username, password } = req.body;
+    let {
+      email,
+      username,
+      password,
+      captchaAnswer,
+      captchaToken,
+    } = req.body;
 
-    // Normalize
-    email = email.toLowerCase().trim();
-    username = username.trim();
-
-    const existingEmail = await User.findOne({ email });
-    if (existingEmail) {
-      return res.status(400).json({
-        message: "Email đã được sử dụng. Vui lòng sử dụng email khác!",
-      });
+    // ===== BASIC VALIDATION =====
+    if (!email || !username || !password) {
+      return res.status(400).json({ message: "Thiếu thông tin đăng ký" });
     }
-
-    const existingUser = await User.findOne({ username });
-    if (existingUser) {
-      return res.status(400).json({
-        message: "Tên đăng nhập đã được sử dụng. Vui lòng sử dụng tên đăng nhập khác!",
-      });
-    }
-
-    const { captchaAnswer, captchaToken } = req.body;
 
     if (!captchaAnswer || !captchaToken) {
       return res.status(400).json({ message: "Thiếu captcha" });
     }
 
+    // ===== CAPTCHA VERIFY =====
     try {
       const decoded = jwt.verify(
         captchaToken,
@@ -40,27 +32,54 @@ export const register = async (req, res) => {
       if (Number(captchaAnswer) !== decoded.answer) {
         return res.status(400).json({ message: "Captcha không đúng" });
       }
-    } catch (err) {
+    } catch {
       return res.status(400).json({ message: "Captcha đã hết hạn" });
     }
 
-    const hashed = await bcrypt.hash(password, 10);
+    // ===== NORMALIZE =====
+    email = email.toLowerCase().trim();
+    username = username.trim();
 
-    const newUser = new User({
+    // ===== UNIQUE CHECK =====
+    if (await User.findOne({ email })) {
+      return res.status(400).json({ message: "Email đã được sử dụng" });
+    }
+
+    if (await User.findOne({ username })) {
+      return res.status(400).json({ message: "Tên đăng nhập đã được sử dụng" });
+    }
+
+    // ===== HASH PASSWORD =====
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // ===== CREATE USER =====
+    const user = await User.create({
       email,
       username,
-      password: hashed,
+      password: hashedPassword,
 
-      // ✅ REQUIRED by schema
-      fullName: username,
-
-      // Optional defaults (explicit is better than implicit)
-      isEmailVerified: false,
+      // required by schema
+      fullName: username, // temporary default, updated in step 2
     });
 
-    await newUser.save();
+    // ===== ISSUE TOKEN (IMPORTANT) =====
+    const token = jwt.sign(
+      { id: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
 
-    res.status(201).json({ message: "Đăng ký thành công" });
+    // ===== RESPONSE =====
+    res.status(201).json({
+      token,
+      user: {
+        id: user._id,
+        email: user.email,
+        username: user.username,
+        role: user.role,
+        avatar: user.avatar || null,
+      },
+    });
   } catch (err) {
     console.error("Register error:", err);
     res.status(500).json({ message: err.message });
@@ -72,6 +91,10 @@ export const login = async (req, res) => {
   try {
     const { identifier, password } = req.body;
 
+    if (!identifier || !password) {
+      return res.status(400).json({ message: "Thiếu thông tin đăng nhập" });
+    }
+
     const user = await User.findOne({
       $or: [
         { email: identifier.toLowerCase().trim() },
@@ -80,23 +103,18 @@ export const login = async (req, res) => {
     });
 
     if (!user) {
-      return res.status(400).json({
-        message: "Thông tin đăng nhập không hợp lệ",
+      return res.status(400).json({ message: "Thông tin đăng nhập không hợp lệ" });
+    }
+
+    if (user.isLocked) {
+      return res.status(403).json({
+        message: "Tài khoản của bạn đang bị khóa",
       });
     }
 
     const match = await bcrypt.compare(password, user.password);
     if (!match) {
-      return res.status(400).json({
-        message: "Thông tin đăng nhập không hợp lệ",
-      });
-    }
-
-    if (user.isLocked) {
-      return res.status(403).json({
-        message:
-          "Tài khoản của bạn đang bị khóa, vui lòng liên hệ admin để biết thêm chi tiết",
-      });
+      return res.status(400).json({ message: "Thông tin đăng nhập không hợp lệ" });
     }
 
     const token = jwt.sign(
@@ -112,6 +130,7 @@ export const login = async (req, res) => {
         email: user.email,
         username: user.username,
         role: user.role,
+        avatar: user.avatar || null,
       },
     });
   } catch (err) {

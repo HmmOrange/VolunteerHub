@@ -20,6 +20,7 @@ export default function Login() {
         localStorage.setItem("userId", res.user.id);
         localStorage.setItem("username", res.user.username);
         localStorage.setItem("role", res.user.role);
+        localStorage.setItem("avatar", res.user.avatar || "");
 
         setMsg("Đăng nhập thành công! Đang chuyển hướng...");
 

@@ -9,7 +9,7 @@ export const getPostsByEvent = async (req, res) => {
     const { eventId } = req.params;
 
     const posts = await Post.find({ eventId: eventId })
-      .populate("createdBy", "username")
+      .populate("createdBy", "username avatar")
       .sort({ createdAt: -1 });
 
     const postsWithCommentCount = await Promise.all(
@@ -47,7 +47,7 @@ export const createPost = async (req, res) => {
 
     await newPost.save();
     
-    const populatedPost = await newPost.populate("createdBy", "username");
+    const populatedPost = await newPost.populate("createdBy", "username avatar");
     res.status(201).json({ ...populatedPost.toObject(), commentCount: 0 });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -94,7 +94,7 @@ export const getLikesByPost = async (req, res) => {
     const { postId } = req.params;
     
     const post = await Post.findById(postId)
-                           .populate("likes", "username"); // Chỉ lấy username của người like
+                           .populate("likes", "username avatar"); // Chỉ lấy username và avatar của người like
 
     if (!post) {
       return res.status(404).json({ message: "Post not found" });
@@ -147,8 +147,8 @@ export const updatePost = async (req, res) => {
 
     post.content = content;
     await post.save();
-    
-    const updatedPost = await Post.findById(postId).populate("createdBy", "username");
+
+    const updatedPost = await Post.findById(postId).populate("createdBy", "username avatar");
     const commentCount = await Comment.countDocuments({ postId: post._id });
     
     res.status(200).json({ ...updatedPost.toObject(), commentCount: commentCount });

@@ -53,3 +53,29 @@ export const getProfile = async () => {
 
   return res.json();
 };
+
+export const uploadAvatar = async (file) => {
+  const token = localStorage.getItem("token");
+
+  const formData = new FormData();
+  formData.append("avatar", file);
+
+  const res = await fetch(
+    "http://localhost:5000/api/users/profile/avatar",
+    {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    }
+  );
+
+  if (!res.ok) {
+    const errorData = await res.json();
+    throw new Error(errorData.message || "Upload avatar failed");
+  }
+
+  return res.json();
+};
+

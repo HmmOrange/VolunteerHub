@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { registerUser } from "../../api/Auth";
+import { uploadAvatar } from "../../api/Users";
 import {
   Container,
   Paper,
@@ -10,7 +11,10 @@ import {
   Stack,
   Box,
   Alert,
+  Avatar,
+  IconButton,
 } from "@mui/material";
+import { PhotoCamera, Close } from "@mui/icons-material";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -29,7 +33,7 @@ export default function Register() {
   // ===== STEP CONTROL =====
   const [step, setStep] = useState(1);
 
-  // ===== STEP 1: ACCOUNT =====
+  // ===== STEP 1 =====
   const [accountForm, setAccountForm] = useState({
     email: "",
     username: "",
@@ -37,22 +41,26 @@ export default function Register() {
     confirmPassword: "",
   });
 
-  // ===== STEP 2: PROFILE =====
+  // ===== STEP 2 =====
   const [profileForm, setProfileForm] = useState({
     fullName: "",
     dob: "",
     address: "",
-    avatar: "",
   });
+
+  // ===== AVATAR =====
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState(null);
+  const fileInputRef = useRef(null);
 
   const [msg, setMsg] = useState("");
   const [error, setError] = useState("");
 
-  // ================= STEP 1 SUBMIT =================
+  // ================= STEP 1 =================
   const handleAccountSubmit = async (e) => {
     e.preventDefault();
-    setMsg("");
     setError("");
+    setMsg("");
 
     const { email, username, password, confirmPassword } = accountForm;
 
@@ -67,7 +75,7 @@ export default function Register() {
     }
 
     try {
-      await registerUser({
+      const res = await registerUser({
         email,
         username,
         password,
@@ -75,32 +83,72 @@ export default function Register() {
         captchaToken: captcha.token,
       });
 
+      // ✅ SAVE AUTH INFO
+      localStorage.setItem("token", res.token);
+      localStorage.setItem("userId", res.user.id);
+      localStorage.setItem("username", res.user.username);
+      localStorage.setItem("role", res.user.role);
+      localStorage.setItem("avatar", res.user.avatar || "");
+
       setStep(2);
     } catch (err) {
-      console.error("Lỗi đăng ký:", err);
       setError(err.message || "Đăng ký thất bại");
     }
   };
 
-  // ================= STEP 2 SUBMIT =================
-  const handleProfileSubmit = (e) => {
+  // ================= STEP 2 =================
+  const handleProfileSubmit = async (e) => {
     e.preventDefault();
-    setMsg("");
     setError("");
+    setMsg("");
 
     if (!profileForm.fullName.trim()) {
       setError("Họ và tên là bắt buộc");
       return;
     }
 
-    // Backend chưa xử lý → log tạm
-    console.log("PROFILE INFO:", profileForm);
+    try {
+      // 1️⃣ update profile info
+      await fetch("http://localhost:5000/api/users/profile", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({
+          fullName: profileForm.fullName,
+          dateOfBirth: profileForm.dob,
+          address: profileForm.address,
+        }),
+      });
 
-    setMsg("Hoàn tất đăng ký! Đang chuyển đến trang đăng nhập...");
+      // 2️⃣ upload avatar (SAME AS Profile.jsx)
+      if (avatarFile) {
+        const res = await uploadAvatar(avatarFile);
+        localStorage.setItem("avatar", res.avatar);
+      }
 
-    setTimeout(() => {
-      navigate("/login");
-    }, 1500);
+      setMsg("Hoàn tất đăng ký! Đang chuyển đến trang đăng nhập...");
+
+      setTimeout(() => {
+        navigate("/login");
+      }, 1500);
+    } catch (err) {
+      setError(err.message || "Không thể hoàn tất đăng ký");
+    }
+  };
+
+  // ===== AVATAR HANDLERS =====
+  const handleAvatarChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAvatarFile(file);
+    setAvatarPreview(URL.createObjectURL(file));
+  };
+
+  const clearAvatar = () => {
+    setAvatarFile(null);
+    setAvatarPreview(null);
   };
 
   return (
@@ -110,18 +158,10 @@ export default function Register() {
           Đăng ký
         </Typography>
 
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
-        {msg && (
-          <Alert severity="success" sx={{ mb: 2 }}>
-            {msg}
-          </Alert>
-        )}
+        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+        {msg && <Alert severity="success" sx={{ mb: 2 }}>{msg}</Alert>}
 
-        {/* ================= STEP 1 ================= */}
+        {/* ===== STEP 1 ===== */}
         {step === 1 && (
           <Box component="form" onSubmit={handleAccountSubmit}>
             <Stack spacing={2}>
@@ -186,10 +226,33 @@ export default function Register() {
           </Box>
         )}
 
-        {/* ================= STEP 2 ================= */}
+        {/* ===== STEP 2 ===== */}
         {step === 2 && (
           <Box component="form" onSubmit={handleProfileSubmit}>
             <Stack spacing={2}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <Avatar
+                  src={avatarPreview || undefined}
+                  sx={{ width: 64, height: 64 }}
+                />
+                <IconButton onClick={() => fileInputRef.current.click()}>
+                  <PhotoCamera />
+                </IconButton>
+                {avatarPreview && (
+                  <IconButton onClick={clearAvatar}>
+                    <Close />
+                  </IconButton>
+                )}
+              </Box>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={handleAvatarChange}
+              />
+
               <TextField
                 label="Họ và tên"
                 value={profileForm.fullName}
@@ -216,15 +279,6 @@ export default function Register() {
                 value={profileForm.address}
                 onChange={(e) =>
                   setProfileForm({ ...profileForm, address: e.target.value })
-                }
-                fullWidth
-              />
-
-              <TextField
-                label="Ảnh đại diện (URL)"
-                value={profileForm.avatar}
-                onChange={(e) =>
-                  setProfileForm({ ...profileForm, avatar: e.target.value })
                 }
                 fullWidth
               />

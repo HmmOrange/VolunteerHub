@@ -204,9 +204,17 @@ export default function PostCard({ post, onPostDeleted, onPostUpdated }) {
         
         {/* Header */}
         <Box className="post-header">
-          <Avatar sx={{ bgcolor: '#49BBBD' }}> 
+          <Avatar
+            sx={{ bgcolor: '#49BBBD' }}
+            src={
+              !post.isAnonymous && post.createdBy?.avatar
+                ? `http://localhost:5000${post.createdBy.avatar}`
+                : undefined
+            }
+          >
             {post.isAnonymous ? '?' : userInitial}
           </Avatar>
+
           <Box ml={1.5}>
             <Typography fontWeight="bold">{displayName}</Typography>
             <Typography variant="caption" color="text.secondary">
@@ -338,9 +346,17 @@ export default function PostCard({ post, onPostDeleted, onPostUpdated }) {
                     return (
                       <ListItem key={recentComment._id} sx={{ p: 0, alignItems: 'flex-start' }}>
                         <ListItemAvatar sx={{ minWidth: 40, mt: 0.5 }}>
-                          <Avatar sx={{ width: 32, height: 32 }}>
+                          <Avatar
+                            sx={{ width: 32, height: 32 }}
+                            src={
+                              recentComment.createdBy?.avatar
+                                ? `http://localhost:5000${recentComment.createdBy.avatar}`
+                                : undefined
+                            }
+                          >
                             {recentComment.createdBy?.username?.charAt(0).toUpperCase() || 'U'}
                           </Avatar>
+
                         </ListItemAvatar>
                         <Box sx={{ bgcolor: '#f0f2f5', borderRadius: '16px', p: '8px 12px', width: '100%', ml: 0.5}}>
                           <ListItemText 
@@ -430,7 +446,14 @@ export default function PostCard({ post, onPostDeleted, onPostUpdated }) {
               {likeList.map((user) => (
                 <ListItem key={user._id}>
                   <ListItemAvatar>
-                    <Avatar sx={{ bgcolor: '#49BBBD' }}>
+                    <Avatar
+                      sx={{ bgcolor: '#49BBBD' }}
+                      src={
+                        user.avatar
+                          ? `http://localhost:5000${user.avatar}`
+                          : undefined
+                      }
+                    >
                       {user.username.charAt(0).toUpperCase()}
                     </Avatar>
                   </ListItemAvatar>
@@ -461,9 +484,16 @@ export default function PostCard({ post, onPostDeleted, onPostUpdated }) {
               {comments.map((comment) => (
                  <ListItem key={comment._id} sx={{ p: 0, alignItems: 'flex-start', mb: 1 }}>
                    <ListItemAvatar sx={{ minWidth: 40, mt: 0.5 }}>
-                     <Avatar sx={{ width: 32, height: 32 }}>
-                       {comment.createdBy?.username?.charAt(0).toUpperCase() || 'U'}
-                     </Avatar>
+                    <Avatar
+                      sx={{ width: 32, height: 32 }}
+                      src={
+                        comment.createdBy?.avatar
+                          ? `http://localhost:5000${comment.createdBy.avatar}`
+                          : undefined
+                      }
+                    >
+                      {comment.createdBy?.username?.charAt(0).toUpperCase() || 'U'}
+                    </Avatar>
                    </ListItemAvatar>
                    <Box sx={{ bgcolor: '#f0f2f5', borderRadius: '16px', p: '8px 12px', width: '100%', ml: 0.5}}>
                      <ListItemText 

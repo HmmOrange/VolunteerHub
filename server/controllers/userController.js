@@ -78,3 +78,54 @@ export const getProfile = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+export const updateProfile = async (req, res) => {
+  try {
+    const { fullName, dateOfBirth, address, avatar } = req.body;
+
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    user.fullName = fullName;
+    user.dateOfBirth = dateOfBirth || null;
+    user.address = address || "";
+    if (avatar) user.avatar = avatar;
+
+    await user.save();
+
+    res.json({
+      message: "Profile updated",
+      user: {
+        username: user.username,
+        avatar: user.avatar,
+        fullName: user.fullName,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+
+export const updateAvatar = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "Không có file được upload" });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: "Người dùng không tồn tại" });
+    }
+
+    user.avatar = `/uploads/avatars/${req.file.filename}`;
+    await user.save();
+
+    res.json({
+      message: "Cập nhật ảnh đại diện thành công",
+      avatar: user.avatar,
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
