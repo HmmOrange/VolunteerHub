@@ -30,6 +30,7 @@ export default function HNavbar({ onToggleVNavBar }) {
 
   const handleProfile = () => {
     handleProfileMenuClose();
+    navigate("/profile");
   };
 
   const handleAddEvent = () => {

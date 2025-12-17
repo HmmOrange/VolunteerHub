@@ -7,6 +7,7 @@ import eventRoutes from "./routes/eventRoutes.js";
 import postRoutes from "./routes/postRoutes.js"; 
 import commentRoutes from "./routes/commentRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
+import captchaRoutes from "./routes/captchaRoutes.js";
 
 // === THÊM 2 DÒNG NÀY ===
 import path from "path";
@@ -38,6 +39,7 @@ app.use("/api/events", eventRoutes);
 app.use("/api/posts", postRoutes); 
 app.use("/api/comments", commentRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/captcha", captchaRoutes);
 
 // Start server
 const PORT = process.env.PORT || 5000;

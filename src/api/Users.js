@@ -36,3 +36,20 @@ export const toggleUserLock = async (userId) => {
   
   return res.json();
 };
+
+export const getProfile = async () => {
+  const token = localStorage.getItem("token");
+
+  const res = await fetch("http://localhost:5000/api/users/profile", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json();
+    throw new Error(errorData.message || "Failed to fetch profile");
+  }
+
+  return res.json();
+};
