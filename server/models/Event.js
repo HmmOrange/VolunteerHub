@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import slugify from "slugify";
 
+// Schema con cho tính năng lặp lại (Recurrence)
 const recurrenceSchema = new mongoose.Schema(
   {
     enabled: { type: Boolean, default: false },
@@ -17,7 +18,7 @@ const recurrenceSchema = new mongoose.Schema(
       {
         type: Number,
         min: 0,
-        max: 6,
+        max: 6, // 0 = Sunday, 6 = Saturday
       },
     ],
     endDate: {
@@ -33,30 +34,35 @@ const eventSchema = new mongoose.Schema(
     name: { type: String, required: true },
     slug: { type: String, required: true, unique: true },
 
-    // Start DATE (not time)
-    date: { type: Date, required: true },
-
-    // ⏰ TIME FIELDS (NEW)
-    startTime: {
-      type: String, // "18:30"
-      required: true,
-    },
-    endTime: {
-      type: String, // "20:00"
-    },
+    // --- THỜI GIAN ---
+    date: { type: Date, required: true }, // Ngày diễn ra
+    startTime: { type: String, required: true }, // Giờ bắt đầu (VD: "18:30")
+    endTime: { type: String }, // Giờ kết thúc (VD: "21:00")
 
     location: String,
     description: String,
 
+    // --- QUYỀN RIÊNG TƯ (Từ phiên bản cũ) ---
+    privacy: {
+      type: String,
+      enum: ["Public", "Private"],
+      default: "Public",
+    },
+    question: {
+      type: String,
+      default: "Tại sao bạn muốn tham gia sự kiện này?", // Câu hỏi nếu là Private
+    },
+
+    // --- QUẢN LÝ ---
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
-
     approved: { type: Boolean, default: false },
     volunteers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
 
+    // --- TÍNH NĂNG LẶP LẠI (Từ phiên bản mới) ---
     recurrence: {
       type: recurrenceSchema,
       default: null,
@@ -65,12 +71,10 @@ const eventSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Middleware tự động tạo slug nếu thiếu (Dự phòng)
 eventSchema.pre("validate", function (next) {
   if (!this.slug && this.name) {
-    this.slug = slugify(this.name, { lower: true, strict: true });
-  }
-  if (this.slug) {
-    this.slug = slugify(this.slug, { lower: true, strict: true });
+    this.slug = slugify(this.name, { lower: true, strict: true }) + "-" + Date.now();
   }
   next();
 });

@@ -118,7 +118,7 @@ export default function Dashboard() {
       </Typography>
 
       {/* ================= UPCOMING JOINED EVENTS ================= */}
-      <Paper elevation={2} sx={{ p: 3, mb: 4 }}>
+      <Paper elevation={2} sx={{ p: 3, mb: 4, mt: 3}}>
         <Typography variant="h6" fontWeight="bold" mb={2}>
           Sự kiện sắp diễn ra bạn đã tham gia
         </Typography>

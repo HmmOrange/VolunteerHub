@@ -105,7 +105,7 @@ export default function Events() {
   return (
     <Container maxWidth="lg">
       {/* ================= JOINED EVENTS ================= */}
-      <Paper elevation={2} sx={{ p: 3, mb: 5 }}>
+      <Paper elevation={2} sx={{ p: 3, mb: 4, mt: 12 }}>
         <Typography variant="h5" fontWeight="bold" mb={2}>
           Sự kiện bạn đã tham gia
         </Typography>

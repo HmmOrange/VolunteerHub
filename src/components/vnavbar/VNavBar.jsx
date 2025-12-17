@@ -36,25 +36,25 @@ export default function VNavBar({ isOpen, drawerWidth, drawerVariant, onClose })
         <ListItem disablePadding>
           <ListItemButton onClick={() => handleNavigate("/dashboard")}>
             <ListItemIcon><HomeOutlined /></ListItemIcon>
-            <ListItemText primary="Trang chủ" />
+            <ListItemText primary="Trang chủ" sx={{ mt: 0.9 }}/>
           </ListItemButton>
         </ListItem>
         <ListItem disablePadding>
           <ListItemButton onClick={() => handleNavigate("/events")}>
             <ListItemIcon><EventOutlined /></ListItemIcon>
-            <ListItemText primary="Sự kiện" />
+            <ListItemText primary="Sự kiện" sx={{ mt: 0.95}}/>
           </ListItemButton>
         </ListItem>
         <ListItem disablePadding>
           <ListItemButton onClick={() => handleNavigate("/discover")}>
             <ListItemIcon><ExploreOutlined /></ListItemIcon>
-            <ListItemText primary="Khám phá" />
+            <ListItemText primary="Khám phá" sx={{ mt: 0.75 }}/>
           </ListItemButton>
         </ListItem>
         <ListItem disablePadding>
           <ListItemButton onClick={() => handleNavigate("/calendar")}>
             <ListItemIcon><CalendarMonthOutlined /></ListItemIcon>
-            <ListItemText primary="Lịch" />
+            <ListItemText primary="Lịch" sx={{ mt: 0.85 }}/>
           </ListItemButton>
         </ListItem>
       </List>
