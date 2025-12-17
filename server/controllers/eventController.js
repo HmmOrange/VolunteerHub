@@ -79,7 +79,7 @@ export const createEvent = async (req, res) => {
 // ---------------------- GET ALL EVENTS ----------------------
 export const getAllEvents = async (req, res) => {
   try {
-    const events = await Event.find().populate("createdBy", "username role");
+    const events = await Event.find().populate("createdBy", "username role avatar");
     res.json(events);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -93,8 +93,8 @@ export const getEventBySlug = async (req, res) => {
     const { userId } = req.query;
 
     const event = await Event.findOne({ slug })
-      .populate("createdBy", "username email")
-      .populate("volunteers", "username email role");
+      .populate("createdBy", "username email avatar")
+      .populate("volunteers", "username email role avatar");
 
     if (!event)
       return res.status(404).json({ message: "Không tìm thấy event" });
@@ -138,7 +138,7 @@ export const getEventBySlug = async (req, res) => {
         const pendingRequestsList = await JoinRequest.find({
           event: event._id,
           status: "pending",
-        }).populate("user", "username email");
+        }).populate("user", "username email avatar");
 
         result.requests = pendingRequestsList;
       }
@@ -347,7 +347,7 @@ export const getPendingRequests = async (req, res) => {
     const requests = await JoinRequest.find({
       event: event._id,
       status: "pending",
-    }).populate("user", "username email");
+    }).populate("user", "username email avatar");
 
     res.status(200).json(requests);
   } catch (err) {

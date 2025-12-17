@@ -2,8 +2,7 @@ import { useEffect, useState } from "react";
 import { 
   Container, Paper, Typography, Table, TableBody, TableCell, 
   TableContainer, TableHead, TableRow, Chip, CircularProgress, 
-  IconButton, Tooltip,
-  Divider
+  IconButton, Tooltip, Divider, Avatar
 } from "@mui/material";
 import { 
   ArrowUpward as UpIcon, 
@@ -13,19 +12,17 @@ import {
 } from "@mui/icons-material";
 
 import { getAllUsers, updateUserRole, toggleUserLock } from "../../api/Users";
-import "./UserList.css"; // Import file CSS
+import "./UserList.css";
 
 export default function UserList() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const currentUserRole = localStorage.getItem("role"); 
+  const currentUserRole = localStorage.getItem("role");
 
   const fetchUsers = async () => {
     try {
       const data = await getAllUsers();
-      // Giả lập thêm trường isBanned cho frontend (vì DB chưa có)
-      const usersWithBanStatus = data.map(u => ({ ...u, isBanned: false }));
-      setUsers(usersWithBanStatus);
+      setUsers(data);
     } catch (error) {
       console.error("Lỗi tải danh sách:", error);
     } finally {
@@ -37,149 +34,111 @@ export default function UserList() {
     fetchUsers();
   }, []);
 
-  // Xử lý thăng/giáng cấp
   const handleRoleChange = async (userId, currentRole) => {
-    const newRole = currentRole === 'volunteer' ? 'manager' : 'volunteer';
-    const actionName = newRole === 'manager' ? 'thăng cấp lên Quản lý' : 'giáng cấp xuống Thành viên';
+    const newRole = currentRole === "volunteer" ? "manager" : "volunteer";
+    if (!window.confirm("Xác nhận thay đổi vai trò?")) return;
 
-    if (window.confirm(`Bạn có chắc muốn ${actionName} cho người dùng này?`)) {
-      try {
-        await updateUserRole(userId, newRole);
-        setUsers(users.map(u => u._id === userId ? { ...u, role: newRole } : u));
-      } catch (error) {
-        alert("Lỗi: " + error.message);
-      }
+    try {
+      await updateUserRole(userId, newRole);
+      setUsers(users.map(u => u._id === userId ? { ...u, role: newRole } : u));
+    } catch (error) {
+      alert(error.message);
     }
   };
 
-  // Xử lý Khóa/Mở khóa (Tạm thời chỉ đổi state ở Frontend)
   const handleToggleBan = async (userId) => {
-    // Tìm user hiện tại để hiển thị confirm đúng thông điệp
-    const userToToggle = users.find(u => u._id === userId);
-    const action = userToToggle.isLocked ? "Mở khóa" : "Khóa";
+    if (!window.confirm("Xác nhận khóa / mở khóa tài khoản?")) return;
 
-    if (window.confirm(`Bạn có chắc muốn ${action} tài khoản này?`)) {
-      try {
-        const res = await toggleUserLock(userId);
-        
-        // Cập nhật state UI ngay lập tức
-        setUsers(users.map(u => 
-          u._id === userId ? { ...u, isLocked: res.user.isLocked } : u
-        ));
-      } catch (error) {
-        alert("Lỗi: " + error.message);
-      }
+    try {
+      const res = await toggleUserLock(userId);
+      setUsers(users.map(u =>
+        u._id === userId ? { ...u, isLocked: res.user.isLocked } : u
+      ));
+    } catch (error) {
+      alert(error.message);
     }
   };
 
-  if (currentUserRole !== 'admin') {
-    return <Typography sx={{ p: 3, color: 'error.main' }}>Bạn không có quyền truy cập trang này.</Typography>;
+  if (currentUserRole !== "admin") {
+    return (
+      <Typography sx={{ p: 3, color: "error.main" }}>
+        Bạn không có quyền truy cập trang này.
+      </Typography>
+    );
   }
 
-  // Helper để lấy class CSS theo role
-  const getRoleClass = (role) => {
-    switch (role) {
-      case 'admin': return 'role-chip-admin';
-      case 'manager': return 'role-chip-manager';
-      default: return 'role-chip-volunteer';
-    }
-  };
-
-  // Helper để lấy Label hiển thị
-  const getRoleLabel = (role) => {
-    switch (role) {
-      case 'admin': return 'Admin';
-      case 'manager': return 'Quản lý';
-      default: return 'Thành viên';
-    }
-  };
+  const roleLabel = (role) =>
+    role === "admin" ? "Admin" : role === "manager" ? "Quản lý" : "Thành viên";
 
   return (
     <Container maxWidth="md" className="user-list-container">
       <Divider sx={{ mb: 3 }} />
-      <Typography variant="h4" className="user-list-title" align="center">
+      <Typography variant="h4" align="center" mb={2}>
         Danh sách người dùng
       </Typography>
-      
+
       {loading ? (
         <CircularProgress />
       ) : (
         <TableContainer component={Paper}>
           <Table>
-            <TableHead className="table-header">
-            <TableRow>
-                {/* Giữ nguyên widths đã được căn chỉnh */}
-                <TableCell sx={{ width: '25%' }}>Username</TableCell>
-                <TableCell sx={{ width: '40%' }}>Email</TableCell>
-                <TableCell sx={{ width: '35%', paddingLeft: '54px' }}>Vai trò</TableCell> 
-            </TableRow>
-        </TableHead>
+            <TableHead>
+              <TableRow>
+                <TableCell sx={{ width: "10%" }}>Avatar</TableCell>
+                <TableCell sx={{ width: "25%" }}>Username</TableCell>
+                <TableCell sx={{ width: "35%" }}>Email</TableCell>
+                <TableCell sx={{ width: "30%" }}>Vai trò</TableCell>
+              </TableRow>
+            </TableHead>
+
             <TableBody>
               {users.map((user) => {
-                const isMySelf = user.username === localStorage.getItem("username"); // Không sửa chính mình
-                const isAdmin = user.role === 'admin';
+                const isSelf = user.username === localStorage.getItem("username");
+                const isAdmin = user.role === "admin";
 
                 return (
                   <TableRow key={user._id} hover>
+                    {/* AVATAR */}
+                    <TableCell>
+                      <Avatar
+                        src={user.avatar ? `http://localhost:5000${user.avatar}` : ""}
+                        sx={{ width: 36, height: 36 }}
+                      >
+                        {user.username.charAt(0).toUpperCase()}
+                      </Avatar>
+                    </TableCell>
+
                     <TableCell>{user.username}</TableCell>
                     <TableCell>{user.email}</TableCell>
-                    
-                    {/* CỘT ROLE + ACTIONS */}
+
                     <TableCell>
-                      <div className="role-cell-wrapper">
-                        {/* 1. Label Role (Độ dài cố định) */}
-                        <Chip 
-                          label={getRoleLabel(user.role)} 
-                          className={`role-chip ${getRoleClass(user.role)}`}
-                        />
+                      <Chip label={roleLabel(user.role)} />
 
-                        {/* 2. Các nút điều khiển (Chỉ hiện nếu không phải Admin và không phải chính mình) */}
-                        {!isAdmin && !isMySelf && (
-                          <div className="action-icons">
-                            
-                            {/* Nút Mũi tên (Promote/Demote) */}
-                            {user.role === 'volunteer' && (
-                              <Tooltip title="Thăng cấp lên Quản lý">
-                                <IconButton 
-                                  size="small" 
-                                  className="arrow-btn"
-                                  onClick={() => handleRoleChange(user._id, user.role)}
-                                >
-                                  <UpIcon color="success" />
-                                </IconButton>
-                              </Tooltip>
-                            )}
+                      {!isAdmin && !isSelf && (
+                        <>
+                          <Tooltip title="Đổi vai trò">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleRoleChange(user._id, user.role)}
+                            >
+                              {user.role === "volunteer" ? (
+                                <UpIcon color="success" />
+                              ) : (
+                                <DownIcon color="warning" />
+                              )}
+                            </IconButton>
+                          </Tooltip>
 
-                            {user.role === 'manager' && (
-                              <Tooltip title="Giáng cấp xuống Thành viên">
-                                <IconButton 
-                                  size="small" 
-                                  className="arrow-btn"
-                                  onClick={() => handleRoleChange(user._id, user.role)}
-                                >
-                                  <DownIcon color="warning" />
-                                </IconButton>
-                              </Tooltip>
-                            )}
-
-                            {/* Nút Khóa (Lock/Unlock) */}
-                            <Tooltip title={user.isLocked ? "Mở khóa tài khoản" : "Khóa tài khoản"}>
-                              <IconButton 
-                                size="small" 
-                                className="lock-btn"
-                                onClick={() => handleToggleBan(user._id)}
-                              >
-                                {user.isLocked ? (
-                                  <LockIcon sx={{ color: 'black' }} /> 
-                                ) : (
-                                  <UnlockIcon color="action" /> 
-                                )}
-                              </IconButton>
-                            </Tooltip>
-
-                          </div>
-                        )}
-                      </div>
+                          <Tooltip title={user.isLocked ? "Mở khóa" : "Khóa"}>
+                            <IconButton
+                              size="small"
+                              onClick={() => handleToggleBan(user._id)}
+                            >
+                              {user.isLocked ? <LockIcon /> : <UnlockIcon />}
+                            </IconButton>
+                          </Tooltip>
+                        </>
+                      )}
                     </TableCell>
                   </TableRow>
                 );

@@ -428,10 +428,18 @@ export default function EventGroup() {
                                 }
                             >
                                 <ListItemAvatar>
-                                    <Avatar sx={{ bgcolor: '#49BBBD' }}> 
-                                        {member.username?.charAt(0).toUpperCase()}
-                                    </Avatar>
+                                  <Avatar
+                                    src={
+                                      member.avatar
+                                        ? `http://localhost:5000${member.avatar}`
+                                        : undefined
+                                    }
+                                    sx={{ bgcolor: '#49BBBD' }}
+                                  >
+                                    {member.username?.charAt(0).toUpperCase()}
+                                  </Avatar>
                                 </ListItemAvatar>
+
                                 
                                 <ListItemText 
                                     primary={
@@ -477,7 +485,19 @@ export default function EventGroup() {
                       </Button>
                     </Stack>
                   }>
-                    <ListItemAvatar><Avatar sx={{ bgcolor: '#49BBBD' }}>{req.user?.username?.charAt(0)}</Avatar></ListItemAvatar>
+                    <ListItemAvatar>
+                      <Avatar
+                        src={
+                          req.user?.avatar
+                            ? `http://localhost:5000${req.user.avatar}`
+                            : undefined
+                        }
+                        sx={{ bgcolor: '#49BBBD' }}
+                      >
+                        {req.user?.username?.charAt(0).toUpperCase()}
+                      </Avatar>
+                    </ListItemAvatar>
+
                     <ListItemText
                       primary={req.user?.username}
                       secondary={
