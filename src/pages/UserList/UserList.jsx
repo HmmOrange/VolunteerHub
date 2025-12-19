@@ -97,7 +97,8 @@ export default function UserList() {
   return (
     <Container maxWidth="md" className="user-list-container">
       <Divider sx={{ mb: 3 }} />
-      <Typography variant="h4" className="user-list-title" align="center">
+      {/* 1. Thêm class user-list-title */}
+      <Typography variant="h4" className="user-list-title">
         Danh sách người dùng
       </Typography>
       
@@ -106,14 +107,16 @@ export default function UserList() {
       ) : (
         <TableContainer component={Paper}>
           <Table>
-            <TableHead className="table-header">
-            <TableRow>
-                {/* Giữ nguyên widths đã được căn chỉnh */}
-                <TableCell sx={{ width: '25%' }}>Username</TableCell>
-                <TableCell sx={{ width: '40%' }}>Email</TableCell>
-                <TableCell sx={{ width: '35%', paddingLeft: '54px' }}>Vai trò</TableCell> 
-            </TableRow>
-        </TableHead>
+            <TableHead>
+              {/* 2. Thêm class table-header */}
+              <TableRow className="table-header">
+                <TableCell sx={{ width: "10%" }}>Avatar</TableCell>
+                <TableCell sx={{ width: "25%" }}>Username</TableCell>
+                <TableCell sx={{ width: "35%" }}>Email</TableCell>
+                <TableCell sx={{ width: "30%", paddingLeft: '54px'  }}>Vai trò</TableCell>
+              </TableRow>
+            </TableHead>
+
             <TableBody>
               {users.map((user) => {
                 const isMySelf = user.username === localStorage.getItem("username"); // Không sửa chính mình
@@ -121,62 +124,55 @@ export default function UserList() {
 
                 return (
                   <TableRow key={user._id} hover>
+                    <TableCell>
+                      <Avatar
+                        src={user.avatar ? `http://localhost:5000${user.avatar}` : ""}
+                        sx={{ width: 36, height: 36 }}
+                      >
+                        {user.username.charAt(0).toUpperCase()}
+                      </Avatar>
+                    </TableCell>
+
                     <TableCell>{user.username}</TableCell>
                     <TableCell>{user.email}</TableCell>
                     
                     {/* CỘT ROLE + ACTIONS */}
                     <TableCell>
+                      {/* 3. Thêm wrapper role-cell-wrapper để căn chỉnh flex */}
                       <div className="role-cell-wrapper">
-                        {/* 1. Label Role (Độ dài cố định) */}
+                        
+                        {/* 4. Thêm class role-chip và class màu động theo role */}
                         <Chip 
-                          label={getRoleLabel(user.role)} 
-                          className={`role-chip ${getRoleClass(user.role)}`}
+                          label={roleLabel(user.role)} 
+                          className={`role-chip role-chip-${user.role}`}
                         />
 
-                        {/* 2. Các nút điều khiển (Chỉ hiện nếu không phải Admin và không phải chính mình) */}
-                        {!isAdmin && !isMySelf && (
+                        {!isAdmin && !isSelf && (
+                          // 5. Thêm wrapper action-icons cho các nút
                           <div className="action-icons">
-                            
-                            {/* Nút Mũi tên (Promote/Demote) */}
-                            {user.role === 'volunteer' && (
-                              <Tooltip title="Thăng cấp lên Quản lý">
-                                <IconButton 
-                                  size="small" 
-                                  className="arrow-btn"
-                                  onClick={() => handleRoleChange(user._id, user.role)}
-                                >
-                                  <UpIcon color="success" />
-                                </IconButton>
-                              </Tooltip>
-                            )}
-
-                            {user.role === 'manager' && (
-                              <Tooltip title="Giáng cấp xuống Thành viên">
-                                <IconButton 
-                                  size="small" 
-                                  className="arrow-btn"
-                                  onClick={() => handleRoleChange(user._id, user.role)}
-                                >
-                                  <DownIcon color="warning" />
-                                </IconButton>
-                              </Tooltip>
-                            )}
-
-                            {/* Nút Khóa (Lock/Unlock) */}
-                            <Tooltip title={user.isLocked ? "Mở khóa tài khoản" : "Khóa tài khoản"}>
-                              <IconButton 
-                                size="small" 
-                                className="lock-btn"
-                                onClick={() => handleToggleBan(user._id)}
+                            <Tooltip title="Đổi vai trò">
+                              <IconButton
+                                size="small"
+                                className="arrow-btn" // 6. Thêm class cho nút
+                                onClick={() => handleRoleChange(user._id, user.role)}
                               >
-                                {user.isLocked ? (
-                                  <LockIcon sx={{ color: 'black' }} /> 
+                                {user.role === "volunteer" ? (
+                                  <UpIcon color="success" />
                                 ) : (
-                                  <UnlockIcon color="action" /> 
+                                  <DownIcon color="warning" />
                                 )}
                               </IconButton>
                             </Tooltip>
 
+                            <Tooltip title={user.isLocked ? "Mở khóa" : "Khóa"}>
+                              <IconButton
+                                size="small"
+                                className="lock-btn" // 7. Thêm class cho nút
+                                onClick={() => handleToggleBan(user._id)}
+                              >
+                                {user.isLocked ? <LockIcon color="error" /> : <UnlockIcon color="action" />}
+                              </IconButton>
+                            </Tooltip>
                           </div>
                         )}
                       </div>

@@ -15,9 +15,23 @@ import "./HNavBar.css";
 export default function HNavbar({ onToggleVNavBar }) { 
   const navigate = useNavigate();
   const username = localStorage.getItem("username") || "User";
-  const role = localStorage.getItem("role");
+  const role = localStorage.getItem("role")?.toLowerCase(); // Lấy role và chuyển về chữ thường
+  const avatar = localStorage.getItem("avatar"); 
+
   const [anchorEl, setAnchorEl] = useState(null);
   const isMenuOpen = Boolean(anchorEl);
+
+  // === LOGIC XÁC ĐỊNH MÀU NỀN THEO ROLE ===
+  const getRoleColor = () => {
+    switch (role) {
+      case "admin":
+        return "#d32f2f"; // Đỏ cho Admin
+      case "manager":
+        return "#49BBBD"; // Teal cho Manager
+      default:
+        return "#9e9e9e"; // Xám cho người dùng/tình nguyện viên bình thường
+    }
+  };
 
   const handleProfileMenuOpen = (event) => setAnchorEl(event.currentTarget);
   const handleProfileMenuClose = () => setAnchorEl(null);
@@ -98,8 +112,15 @@ export default function HNavbar({ onToggleVNavBar }) {
             size="small"
             className="hnavbar-avatar-btn"
           >
-            <Avatar className="hnavbar-avatar">
-              {username.charAt(0).toUpperCase()}
+            <Avatar
+              className="hnavbar-avatar"
+              src={avatar ? `http://localhost:5000${avatar}` : undefined}
+              sx={{ 
+                // SỬA TẠI ĐÂY: Nếu có avatar thì transparent, không có thì lấy màu theo role
+                bgcolor: avatar ? 'transparent' : getRoleColor() 
+              }}
+            >
+              {!avatar && username.charAt(0).toUpperCase()}
             </Avatar>
           </IconButton>
         </Stack>
