@@ -73,7 +73,8 @@ export default function UserList() {
   return (
     <Container maxWidth="md" className="user-list-container">
       <Divider sx={{ mb: 3 }} />
-      <Typography variant="h4" align="center" mb={2}>
+      {/* 1. Thêm class user-list-title */}
+      <Typography variant="h4" className="user-list-title">
         Danh sách người dùng
       </Typography>
 
@@ -83,11 +84,12 @@ export default function UserList() {
         <TableContainer component={Paper}>
           <Table>
             <TableHead>
-              <TableRow>
+              {/* 2. Thêm class table-header */}
+              <TableRow className="table-header">
                 <TableCell sx={{ width: "10%" }}>Avatar</TableCell>
                 <TableCell sx={{ width: "25%" }}>Username</TableCell>
                 <TableCell sx={{ width: "35%" }}>Email</TableCell>
-                <TableCell sx={{ width: "30%" }}>Vai trò</TableCell>
+                <TableCell sx={{ width: "30%", paddingLeft: '54px'  }}>Vai trò</TableCell>
               </TableRow>
             </TableHead>
 
@@ -98,7 +100,6 @@ export default function UserList() {
 
                 return (
                   <TableRow key={user._id} hover>
-                    {/* AVATAR */}
                     <TableCell>
                       <Avatar
                         src={user.avatar ? `http://localhost:5000${user.avatar}` : ""}
@@ -112,33 +113,44 @@ export default function UserList() {
                     <TableCell>{user.email}</TableCell>
 
                     <TableCell>
-                      <Chip label={roleLabel(user.role)} />
+                      {/* 3. Thêm wrapper role-cell-wrapper để căn chỉnh flex */}
+                      <div className="role-cell-wrapper">
+                        
+                        {/* 4. Thêm class role-chip và class màu động theo role */}
+                        <Chip 
+                          label={roleLabel(user.role)} 
+                          className={`role-chip role-chip-${user.role}`}
+                        />
 
-                      {!isAdmin && !isSelf && (
-                        <>
-                          <Tooltip title="Đổi vai trò">
-                            <IconButton
-                              size="small"
-                              onClick={() => handleRoleChange(user._id, user.role)}
-                            >
-                              {user.role === "volunteer" ? (
-                                <UpIcon color="success" />
-                              ) : (
-                                <DownIcon color="warning" />
-                              )}
-                            </IconButton>
-                          </Tooltip>
+                        {!isAdmin && !isSelf && (
+                          // 5. Thêm wrapper action-icons cho các nút
+                          <div className="action-icons">
+                            <Tooltip title="Đổi vai trò">
+                              <IconButton
+                                size="small"
+                                className="arrow-btn" // 6. Thêm class cho nút
+                                onClick={() => handleRoleChange(user._id, user.role)}
+                              >
+                                {user.role === "volunteer" ? (
+                                  <UpIcon color="success" />
+                                ) : (
+                                  <DownIcon color="warning" />
+                                )}
+                              </IconButton>
+                            </Tooltip>
 
-                          <Tooltip title={user.isLocked ? "Mở khóa" : "Khóa"}>
-                            <IconButton
-                              size="small"
-                              onClick={() => handleToggleBan(user._id)}
-                            >
-                              {user.isLocked ? <LockIcon /> : <UnlockIcon />}
-                            </IconButton>
-                          </Tooltip>
-                        </>
-                      )}
+                            <Tooltip title={user.isLocked ? "Mở khóa" : "Khóa"}>
+                              <IconButton
+                                size="small"
+                                className="lock-btn" // 7. Thêm class cho nút
+                                onClick={() => handleToggleBan(user._id)}
+                              >
+                                {user.isLocked ? <LockIcon color="error" /> : <UnlockIcon color="action" />}
+                              </IconButton>
+                            </Tooltip>
+                          </div>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 );

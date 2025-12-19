@@ -18,9 +18,14 @@ import { uploadAvatar } from "../../api/Users";
 import { Button } from "@mui/material";
 
 export default function Profile() {
-  const [profile, setProfile] = useState(null);
-  const [error, setError] = useState("");
-  const [uploading, setUploading] = useState(false);
+	const roleLabel = {
+		manager: "Quản lý",
+		admin: "Admin",
+		volunteer: "Thành viên",
+	};
+	const [profile, setProfile] = useState(null);
+	const [error, setError] = useState("");
+	const [uploading, setUploading] = useState(false);
 	const [confirmOpen, setConfirmOpen] = useState(false);
 	const [pendingFile, setPendingFile] = useState(null);
 	const [snackbar, setSnackbar] = useState({
@@ -69,8 +74,8 @@ export default function Profile() {
 
   useEffect(() => {
     getProfile()
-      .then(setProfile)
-      .catch((err) => setError(err.message));
+		.then(setProfile)
+		.catch((err) => setError(err.message));
   }, []);
 
   if (error) {
@@ -91,11 +96,11 @@ export default function Profile() {
 
   return (
     <Container maxWidth="sm" sx={{ mt: 6 }}>
-      <Paper elevation={3} sx={{ p: 4 }}>
+      <Paper elevation={3} sx={{ p: 4, mt: 12 }}>
         <Typography variant="h5" fontWeight="bold" mb={3}>
           Thông tin cá nhân
         </Typography>
-				<Stack spacing={2} alignItems="center">
+				<Stack spacing={2} alignItems="center"  sx={{ mb: 4 }}>
 					<Avatar
 						src={profile.avatar ? `http://localhost:5000${profile.avatar}` : ""}
 						sx={{ width: 100, height: 100 }}
@@ -133,9 +138,9 @@ export default function Profile() {
             </Typography>
           )}
 
-          <Typography>
-            <b>Vai trò:</b> {profile.role}
-          </Typography>
+			<Typography>
+				<b>Vai trò:</b> {roleLabel[profile.role] || profile.role}
+			</Typography>
         </Stack>
       </Paper>
 			<Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>

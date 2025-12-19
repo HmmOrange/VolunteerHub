@@ -93,7 +93,7 @@ export const getEventBySlug = async (req, res) => {
     const { userId } = req.query;
 
     const event = await Event.findOne({ slug })
-      .populate("createdBy", "username email avatar")
+      .populate("createdBy", "username email avatar role")
       .populate("volunteers", "username email role avatar");
 
     if (!event)
@@ -138,7 +138,7 @@ export const getEventBySlug = async (req, res) => {
         const pendingRequestsList = await JoinRequest.find({
           event: event._id,
           status: "pending",
-        }).populate("user", "username email avatar");
+        }).populate("user", "username email avatar role");
 
         result.requests = pendingRequestsList;
       }
@@ -347,7 +347,7 @@ export const getPendingRequests = async (req, res) => {
     const requests = await JoinRequest.find({
       event: event._id,
       status: "pending",
-    }).populate("user", "username email avatar");
+    }).populate("user", "username email avatar role");
 
     res.status(200).json(requests);
   } catch (err) {

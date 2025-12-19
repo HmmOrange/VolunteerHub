@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"; 
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Box,
@@ -19,8 +19,8 @@ import { getAllEvents, deleteEvent, updateEvent } from "../../api/Events";
 export default function Events() {
   const navigate = useNavigate();
   const username = localStorage.getItem("username");
-  const role = localStorage.getItem("role");
   const userId = localStorage.getItem("userId");
+  // const role = localStorage.getItem("role"); // Không cần dùng role ở đây nữa
 
   const [events, setEvents] = useState([]);
   const [joinedEvents, setJoinedEvents] = useState([]);
@@ -161,143 +161,147 @@ export default function Events() {
         </Typography>
       ) : (
         <Grid container spacing={3}>
-          {events.map((event) => (
-            <Grid item xs={12} sm={6} md={4} key={event._id}>
-              <Card
-                className="event-card-clickable"
-                onClick={() => {
-                  if (editing !== event.slug) {
-                    navigate(`/event/${event.slug}`);
-                  }
-                }}
-              >
-                <CardContent>
-                  {editing === event.slug ? (
-                    <Box component="form" onSubmit={handleUpdate}>
-                      <Stack spacing={2}>
-                        <TextField
-                          label="Tên sự kiện"
-                          value={form.name}
-                          onChange={(e) =>
-                            setForm({ ...form, name: e.target.value })
-                          }
-                          required
-                        />
+          {events.map((event) => {
+            // Logic: Chỉ Creator mới được phép thấy nút Sửa/Xóa
+            const isCreator = event.createdBy?.username === username;
 
-                        <TextField
-                          label="Ngày"
-                          type="date"
-                          value={form.date}
-                          onChange={(e) =>
-                            setForm({ ...form, date: e.target.value })
-                          }
-                          InputLabelProps={{ shrink: true }}
-                          required
-                        />
+            return (
+              <Grid item xs={12} sm={6} md={4} key={event._id} sx={{ mb: 4}}>
+                <Card
+                  className="event-card-clickable"
+                  onClick={() => {
+                    // Nếu là creator đang edit thì không navigate
+                    if (editing !== event.slug) {
+                      navigate(`/event/${event.slug}`);
+                    }
+                  }}
+                >
+                  <CardContent>
+                    {editing === event.slug ? (
+                      /* FORM CHỈNH SỬA */
+                      <Box component="form" onSubmit={handleUpdate}>
+                        <Stack spacing={2}>
+                          <TextField
+                            label="Tên sự kiện"
+                            value={form.name}
+                            onChange={(e) =>
+                              setForm({ ...form, name: e.target.value })
+                            }
+                            required
+                          />
 
-                        <TextField
-                          label="Giờ bắt đầu"
-                          type="time"
-                          value={form.startTime}
-                          onChange={(e) =>
-                            setForm({ ...form, startTime: e.target.value })
-                          }
-                          InputLabelProps={{ shrink: true }}
-                          required
-                        />
+                          <TextField
+                            label="Ngày"
+                            type="date"
+                            value={form.date}
+                            onChange={(e) =>
+                              setForm({ ...form, date: e.target.value })
+                            }
+                            InputLabelProps={{ shrink: true }}
+                            required
+                          />
 
-                        <TextField
-                          label="Giờ kết thúc"
-                          type="time"
-                          value={form.endTime}
-                          onChange={(e) =>
-                            setForm({ ...form, endTime: e.target.value })
-                          }
-                          InputLabelProps={{ shrink: true }}
-                        />
+                          <TextField
+                            label="Giờ bắt đầu"
+                            type="time"
+                            value={form.startTime}
+                            onChange={(e) =>
+                              setForm({ ...form, startTime: e.target.value })
+                            }
+                            InputLabelProps={{ shrink: true }}
+                            required
+                          />
 
-                        <TextField
-                          label="Địa điểm"
-                          value={form.location}
-                          onChange={(e) =>
-                            setForm({ ...form, location: e.target.value })
-                          }
-                        />
+                          <TextField
+                            label="Giờ kết thúc"
+                            type="time"
+                            value={form.endTime}
+                            onChange={(e) =>
+                              setForm({ ...form, endTime: e.target.value })
+                            }
+                            InputLabelProps={{ shrink: true }}
+                          />
 
-                        <TextField
-                          label="Mô tả"
-                          value={form.description}
-                          onChange={(e) =>
-                            setForm({ ...form, description: e.target.value })
-                          }
-                          multiline
-                          rows={3}
-                        />
+                          <TextField
+                            label="Địa điểm"
+                            value={form.location}
+                            onChange={(e) =>
+                              setForm({ ...form, location: e.target.value })
+                            }
+                          />
 
-                        <Button type="submit" variant="contained">
-                          Lưu
-                        </Button>
-                        <Button onClick={handleCancelEdit}>Hủy</Button>
-                      </Stack>
-                    </Box>
-                  ) : (
-                    <>
-                      <Typography variant="h6">{event.name}</Typography>
+                          <TextField
+                            label="Mô tả"
+                            value={form.description}
+                            onChange={(e) =>
+                              setForm({ ...form, description: e.target.value })
+                            }
+                            multiline
+                            rows={3}
+                          />
 
-                      <Typography variant="body2" color="text.secondary" mb={1}>
-                        {event.description}
-                      </Typography>
-
-                      <Typography variant="body2">
-                        <b>Địa điểm:</b> {event.location || "Chưa xác định"}
-                      </Typography>
-
-                      <Typography variant="body2">
-                        <b>Ngày:</b>{" "}
-                        {new Date(event.date).toLocaleDateString()}
-                      </Typography>
-
-                      <Typography variant="body2">
-                        <b>Thời gian:</b>{" "}
-                        {renderTime(event.startTime, event.endTime)}
-                      </Typography>
-
-                      <Typography variant="caption" display="block" mt={1}>
-                        Người tạo: {event.createdBy?.username || "Không rõ"}
-                      </Typography>
-
-                      <Typography variant="caption" display="block">
-                        Đã duyệt: {event.approved ? "✅" : "❌"}
-                      </Typography>
-                    </>
-                  )}
-                </CardContent>
-
-                {(role === "manager" ||
-                  event.createdBy?.username === username) && (
-                  <CardActions>
-                    {editing !== event.slug && (
+                          <Button type="submit" variant="contained">
+                            Lưu
+                          </Button>
+                          <Button onClick={handleCancelEdit}>Hủy</Button>
+                        </Stack>
+                      </Box>
+                    ) : (
+                      /* THÔNG TIN HIỂN THỊ */
                       <>
-                        <Button
-                          variant="outlined"
-                          onClick={(e) => handleEdit(e, event)}
-                        >
-                          Chỉnh sửa
-                        </Button>
-                        <Button
-                          variant="contained"
-                          color="error"
-                          onClick={(e) => handleDelete(e, event.slug)}
-                        >
-                          Xóa
-                        </Button>
+                        <Typography variant="h6">{event.name}</Typography>
+
+                        <Typography variant="body2" color="text.secondary" mb={1}>
+                          {event.description}
+                        </Typography>
+
+                        <Typography variant="body2">
+                          <b>Địa điểm:</b> {event.location || "Chưa xác định"}
+                        </Typography>
+
+                        <Typography variant="body2">
+                          <b>Ngày:</b>{" "}
+                          {new Date(event.date).toLocaleDateString()}
+                        </Typography>
+
+                        <Typography variant="body2">
+                          <b>Thời gian:</b>{" "}
+                          {renderTime(event.startTime, event.endTime)}
+                        </Typography>
+
+                        <Typography variant="caption" display="block" mt={1}>
+                          Người tạo: {event.createdBy?.username || "Không rõ"}
+                        </Typography>
+
+                        <Typography variant="caption" display="block">
+                          Đã duyệt: {event.approved ? "✅" : "❌"}
+                        </Typography>
                       </>
                     )}
-                  </CardActions>
-                )}
-              </Card>
-            </Grid>
-          ))}
+                  </CardContent>
+
+                  {/* CHỈ CREATOR MỚI THẤY CARD ACTIONS (SỬA/XÓA) */}
+                  {isCreator && editing !== event.slug && (
+                    <CardActions>
+                      <Button
+                        variant="outlined"
+                        onClick={(e) => handleEdit(e, event)}
+                      >
+                        Chỉnh sửa
+                      </Button>
+                      <Button
+                        variant="contained"
+                        color="error"
+                        onClick={(e) => handleDelete(e, event.slug)}
+                      >
+                        Xóa
+                      </Button>
+                    </CardActions>
+                  )}
+                </Card>
+              </Grid>
+            );
+          })}
         </Grid>
       )}
     </Container>
