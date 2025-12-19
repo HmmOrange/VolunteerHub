@@ -7,8 +7,10 @@ export const getCommentsByPost = async (req, res) => {
   try {
     const { postId } = req.params;
     const comments = await Comment.find({ postId: postId })
-      .populate("createdBy", "username") // Lấy 'username'
-      .sort({ createdAt: "asc" }); // Sắp xếp cũ nhất lên đầu
+      // --- SỬA Ở ĐÂY ---
+      // Thêm 'avatar' và 'role' để frontend hiển thị ảnh và màu nền đúng
+      .populate("createdBy", "username avatar role") 
+      .sort({ createdAt: "asc" }); 
 
     res.status(200).json(comments);
   } catch (err) {
@@ -32,8 +34,9 @@ export const createComment = async (req, res) => {
 
     await newComment.save();
     
-    // Populate createdBy để gửi về client ngay
-    const populatedComment = await newComment.populate("createdBy", "username");
+    // --- SỬA Ở ĐÂY ---
+    // Populate đầy đủ thông tin để trả về ngay cho frontend update UI
+    const populatedComment = await newComment.populate("createdBy", "username avatar role");
 
     res.status(201).json(populatedComment);
   } catch (err) {

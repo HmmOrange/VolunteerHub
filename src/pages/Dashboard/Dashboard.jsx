@@ -10,6 +10,7 @@ import {
   Stack,
   Grid,
   Paper,
+  Box,
 } from "@mui/material";
 
 import "./Dashboard.css";
@@ -48,43 +49,37 @@ export default function Dashboard() {
       // ===== UPCOMING (DATE + TIME) =====
       const upcoming = joinedEvents.filter((event) => {
         if (!event.date) return false;
-
         const eventDate = new Date(event.date);
 
-        // Future date
         if (eventDate > today) return true;
 
-        // Same day → compare time
         if (eventDate.getTime() === today.getTime()) {
           if (!event.startTime) return true;
-
           const [h, m] = event.startTime.split(":").map(Number);
           const eventTime = new Date(today);
           eventTime.setHours(h, m, 0, 0);
-
           return eventTime >= now;
         }
-
         return false;
       });
 
-      // Sort by date then startTime
       upcoming.sort((a, b) => {
         const d1 = new Date(a.date);
         const d2 = new Date(b.date);
-
-        if (d1.getTime() !== d2.getTime()) {
-          return d1 - d2;
-        }
-
+        if (d1.getTime() !== d2.getTime()) return d1 - d2;
         return (a.startTime || "").localeCompare(b.startTime || "");
       });
 
       setUpcomingJoinedEvents(upcoming);
 
       // ===== POSTS FEED (JOINED EVENTS) =====
+      // SỬA ĐỔI: Kèm theo tên sự kiện (eventName) vào bài viết
       const postsArrays = await Promise.all(
-        joinedEvents.map((event) => getPostsByEvent(event._id))
+        joinedEvents.map(async (event) => {
+          const posts = await getPostsByEvent(event._id);
+          // Map thêm tên sự kiện vào từng post
+          return posts.map(p => ({ ...p, eventName: event.name }));
+        })
       );
 
       const sortedPosts = postsArrays
@@ -100,7 +95,6 @@ export default function Dashboard() {
     return end ? `${start} – ${end}` : start;
   };
 
-  // ===== PostCard callbacks =====
   const handlePostDeleted = (postId) => {
     setFeedPosts((prev) => prev.filter((p) => p._id !== postId));
   };
@@ -117,7 +111,7 @@ export default function Dashboard() {
         Xin chào, {username || "Người dùng"}!
       </Typography>
 
-      {/* ================= UPCOMING JOINED EVENTS ================= */}
+      {/* ... (Phần Upcoming Events giữ nguyên) ... */}
       <Paper elevation={2} sx={{ p: 3, mb: 4, mt: 3}}>
         <Typography variant="h6" fontWeight="bold" mb={2}>
           Sự kiện sắp diễn ra bạn đã tham gia
@@ -137,23 +131,17 @@ export default function Dashboard() {
                 >
                   <CardContent>
                     <Typography variant="h6">{event.name}</Typography>
-
                     <Typography variant="body2" color="text.secondary" mb={1}>
                       {event.description}
                     </Typography>
-
                     <Typography variant="body2">
                       <b>Địa điểm:</b> {event.location || "Chưa xác định"}
                     </Typography>
-
                     <Typography variant="body2">
-                      <b>Ngày:</b>{" "}
-                      {new Date(event.date).toLocaleDateString()}
+                      <b>Ngày:</b> {new Date(event.date).toLocaleDateString()}
                     </Typography>
-
                     <Typography variant="body2">
-                      <b>Thời gian:</b>{" "}
-                      {renderTime(event.startTime, event.endTime)}
+                      <b>Thời gian:</b> {renderTime(event.startTime, event.endTime)}
                     </Typography>
                   </CardContent>
                 </Card>
@@ -165,23 +153,25 @@ export default function Dashboard() {
 
       {/* ================= EVENT POSTS FEED ================= */}
       <Paper elevation={2} sx={{ p: 3, mb: 4 }}>
+        {/* SỬA ĐỔI: Bỏ textAlign="center" để về mặc định (trái) */}
         <Typography variant="h6" fontWeight="bold" mb={2}>
           Bài viết từ các sự kiện bạn đã tham gia
         </Typography>
 
         {feedPosts.length === 0 ? (
-          <Typography color="text.secondary">
+          <Typography color="text.secondary" textAlign="center">
             Chưa có bài viết nào
           </Typography>
         ) : (
-          <Stack spacing={2}>
+          <Stack spacing={2} alignItems="center">
             {feedPosts.map((post) => (
-              <PostCard
-                key={post._id}
-                post={post}
-                onPostDeleted={handlePostDeleted}
-                onPostUpdated={handlePostUpdated}
-              />
+              <Box key={post._id} sx={{ width: "100%", maxWidth: "700px" }}>
+                <PostCard
+                  post={post}
+                  onPostDeleted={handlePostDeleted}
+                  onPostUpdated={handlePostUpdated}
+                />
+              </Box>
             ))}
           </Stack>
         )}

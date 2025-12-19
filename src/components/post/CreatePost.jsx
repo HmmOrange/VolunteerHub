@@ -20,25 +20,80 @@ import {
 } from "@mui/icons-material";
 import "./Post.css"; 
 
-// 1. Import cả 2 API
 import { createPost, uploadImage } from "../../api/Posts"; 
 
 export default function CreatePost({ eventId, onPostCreated }) {
   const navigate = useNavigate();
+  
+  // === 1. LẤY THÔNG TIN TỪ LOCALSTORAGE ===
   const username = localStorage.getItem("username") || "Người dùng";
-  
+  const avatar = localStorage.getItem("avatar"); 
+  const role = localStorage.getItem("role"); // Lấy thêm role để tô màu
+  // ==========================================
+    
   const [isExpanded, setIsExpanded] = useState(false); 
-  
   const [postContent, setPostContent] = useState("");
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  
-  // State: imageFile (File thật), imagePreview (link blob:)
+    
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
-  
+    
   const [triggerUpload, setTriggerUpload] = useState(false); 
   const fileInputRef = useRef(null);
+
+  // === 2. CÁC HÀM XỬ LÝ HIỂN THỊ AVATAR ===
+  
+  // A. Xử lý URL ảnh
+  const getAvatarUrl = () => {
+    if (!avatar) return undefined;
+    if (avatar.startsWith("http")) return avatar;
+    const path = avatar.startsWith("/") ? avatar : `/${avatar}`;
+    return `http://localhost:5000${path}`;
+  };
+
+  // B. Lấy màu theo Role
+  const getAvatarColor = (userRole) => {
+    switch (userRole) {
+      case 'manager':
+        return '#49BBBD'; // Xanh Manager
+      case 'admin':
+        return '#d32f2f'; // Đỏ Admin
+      case 'volunteer':
+        return '#9e9e9e'; // Xám Tình nguyện viên
+      default:
+        return '#9c27b0'; // Tím User/Creator
+    }
+  };
+
+  // C. Logic hiển thị (Ẩn danh vs Có ảnh vs Chỉ có tên)
+  const renderAvatarProps = () => {
+    // 1. Nếu đang bật chế độ ẩn danh -> Dấu ? + Màu Volunteer
+    if (isAnonymous) {
+      return {
+        src: undefined,
+        children: '?',
+        sx: { bgcolor: '#9e9e9e', cursor: 'default' } 
+      };
+    }
+
+    // 2. Nếu User thật có ảnh -> Hiện ảnh + Nền trong suốt
+    if (avatar) {
+      return {
+        src: getAvatarUrl(),
+        children: null,
+        sx: { bgcolor: 'transparent', cursor: 'pointer' }
+      };
+    }
+
+    // 3. Nếu User thật không có ảnh -> Chữ cái đầu + Màu theo Role
+    return {
+      src: undefined,
+      children: username.charAt(0).toUpperCase(),
+      sx: { bgcolor: getAvatarColor(role), cursor: 'pointer' }
+    };
+  };
+  // ==========================================
 
   useEffect(() => {
     if (isExpanded && triggerUpload) {
@@ -60,8 +115,8 @@ export default function CreatePost({ eventId, onPostCreated }) {
   const handleCancel = () => {
     setIsExpanded(false);
     setPostContent("");
-    setImageFile(null); // Xóa file
-    setImagePreview(null); // Xóa link xem trước
+    setImageFile(null); 
+    setImagePreview(null); 
     setIsAnonymous(false);
   };
 
@@ -74,18 +129,16 @@ export default function CreatePost({ eventId, onPostCreated }) {
     }
     
     setIsLoading(true);
-    let finalImageUrl = null; // URL ảnh sẽ lưu vào CSDL
+    let finalImageUrl = null; 
 
     try {
       // 1. Kiểm tra xem có file ảnh không
       if (imageFile) {
         // 2. Nếu có, tạo FormData
         const formData = new FormData();
-        formData.append('image', imageFile); // 'image' phải khớp với tên ở route
-
-        // 3. Gọi API upload
+        formData.append('image', imageFile); 
         const uploadRes = await uploadImage(formData);
-        finalImageUrl = uploadRes.imageUrl; // Lấy URL thật
+        finalImageUrl = uploadRes.imageUrl; 
       }
 
       // 4. Gọi API createPost với URL thật (hoặc null)
@@ -94,11 +147,11 @@ export default function CreatePost({ eventId, onPostCreated }) {
         isAnonymous,
         eventId,
         username,
-        imageUrl: finalImageUrl, // Gửi URL thật về CSDL
+        imageUrl: finalImageUrl, 
       });
 
-      onPostCreated(newPost); // Gửi post lên EventGroup
-      handleCancel(); // Reset form
+      onPostCreated(newPost); 
+      handleCancel(); 
 
     } catch (error) {
       console.error("Không thể tạo bài đăng:", error);
@@ -107,19 +160,21 @@ export default function CreatePost({ eventId, onPostCreated }) {
     
     setIsLoading(false);
   };
-  
-  // === RENDER TRẠNG THÁI ĐƠN GIẢN ===
+    
+  // === RENDER TRẠNG THÁI ĐƠN GIẢN (COLLAPSED) ===
   if (!isExpanded) {
+    // Ở trạng thái này, isAnonymous luôn false (mặc định), nên hiện avatar thật
+    const avatarProps = renderAvatarProps(); 
+
     return (
       <Paper className="create-post-trigger-paper" elevation={0} variant="outlined">
         <Box sx={{ display: 'flex', alignItems: 'center', p: 1.5 }}>
-          <Avatar 
-            sx={{ bgcolor: '#49BBBD', cursor: 'pointer' }} 
-            onClick={() => navigate('/profile')} 
-          >
-            {username.charAt(0).toUpperCase()}
-          </Avatar>
           
+          <Avatar 
+            {...avatarProps}
+            onClick={() => navigate('/profile')} 
+          />
+           
           <Button
             fullWidth
             variant="outlined"
@@ -138,18 +193,12 @@ export default function CreatePost({ eventId, onPostCreated }) {
           >
             <ImageIcon />
           </IconButton>
-          <IconButton color="primary" disabled>
-            <TagIcon />
-          </IconButton>
-          <IconButton color="error" disabled>
-            <LocationIcon />
-          </IconButton>
         </Box>
       </Paper>
     );
   }
 
-  // === RENDER TRẠNG THÁI ĐẦY ĐỦ (FORM) ===
+  // === RENDER TRẠNG THÁI ĐẦY ĐỦ (FORM EXPANDED) ===
   return (
     <Paper className="create-post-paper" elevation={0} variant="outlined">
       {/* Header */}
@@ -160,30 +209,33 @@ export default function CreatePost({ eventId, onPostCreated }) {
         </IconButton>
       </Box>
       <Divider />
-      
+        
       {/* Thông tin người dùng */}
       <Box className="create-post-user-info">
-        <Avatar sx={{ bgcolor: '#49BBBD' }}> 
-          {username.charAt(0).toUpperCase()}
-        </Avatar>
+        
+        {/* Avatar thay đổi realtime khi toggle Switch Ẩn danh */}
+        <Avatar {...renderAvatarProps()} />
+
         <Box ml={1.5}>
           <Typography fontWeight="bold">
             {isAnonymous ? "Bạn đang đăng ẩn danh" : username}
           </Typography>
+          {!isAnonymous && (
+             // Có thể hiển thị Role ở đây nếu muốn
+             <Typography variant="caption" color="text.secondary" sx={{textTransform: 'capitalize'}}>
+                {role === 'manager' ? 'Quản lý' : role === 'admin' ? 'Admin' : role === 'volunteer' ? 'Tình nguyện viên' : 'Thành viên'}
+             </Typography>
+          )}
         </Box>
       </Box>
 
-      {/* === SỬA TẠI ĐÂY === */}
       {/* Ô nhập nội dung */}
       <TextField
         variant="standard"
         fullWidth
-        multiline // Giữ lại: cho phép nhiều dòng
-        // Xóa: rows={4} (vì đây là cố định)
-        maxRows={10} // Thêm: Giới hạn chiều cao (ví dụ 10 dòng)
-                     // TextField sẽ tự động giãn nở đến 10 dòng
-                     // sau đó mới hiện thanh cuộn
-        placeholder="Bạn đang nghĩ gì?"
+        multiline 
+        maxRows={10} 
+        placeholder={isAnonymous ? "Chia sẻ ẩn danh..." : "Bạn đang nghĩ gì?"}
         InputProps={{ disableUnderline: true }}
         className="create-post-textfield"
         value={postContent}
@@ -193,7 +245,7 @@ export default function CreatePost({ eventId, onPostCreated }) {
       {/* ================= */}
 
 
-      {/* Hiển thị ảnh xem trước (dùng link blob:) */}
+      {/* Hiển thị ảnh xem trước */}
       {imagePreview && (
         <Box sx={{ my: 2, position: 'relative' }}>
           <img src={imagePreview} alt="Xem trước" style={{ width: '100%', borderRadius: '8px' }} />
@@ -220,13 +272,11 @@ export default function CreatePost({ eventId, onPostCreated }) {
 
       {/* Thanh công cụ */}
       <Box className="create-post-toolbar">
-        <Typography variant="body2" fontWeight="bold">Thêm vào bài viết</Typography>
+        <Typography variant="body2" fontWeight="bold">Thêm ảnh vào bài viết</Typography>
         <Box>
           <IconButton color="success" onClick={() => fileInputRef.current.click()}>
             <ImageIcon />
           </IconButton>
-          <IconButton color="primary" disabled><TagIcon /></IconButton>
-          <IconButton color="error" disabled><LocationIcon /></IconButton>
         </Box>
       </Box>
 
