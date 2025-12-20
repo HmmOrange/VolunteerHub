@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom"; 
 import { getAllEvents } from "../../api/Events";
-import { getPostsByEvent } from "../../api/Posts";
+import { getPostsByEventsPaginated } from "../../api/Posts";
 import {
   Card,
   CardContent,
@@ -12,6 +12,7 @@ import {
   Paper,
   Box,
   IconButton,
+  CircularProgress,
 } from "@mui/material";
 import { ChevronLeft, ChevronRight } from "@mui/icons-material";
 
@@ -28,6 +29,14 @@ export default function Dashboard() {
   const [hotEvents, setHotEvents] = useState([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [upcomingScrollIndex, setUpcomingScrollIndex] = useState(0);
+  
+  // States cho infinite scroll
+  const [postsPage, setPostsPage] = useState(1);
+  const [hasMorePosts, setHasMorePosts] = useState(true);
+  const [loadingPosts, setLoadingPosts] = useState(false);
+  const [joinedEventIds, setJoinedEventIds] = useState([]);
+  
+  const observerTarget = useRef(null);
 
   // Helper function để render banner URL
   const getBannerUrl = (banner) => {
@@ -64,6 +73,35 @@ export default function Dashboard() {
     return 'completed';
   };
 
+  // Hàm load posts với pagination
+  const loadMorePosts = useCallback(async () => {
+    if (loadingPosts || !hasMorePosts || joinedEventIds.length === 0) return;
+    
+    setLoadingPosts(true);
+    try {
+      const response = await getPostsByEventsPaginated(joinedEventIds, postsPage, 5);
+      
+      // Map posts để thêm event info
+      const postsWithEventInfo = response.posts.map(p => ({
+        ...p,
+        event: p.eventId ? {
+          _id: p.eventId._id,
+          title: p.eventId.name,
+          name: p.eventId.name,
+          slug: p.eventId.slug
+        } : p.event
+      }));
+      
+      setFeedPosts(prev => [...prev, ...postsWithEventInfo]);
+      setHasMorePosts(response.hasMore);
+      setPostsPage(prev => prev + 1);
+    } catch (error) {
+      console.error("Error loading posts:", error);
+    } finally {
+      setLoadingPosts(false);
+    }
+  }, [loadingPosts, hasMorePosts, joinedEventIds, postsPage]);
+
   useEffect(() => {
     if (!userId) return;
 
@@ -88,6 +126,10 @@ export default function Dashboard() {
             : v._id?.toString() === userId
         )
       );
+
+      // Lưu event IDs để dùng cho pagination
+      const eventIds = joinedEvents.map(e => e._id);
+      setJoinedEventIds(eventIds);
 
       // ===== UPCOMING (DATE + TIME) =====
       const upcoming = joinedEvents.filter((event) => {
@@ -114,33 +156,6 @@ export default function Dashboard() {
       });
 
       setUpcomingJoinedEvents(upcoming);
-
-      // ===== POSTS FEED (JOINED EVENTS) =====
-      const postsArrays = await Promise.all(
-        joinedEvents.map(async (event) => {
-          const posts = await getPostsByEvent(event._id);
-          
-          // --- SỬA ĐOẠN NÀY ---
-          // Thay vì chỉ map eventName, hãy map cả object event 
-          // để PostCard có thể lấy được event._id (dùng khi click chuyển trang)
-          return posts.map(p => ({ 
-            ...p, 
-            event: {
-              _id: event._id,
-              title: event.name, // PostCard dùng .title hoặc .name đều được
-              name: event.name,
-              slug: event.slug   // Thêm slug nếu muốn navigate theo slug
-            } 
-          }));
-          // --------------------
-        })
-      );
-
-      const sortedPosts = postsArrays
-        .flat()
-        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-      setFeedPosts(sortedPosts);
 
       // ===== HOT EVENTS (SẮP DIỄN RA + ĐANG DIỄN RA, NHIỀU THÀNH VIÊN NHẤT) =====
       const hotEventCandidates = events.filter((event) => {
@@ -229,6 +244,35 @@ export default function Dashboard() {
       setHotEvents(topHotEvents);
     })();
   }, [userId]);
+
+  // Load posts ban đầu khi có joinedEventIds
+  useEffect(() => {
+    if (joinedEventIds.length > 0 && feedPosts.length === 0) {
+      loadMorePosts();
+    }
+  }, [joinedEventIds]);
+
+  // Intersection Observer cho infinite scroll
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMorePosts && !loadingPosts) {
+          loadMorePosts();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (observerTarget.current) {
+      observer.observe(observerTarget.current);
+    }
+
+    return () => {
+      if (observerTarget.current) {
+        observer.unobserve(observerTarget.current);
+      }
+    };
+  }, [loadMorePosts, hasMorePosts, loadingPosts]);
 
   const renderTime = (start, end) => {
     if (!start) return "Không rõ thời gian";
@@ -447,7 +491,7 @@ export default function Dashboard() {
               Bài viết từ các sự kiện bạn đã tham gia
             </Typography>
 
-            {feedPosts.length === 0 ? (
+            {feedPosts.length === 0 && !loadingPosts ? (
               <Typography color="text.secondary" textAlign="center">
                 Chưa có bài viết nào
               </Typography>
@@ -462,6 +506,23 @@ export default function Dashboard() {
                     />
                   </Box>
                 ))}
+                
+                {/* Observer target cho infinite scroll */}
+                <div ref={observerTarget} style={{ height: '20px', width: '100%' }} />
+                
+                {/* Loading indicator */}
+                {loadingPosts && (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+                    <CircularProgress />
+                  </Box>
+                )}
+                
+                {/* Hiển thị khi hết posts */}
+                {!hasMorePosts && feedPosts.length > 0 && (
+                  <Typography color="text.secondary" textAlign="center" py={2}>
+                    Đã hiển thị tất cả bài viết
+                  </Typography>
+                )}
               </Stack>
             )}
           </Paper>

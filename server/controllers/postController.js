@@ -233,3 +233,48 @@ export const getPostById = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+// 8. Lấy posts từ nhiều events với pagination
+export const getPostsByEvents = async (req, res) => {
+  try {
+    const { eventIds, page = 1, limit = 10 } = req.query;
+    
+    if (!eventIds) {
+      return res.status(400).json({ message: "Missing eventIds parameter" });
+    }
+
+    // Parse eventIds (có thể là string hoặc array)
+    const eventIdsArray = Array.isArray(eventIds) ? eventIds : eventIds.split(',');
+    
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    
+    // Đếm tổng số posts
+    const total = await Post.countDocuments({ eventId: { $in: eventIdsArray } });
+    
+    // Lấy posts với pagination
+    const posts = await Post.find({ eventId: { $in: eventIdsArray } })
+      .populate("createdBy", "username avatar role")
+      .populate("eventId", "name slug _id")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    // Thêm commentCount cho mỗi post
+    const postsWithCommentCount = await Promise.all(
+      posts.map(async (post) => {
+        const commentCount = await Comment.countDocuments({ postId: post._id });
+        return { ...post.toObject(), commentCount: commentCount };
+      })
+    );
+
+    res.status(200).json({
+      posts: postsWithCommentCount,
+      currentPage: parseInt(page),
+      totalPages: Math.ceil(total / parseInt(limit)),
+      total,
+      hasMore: skip + posts.length < total
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
