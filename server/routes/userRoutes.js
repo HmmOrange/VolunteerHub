@@ -8,6 +8,8 @@ import {
   getProfile,
   createManager,
   importUsers,
+  updateCredentials,
+  changePassword
 } from "../controllers/userController.js";
 
 import { uploadAvatar } from "../middleware/uploadAvatar.js";
@@ -63,5 +65,19 @@ router.put(
   uploadAvatar.single("avatar"),
   updateAvatar
 );
+// PUT /api/users/profile/credentials
+router.put(
+  "/profile/credentials",
+  protect,
+  updateCredentials
+);
+
+// PUT /api/users/profile/password
+router.put(
+  "/profile/password",
+  protect,
+  changePassword
+);
+
 
 export default router;

@@ -318,3 +318,75 @@ export const importUsers = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+/* ======================================================
+   UPDATE CREDENTIALS (USERNAME / EMAIL)
+====================================================== */
+export const updateCredentials = async (req, res) => {
+  try {
+    const { username, email, confirmPassword } = req.body;
+
+    if (!confirmPassword) {
+      return res.status(400).json({
+        message: "Vui lòng nhập mật khẩu để xác nhận",
+      });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const ok = await bcrypt.compare(confirmPassword, user.password);
+    if (!ok) {
+      return res.status(401).json({ message: "Mật khẩu xác nhận không đúng" });
+    }
+
+    if (username) user.username = username;
+    if (email) user.email = email;
+
+    await user.save();
+
+    res.json({
+      message: "Cập nhật thông tin đăng nhập thành công",
+      user: {
+        username: user.username,
+        email: user.email,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+/* ======================================================
+   CHANGE PASSWORD
+====================================================== */
+export const changePassword = async (req, res) => {
+  try {
+    const { oldPassword, newPassword } = req.body;
+
+    if (!oldPassword || !newPassword) {
+      return res.status(400).json({ message: "Thiếu mật khẩu" });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const ok = await bcrypt.compare(oldPassword, user.password);
+    if (!ok) {
+      return res.status(401).json({ message: "Mật khẩu cũ không đúng" });
+    }
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    await user.save();
+
+    res.json({ message: "Đổi mật khẩu thành công" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+

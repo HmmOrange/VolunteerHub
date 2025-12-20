@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Container,
   Paper,
@@ -18,6 +19,7 @@ import { uploadAvatar } from "../../api/Users";
 import { Button } from "@mui/material";
 
 export default function Profile() {
+	const navigate = useNavigate();
 	const roleLabel = {
 		manager: "Quản lý",
 		admin: "Admin",
@@ -142,6 +144,15 @@ export default function Profile() {
 				<b>Vai trò:</b> {roleLabel[profile.role] || profile.role}
 			</Typography>
         </Stack>
+		<Stack direction="row" justifyContent="flex-end" sx={{ mt: 3 }}>
+			<Button
+				variant="contained"
+				onClick={() => navigate("/profile/edit")}
+			>
+				Chỉnh sửa thông tin
+			</Button>
+		</Stack>
+
       </Paper>
 			<Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
 				<DialogTitle>Xác nhận</DialogTitle>

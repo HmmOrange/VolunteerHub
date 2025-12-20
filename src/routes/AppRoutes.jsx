@@ -11,7 +11,7 @@ import UserList from "../pages/AdminUserList/AdminUserList";
 import Events from "../pages/Events/Events";
 import Profile from "../pages/Profile/Profile";
 import AdminEventList from "../pages/AdminEventList/AdminEventList";
-
+import UserSetting from "../pages/UserSetting/UserSetting";
 export default function AppRoutes() {
   return (
     <BrowserRouter>
@@ -25,6 +25,7 @@ export default function AppRoutes() {
           <Route path="/admin/users" element={<UserList />} />
           <Route path="/admin/events" element={<AdminEventList />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/profile/edit" element={<UserSetting />} />
         </Route>
 
         {/* Các trang KHÔNG có layout */}
