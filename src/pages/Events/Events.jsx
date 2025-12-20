@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Box,
@@ -12,6 +12,7 @@ import {
   Stack,
   Grid,
   Paper,
+  MenuItem,
 } from "@mui/material";
 
 import { getAllEvents, deleteEvent, updateEvent } from "../../api/Events";
@@ -29,12 +30,20 @@ export default function Events() {
   const [form, setForm] = useState({
     name: "",
     date: "",
-    endDate: "",            // ✅ ADDED
+    endDate: "",
     startTime: "",
     endTime: "",
     location: "",
     description: "",
   });
+
+  /* ================= FILTER & SORT (JOINED EVENTS ONLY) ================= */
+
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [timeFilter, setTimeFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("time-asc");
+
+  /* ================= FETCH ================= */
 
   useEffect(() => {
     (async () => {
@@ -57,18 +66,48 @@ export default function Events() {
     })();
   }, [userId]);
 
-  /* ================= DERIVED DATA ================= */
+  /* ================= DERIVED ================= */
 
-  const pendingManagerEvents =
-    role === "manager"
-      ? events.filter(
-          (event) =>
-            event.status === "pending" &&
-            event.createdBy?.username === username
-        )
-      : [];
+  const now = new Date();
 
-  const visibleEvents = events.filter((e) => e.status === "approved");
+  const filteredAndSortedJoinedEvents = useMemo(() => {
+    let list = [...joinedEvents];
+
+    /* STATUS FILTER (manager only, mostly redundant but kept) */
+    if (role === "manager" && statusFilter !== "all") {
+      list = list.filter((e) => e.status === statusFilter);
+    }
+
+    /* TIME FILTER */
+    if (timeFilter !== "all") {
+      list = list.filter((e) => {
+        const start = new Date(e.date);
+        const end = new Date(e.endDate);
+
+        if (timeFilter === "ongoing")
+          return start <= now && end >= now;
+        if (timeFilter === "upcoming")
+          return start > now;
+        if (timeFilter === "previous")
+          return end < now;
+
+        return true;
+      });
+    }
+
+    /* SORT */
+    list.sort((a, b) => {
+      if (sortBy === "name-asc")
+        return a.name.localeCompare(b.name);
+      if (sortBy === "name-desc")
+        return b.name.localeCompare(a.name);
+      if (sortBy === "time-desc")
+        return new Date(b.date) - new Date(a.date);
+      return new Date(a.date) - new Date(b.date);
+    });
+
+    return list;
+  }, [joinedEvents, role, statusFilter, timeFilter, sortBy]);
 
   /* ================= ACTIONS ================= */
 
@@ -87,7 +126,7 @@ export default function Events() {
     setForm({
       name: event.name,
       date: event.date.split("T")[0],
-      endDate: event.endDate.split("T")[0], // ✅ ADDED
+      endDate: event.endDate.split("T")[0],
       startTime: event.startTime || "",
       endTime: event.endTime || "",
       location: event.location || "",
@@ -115,6 +154,8 @@ export default function Events() {
     setEditing(null);
   };
 
+  /* ================= RENDER HELPERS ================= */
+
   const renderDateRange = (start, end) => {
     const s = new Date(start).toLocaleDateString();
     const e = new Date(end).toLocaleDateString();
@@ -126,132 +167,51 @@ export default function Events() {
   const renderEventCard = (event) => {
     const isCreator = event.createdBy?.username === username;
 
+    const statusMap = {
+      approved: "Đã duyệt",
+      pending: "Đang chờ duyệt",
+      rejected: "Bị từ chối",
+    };
+
     return (
       <Grid item xs={12} sm={6} md={4} key={event._id}>
         <Card
-          className="event-card-clickable"
+          sx={{ height: "100%" }}
           onClick={() =>
             editing !== event.slug && navigate(`/event/${event.slug}`)
           }
         >
           <CardContent>
-            {editing === event.slug ? (
-              <Box component="form" onSubmit={handleUpdate}>
-                <Stack spacing={2}>
-                  <TextField
-                    label="Tên sự kiện"
-                    value={form.name}
-                    onChange={(e) =>
-                      setForm({ ...form, name: e.target.value })
-                    }
-                    required
-                  />
+            <Typography variant="h6" fontWeight="bold">
+              {event.name}
+            </Typography>
 
-                  <TextField
-                    label="Ngày bắt đầu"
-                    type="date"
-                    value={form.date}
-                    onChange={(e) =>
-                      setForm({ ...form, date: e.target.value })
-                    }
-                    InputLabelProps={{ shrink: true }}
-                    required
-                  />
+            <Typography variant="caption" color="primary" display="block">
+              Trạng thái: {statusMap[event.status]}
+            </Typography>
 
-                  <TextField
-                    label="Ngày kết thúc"
-                    type="date"
-                    value={form.endDate}
-                    onChange={(e) =>
-                      setForm({ ...form, endDate: e.target.value })
-                    }
-                    InputLabelProps={{ shrink: true }}
-                    required
-                  />
+            <Typography variant="body2">
+              <b>Ngày:</b>{" "}
+              {renderDateRange(event.date, event.endDate)}
+            </Typography>
 
-                  <TextField
-                    label="Giờ bắt đầu"
-                    type="time"
-                    value={form.startTime}
-                    onChange={(e) =>
-                      setForm({ ...form, startTime: e.target.value })
-                    }
-                    InputLabelProps={{ shrink: true }}
-                    required
-                  />
+            <Typography variant="body2">
+              <b>Thời gian:</b>{" "}
+              {renderTime(event.startTime, event.endTime)}
+            </Typography>
 
-                  <TextField
-                    label="Giờ kết thúc"
-                    type="time"
-                    value={form.endTime}
-                    onChange={(e) =>
-                      setForm({ ...form, endTime: e.target.value })
-                    }
-                    InputLabelProps={{ shrink: true }}
-                    required
-                  />
-
-                  <TextField
-                    label="Địa điểm"
-                    value={form.location}
-                    onChange={(e) =>
-                      setForm({ ...form, location: e.target.value })
-                    }
-                  />
-
-                  <TextField
-                    label="Mô tả"
-                    value={form.description}
-                    onChange={(e) =>
-                      setForm({ ...form, description: e.target.value })
-                    }
-                    multiline
-                    rows={3}
-                  />
-
-                  <Button type="submit" variant="contained">
-                    Lưu
-                  </Button>
-                  <Button onClick={handleCancelEdit}>Hủy</Button>
-                </Stack>
-              </Box>
-            ) : (
-              <>
-                <Typography variant="h6">{event.name}</Typography>
-
-                <Typography variant="body2" color="text.secondary" mb={1}>
-                  {event.description}
-                </Typography>
-
-                <Typography variant="body2">
-                  <b>Địa điểm:</b> {event.location || "Chưa xác định"}
-                </Typography>
-
-                <Typography variant="body2">
-                  <b>Ngày:</b> {renderDateRange(event.date, event.endDate)}
-                </Typography>
-
-                <Typography variant="body2">
-                  <b>Thời gian:</b> {renderTime(event.startTime, event.endTime)}
-                </Typography>
-
-                <Typography variant="caption" display="block" mt={1}>
-                  Người tạo: {event.createdBy?.username || "Không rõ"}
-                </Typography>
-              </>
-            )}
+            <Typography variant="body2">
+              <b>Địa điểm:</b>{" "}
+              {event.location || "Chưa xác định"}
+            </Typography>
           </CardContent>
 
-          {isCreator && editing !== event.slug && (
+          {isCreator && (
             <CardActions>
-              <Button
-                variant="outlined"
-                onClick={(e) => handleEdit(e, event)}
-              >
+              <Button onClick={(e) => handleEdit(e, event)}>
                 Chỉnh sửa
               </Button>
               <Button
-                variant="contained"
                 color="error"
                 onClick={(e) => handleDelete(e, event.slug)}
               >
@@ -264,49 +224,62 @@ export default function Events() {
     );
   };
 
+  /* ================= UI ================= */
+
   return (
     <Container maxWidth="lg">
-      <Paper elevation={2} sx={{ p: 3, mb: 4, mt: 12 }}>
-        <Typography variant="h5" fontWeight="bold" mb={2}>
-          Sự kiện bạn đã tham gia
-        </Typography>
+      {/* FILTERS — JOINED EVENTS ONLY */}
+      <Paper sx={{ p: 3, mb: 4, mt: 12 }}>
+        <Stack direction="row" spacing={2} flexWrap="wrap">
+          <TextField
+            select
+            label="Thời gian"
+            value={timeFilter}
+            onChange={(e) => setTimeFilter(e.target.value)}
+          >
+            <MenuItem value="all">Tất cả</MenuItem>
+            <MenuItem value="ongoing">Đang diễn ra</MenuItem>
+            <MenuItem value="upcoming">Sắp tới</MenuItem>
+            <MenuItem value="previous">Đã kết thúc</MenuItem>
+          </TextField>
 
-        {joinedEvents.length === 0 ? (
-          <Typography color="text.secondary">
-            Bạn chưa tham gia sự kiện nào
-          </Typography>
-        ) : (
-          <Grid container spacing={2}>
-            {joinedEvents.map(renderEventCard)}
-          </Grid>
-        )}
+          <TextField
+            select
+            label="Sắp xếp"
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+          >
+            <MenuItem value="time-asc">Thời gian ↑</MenuItem>
+            <MenuItem value="time-desc">Thời gian ↓</MenuItem>
+            <MenuItem value="name-asc">Tên A → Z</MenuItem>
+            <MenuItem value="name-desc">Tên Z → A</MenuItem>
+          </TextField>
+        </Stack>
       </Paper>
 
-      {role === "manager" && pendingManagerEvents.length > 0 && (
-        <Paper elevation={2} sx={{ p: 3, mb: 4 }}>
-          <Typography variant="h5" fontWeight="bold" mb={2}>
-            Sự kiện đang chờ duyệt
-          </Typography>
-
-          <Grid container spacing={3}>
-            {pendingManagerEvents.map(renderEventCard)}
-          </Grid>
-        </Paper>
-      )}
-
+      {/* JOINED EVENTS */}
       <Typography variant="h5" fontWeight="bold" mb={3}>
-        Tất cả sự kiện
+        Sự kiện bạn đã tham gia
       </Typography>
 
-      {visibleEvents.length === 0 ? (
-        <Typography textAlign="center">
-          Chưa có sự kiện nào.
+      {filteredAndSortedJoinedEvents.length === 0 ? (
+        <Typography color="text.secondary">
+          Bạn chưa tham gia sự kiện nào
         </Typography>
       ) : (
         <Grid container spacing={3}>
-          {visibleEvents.map(renderEventCard)}
+          {filteredAndSortedJoinedEvents.map(renderEventCard)}
         </Grid>
       )}
+
+      {/* ALL EVENTS — DEBUG, NO FILTER */}
+      <Typography variant="h5" fontWeight="bold" mt={6} mb={3}>
+        Tất cả sự kiện (Debug)
+      </Typography>
+
+      <Grid container spacing={3}>
+        {events.map(renderEventCard)}
+      </Grid>
     </Container>
   );
 }
