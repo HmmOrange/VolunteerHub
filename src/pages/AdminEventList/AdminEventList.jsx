@@ -13,9 +13,48 @@ import {
   Chip,
   Stack,
   CircularProgress,
+  MenuItem,
+  Select,
+  FormControl,
 } from "@mui/material";
 
 const API_BASE = "http://localhost:5000/api/events";
+
+/* ================= EXPORT HELPERS ================= */
+
+const downloadFile = (content, filename, type) => {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
+const eventsToCSV = (events) => {
+  const headers = [
+    "name",
+    "createdBy",
+    "date",
+    "location",
+    "privacy",
+    "status",
+  ];
+
+  const rows = events.map((e) =>
+    [
+      e.name,
+      e.createdBy?.username || "",
+      e.date,
+      e.location || "",
+      e.privacy,
+      e.status,
+    ].join(",")
+  );
+
+  return [headers.join(","), ...rows].join("\n");
+};
 
 export default function AdminEventList() {
   const role = localStorage.getItem("role");
@@ -24,6 +63,9 @@ export default function AdminEventList() {
   const [pendingEvents, setPendingEvents] = useState([]);
   const [allEvents, setAllEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // ===== EXPORT STATE =====
+  const [exportType, setExportType] = useState("csv");
 
   // ===== FETCH EVENTS =====
   const fetchData = async () => {
@@ -40,7 +82,6 @@ export default function AdminEventList() {
       const events = await res.json();
 
       setAllEvents(events);
-      // ✅ FIX: use status instead of approved
       setPendingEvents(events.filter((e) => e.status === "pending"));
     } catch (err) {
       console.error("AdminEventList error:", err);
@@ -54,6 +95,24 @@ export default function AdminEventList() {
       fetchData();
     }
   }, [role]);
+
+  // ===== EXPORT =====
+  const handleExport = () => {
+    if (allEvents.length === 0) {
+      alert("Không có sự kiện để export.");
+      return;
+    }
+
+    if (exportType === "json") {
+      downloadFile(
+        JSON.stringify(allEvents, null, 2),
+        "events.json",
+        "application/json"
+      );
+    } else {
+      downloadFile(eventsToCSV(allEvents), "events.csv", "text/csv");
+    }
+  };
 
   // ===== ACTIONS =====
   const handleApprove = async (eventId) => {
@@ -122,7 +181,6 @@ export default function AdminEventList() {
             <TableCell>{e.location}</TableCell>
             <TableCell>{e.privacy}</TableCell>
             <TableCell>
-              {/* ✅ FIX: render by status */}
               <Chip
                 size="small"
                 label={
@@ -189,10 +247,33 @@ export default function AdminEventList() {
 
       <Divider sx={{ my: 4 }} />
 
-      {/* ===== ALL EVENTS ===== */}
-      <Typography variant="h5" fontWeight="bold" mb={2}>
-        Tất cả sự kiện
-      </Typography>
+      {/* ===== ALL EVENTS + EXPORT ===== */}
+      <Stack
+        direction="row"
+        justifyContent="space-between"
+        alignItems="center"
+        mb={2}
+      >
+        <Typography variant="h5" fontWeight="bold">
+          Tất cả sự kiện
+        </Typography>
+
+        <Stack direction="row" spacing={1} alignItems="center">
+          <FormControl size="small">
+            <Select
+              value={exportType}
+              onChange={(e) => setExportType(e.target.value)}
+            >
+              <MenuItem value="csv">CSV</MenuItem>
+              <MenuItem value="json">JSON</MenuItem>
+            </Select>
+          </FormControl>
+
+          <Button variant="contained" onClick={handleExport}>
+            Export
+          </Button>
+        </Stack>
+      </Stack>
 
       <Paper variant="outlined">
         {allEvents.length === 0 ? (
