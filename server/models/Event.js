@@ -45,6 +45,10 @@ const eventSchema = new mongoose.Schema(
 
     location: String,
     description: String,
+    banner: {
+      type: String,
+      default: null,
+    },
 
     // --- QUYỀN RIÊNG TƯ ---
     privacy: {

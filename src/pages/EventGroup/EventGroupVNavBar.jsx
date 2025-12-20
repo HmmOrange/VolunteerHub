@@ -35,7 +35,16 @@ export default function EventGroupVNavBar({ isOpen, drawerWidth, drawerVariant, 
   const [error, setError] = useState(null);
 
   // Lấy userId để check quyền (nếu cần thiết cho logic backend)
-  const userId = localStorage.getItem("userId"); 
+  const userId = localStorage.getItem("userId");
+
+  // Helper function để render banner URL
+  const getBannerUrl = (banner) => {
+    if (!banner) return null;
+    if (banner.startsWith("http")) return banner;
+    if (banner.startsWith("data:")) return banner;
+    const path = banner.startsWith("/") ? banner : `/${banner}`;
+    return `http://localhost:5000${path}`;
+  }; 
 
   useEffect(() => {
     if (slug) {
@@ -96,12 +105,32 @@ export default function EventGroupVNavBar({ isOpen, drawerWidth, drawerVariant, 
           onClick={drawerVariant === 'temporary' ? onClose : undefined}
         >
           <Box sx={{ px: 2, pb: 2, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <Avatar 
-              src={eventData.avatarUrl || eventGroupAvatar} // Ưu tiên avatar từ API
-              alt="Event Avatar" 
-              sx={{ width: 279, height: 125, mb: 1.5 }} 
-              variant="square" 
-            />
+            {/* Banner/Avatar - Ưu tiên banner, fallback về avatar hoặc placeholder */}
+            <Box
+              sx={{
+                width: 279,
+                height: 140,
+                mb: 1.5,
+                borderRadius: 1,
+                overflow: 'hidden',
+                bgcolor: '#f5f5f5',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <img
+                src={getBannerUrl(eventData.banner) || eventData.avatarUrl || eventGroupAvatar}
+                alt={eventData.name}
+                loading="lazy"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover'
+                }}
+              />
+            </Box>
+            
             <Typography variant="h5" fontWeight="bold" textAlign="center">
               {eventData.name}
             </Typography>

@@ -12,8 +12,11 @@ import {
   removeMember,
   approveEvent,
   rejectEvent,
-  updateMemberAttendance
+  updateMemberAttendance,
+  uploadEventBanner
 } from "../controllers/eventController.js";
+import { protect } from "../middleware/authMiddleware.js";
+import { uploadBanner } from "../middleware/uploadBanner.js";
 
 const router = express.Router();
 
@@ -47,6 +50,9 @@ router.put("/admin/:id/rejected", rejectEvent);  // Gọi hàm từ chối (gử
 
 // Route cập nhật trạng thái tham gia
 router.put("/:slug/attendance", updateMemberAttendance);
+
+// Route upload banner (file upload)
+router.put("/:slug/banner", protect, uploadBanner.single("banner"), uploadEventBanner);
 
 // ⚠️ Route slug để cuối cùng
 router.get("/:slug", getEventBySlug);

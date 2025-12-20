@@ -11,7 +11,7 @@ export const createEvent = async (req, res) => {
     // 1. Lấy dữ liệu từ Client
     const {
       name, date, endDate, startTime, endTime, location,
-      description, username, recurrence, privacy, question,
+      description, username, recurrence, privacy, question, banner,
     } = req.body;
 
     console.log("Create Request Body:", req.body);
@@ -63,6 +63,7 @@ export const createEvent = async (req, res) => {
       endTime,
       location,
       description,
+      banner: null, // Banner sẽ được upload riêng sau khi tạo event
       createdBy: user._id,
       volunteers: [user._id],
       recurrence: recurrenceData,
@@ -415,7 +416,7 @@ export const removeMember = async (req, res) => {
 // ---------------------- UPDATE EVENT ----------------------
 export const updateEvent = async (req, res) => {
   try {
-    const { slug, username, name, date, endDate, startTime, endTime, location, description, privacy, question, action, extendHours } = req.body;
+    const { slug, username, name, date, endDate, startTime, endTime, location, description, privacy, question, banner, action, extendHours } = req.body;
 
     const user = await User.findOne({ username });
     if (!user) return res.status(404).json({ message: "Không tìm thấy người dùng" });
@@ -482,6 +483,7 @@ export const updateEvent = async (req, res) => {
     if (endTime) updateFields.endTime = endTime;
     if (location) updateFields.location = location;
     if (description) updateFields.description = description;
+    if (banner !== undefined) updateFields.banner = banner || null;
     
     if (privacy) {
         updateFields.privacy = privacy;
@@ -890,6 +892,54 @@ export const updateMemberAttendance = async (req, res) => {
 
   } catch (err) {
     console.error("Update Attendance Error:", err);
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// ===================== UPLOAD EVENT BANNER =====================
+export const uploadEventBanner = async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const event = await Event.findOne({ slug });
+
+    if (!event) {
+      return res.status(404).json({ message: "Không tìm thấy sự kiện" });
+    }
+
+    // Kiểm tra quyền (chỉ creator hoặc manager)
+    const isCreator = event.createdBy.toString() === req.user._id.toString();
+    const isManager = req.user.role === "manager" || req.user.role === "admin";
+
+    if (!isCreator && !isManager) {
+      return res.status(403).json({ 
+        message: "Bạn không có quyền cập nhật banner cho sự kiện này" 
+      });
+    }
+
+    // Lấy path của file đã upload (từ multer middleware)
+    if (!req.file) {
+      return res.status(400).json({ message: "Không có file banner được upload" });
+    }
+
+    // Xóa banner cũ nếu có
+    if (event.banner) {
+      const fs = await import("fs");
+      const oldPath = event.banner.startsWith("/") ? `.${event.banner}` : event.banner;
+      if (fs.existsSync(oldPath)) {
+        fs.unlinkSync(oldPath);
+      }
+    }
+
+    // Lưu path mới
+    const bannerPath = `/uploads/banners/${req.file.filename}`;
+    event.banner = bannerPath;
+    await event.save();
+
+    res.json({
+      message: "Cập nhật banner thành công",
+      banner: event.banner,
+    });
+  } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };

@@ -12,12 +12,14 @@ import { Close as CloseIcon, LockOutlined, Edit as EditIcon, ErrorOutline, MoreV
 // Import API
 import {
   getEventBySlug, joinEvent, leaveEvent, removeMember,
-  getPendingRequests, respondToJoinRequest, updateEvent, updateMemberAttendance
+  getPendingRequests, respondToJoinRequest, updateEvent, updateMemberAttendance, uploadBanner
 } from "../../api/Events";
 import { getPostsByEvent } from "../../api/Posts";
+import { createPost } from "../../api/Posts";
 
 import CreatePost from "../../components/post/CreatePost";
 import PostCard from "../../components/post/PostCard";
+import eventGroupAvatar from "../../assets/img/event_group.jpg";
 
 import "./EventGroup.css";
 
@@ -34,7 +36,9 @@ export default function EventGroup() {
   const [currentTab, setCurrentTab] = useState(0);
   const [isLoadingPosts, setIsLoadingPosts] = useState(true);
   const [isJoined, setIsJoined] = useState(false);
-  const [requestStatus, setRequestStatus] = useState(null); 
+  const [requestStatus, setRequestStatus] = useState(null);
+  const [postsLimit, setPostsLimit] = useState(10); // Giới hạn posts hiển thị
+  const [hasMorePosts, setHasMorePosts] = useState(true); 
   
   const [openJoinModal, setOpenJoinModal] = useState(false);
   const [joinAnswer, setJoinAnswer] = useState("");
@@ -46,6 +50,8 @@ export default function EventGroup() {
     endDate: "", startTime: "", endTime: "",
     privacy: "Public", question: ""
   });
+  const [bannerFile, setBannerFile] = useState(null);
+  const [bannerPreview, setBannerPreview] = useState(null);
 
   // State cho action menu
   const [anchorElActions, setAnchorElActions] = useState(null);
@@ -102,6 +108,15 @@ export default function EventGroup() {
     if (!user || !user.avatar) return undefined;
     if (user.avatar.startsWith("http")) return user.avatar;
     const path = user.avatar.startsWith("/") ? user.avatar : `/${user.avatar}`;
+    return `http://localhost:5000${path}`;
+  };
+
+  // === HÀM XỬ LÝ BANNER URL ===
+  const getBannerUrl = (banner) => {
+    if (!banner) return null;
+    if (banner.startsWith("http")) return banner;
+    if (banner.startsWith("data:")) return banner; // base64 cũ (nếu còn)
+    const path = banner.startsWith("/") ? banner : `/${banner}`;
     return `http://localhost:5000${path}`;
   };
 
@@ -188,7 +203,9 @@ export default function EventGroup() {
       (async () => {
         try {
           const data = await getPostsByEvent(eventData._id);
+          // Chỉ load một số posts ban đầu
           setPosts(data);
+          setHasMorePosts(data.length > postsLimit);
         } catch (error) { setPosts([]); }
         setIsLoadingPosts(false);
       })();
@@ -289,6 +306,8 @@ export default function EventGroup() {
       privacy: eventData.privacy || "Public",
       question: eventData.question || "Tại sao bạn muốn tham gia sự kiện này?"
     });
+    setBannerFile(null);
+    setBannerPreview(getBannerUrl(eventData.banner) || null);
     setOpenEditModal(true);
   };
 
@@ -301,17 +320,55 @@ export default function EventGroup() {
       }
       const updated = await updateEvent({ ...editForm, question: questionToSend, slug: eventData.slug, username: currentUserUsername });
       
+      // Upload banner nếu có file mới
+      let finalBanner = updated.banner;
+      let bannerUpdated = false;
+      if (bannerFile) {
+        try {
+          const bannerRes = await uploadBanner(eventData.slug, bannerFile);
+          finalBanner = bannerRes.banner;
+          bannerUpdated = true;
+        } catch (bannerErr) {
+          console.error("Banner upload error:", bannerErr);
+        }
+      }
+      
       // Cập nhật eventData với thông tin mới
       setEventData(prev => ({ 
-        ...updated, 
+        ...prev,
+        ...updated,
+        banner: finalBanner,
         createdBy: prev.createdBy, 
         volunteers: prev.volunteers, 
         requests: prev.requests 
       }));
       
+      // Tự động tạo bài đăng khi cập nhật banner mới
+      if (bannerUpdated && finalBanner) {
+        try {
+          console.log("Creating post with banner:", finalBanner);
+          const newPost = await createPost({
+            eventId: eventData._id,
+            content: "📸 Banner sự kiện đã được cập nhật!",
+            userId: currentUserId,
+            username: currentUserUsername,
+            imageUrl: finalBanner
+          });
+          console.log("Created post:", newPost);
+          // Thêm post mới vào đầu danh sách
+          setPosts(prev => [newPost, ...prev]);
+        } catch (postErr) {
+          console.error("Auto post creation error:", postErr);
+        }
+      }
+      
       // Tính toán và cập nhật trạng thái mới ngay lập tức
       const newStatus = calculateEventStatus(updated);
       setAutoEventStatus(newStatus);
+      
+      // Reset banner state
+      setBannerFile(null);
+      setBannerPreview(null);
       
       setOpenEditModal(false);
       alert("Cập nhật thành công!");
@@ -544,6 +601,33 @@ export default function EventGroup() {
   return (
     // ... (Phần render giao diện chính GIỮ NGUYÊN không thay đổi gì cả)
     <Container maxWidth="lg" sx={{ p: 3, minHeight: '100vh', bgcolor: '#f1f4f7' }}>
+      {/* EVENT BANNER COVER */}
+      <Paper
+        elevation={0}
+        sx={{
+          width: '100%',
+          height: '300px',
+          mb: 2,
+          borderRadius: 2,
+          overflow: 'hidden',
+          bgcolor: '#f5f5f5',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
+      >
+        <img
+          src={getBannerUrl(eventData.banner) || eventGroupAvatar}
+          alt={eventData.name}
+          loading="lazy"
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover'
+          }}
+        />
+      </Paper>
+      
       {/* HEADER TABS */}
       <Paper className="event-group-tabs-paper" elevation={0} variant="outlined" sx={{ mb: 2 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 2 }}>
@@ -955,6 +1039,43 @@ export default function EventGroup() {
                 )}
             </Box>
             <Divider sx={{ my: 2 }} />
+            
+            {/* Event Banner */}
+            <Box
+              sx={{
+                width: '20vw',
+                height: '15vh',
+                mb: 2,
+                borderRadius: 1,
+                overflow: 'hidden',
+                bgcolor: '#f5f5f5',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              {eventData.banner ? (
+                <img
+                  src={getBannerUrl(eventData.banner)}
+                  alt={eventData.name}
+                  loading="lazy"
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover'
+                  }}
+                />
+              ) : (
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ textAlign: 'center', p: 1 }}
+                >
+                  No banner
+                </Typography>
+              )}
+            </Box>
+
             <Typography sx={{ whiteSpace: 'pre-wrap', mb: 2 }}>{eventData.description}</Typography>
             <Divider sx={{ my: 2 }} />
             <Stack spacing={1}>
@@ -1124,6 +1245,67 @@ export default function EventGroup() {
             <TextField label="Tên" fullWidth value={editForm.name} onChange={(e) => setEditForm({...editForm, name: e.target.value})} />
             <TextField label="Mô tả" fullWidth multiline rows={4} value={editForm.description} onChange={(e) => setEditForm({...editForm, description: e.target.value})} />
             <TextField label="Địa điểm" fullWidth value={editForm.location} onChange={(e) => setEditForm({...editForm, location: e.target.value})} />
+            
+            {/* Banner Upload */}
+            <Box>
+              <Typography variant="subtitle2" gutterBottom>
+                Banner sự kiện
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                Ảnh phải nhỏ hơn 2MB
+              </Typography>
+              <Button
+                variant="outlined"
+                component="label"
+                fullWidth
+                sx={{ mb: bannerPreview ? 2 : 0 }}
+              >
+                {bannerFile ? "Thay đổi banner" : (bannerPreview ? "Cập nhật banner" : "Chọn banner")}
+                <input
+                  type="file"
+                  hidden
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      // Kiểm tra kích thước file (2MB = 2 * 1024 * 1024 bytes)
+                      const maxSize = 2 * 1024 * 1024;
+                      if (file.size > maxSize) {
+                        alert('Ảnh quá lớn! Vui lòng chọn ảnh nhỏ hưn 2MB.');
+                        e.target.value = ''; // Reset input
+                        return;
+                      }
+                      setBannerFile(file);
+                      setBannerPreview(URL.createObjectURL(file)); // Preview file mới từ browser
+                    }
+                  }}
+                />
+              </Button>
+              {bannerPreview && (
+                <Box
+                  sx={{
+                    width: '100%',
+                    height: '150px',
+                    borderRadius: 1,
+                    overflow: 'hidden',
+                    bgcolor: '#f5f5f5',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <img
+                    src={bannerPreview}
+                    alt="Banner preview"
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover'
+                    }}
+                  />
+                </Box>
+              )}
+            </Box>
             
             <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
               <TextField 

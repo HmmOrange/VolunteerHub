@@ -19,7 +19,8 @@ const app = express();
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' })); // Giữ limit cao cho các request JSON lớn
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // Lấy __dirname trong ES Modules
 const __filename = fileURLToPath(import.meta.url);

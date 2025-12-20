@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { createEvent } from "../../api/Events";
+import { createEvent, uploadBanner } from "../../api/Events";
 import {
   Box,
   Button,
@@ -45,6 +45,9 @@ export default function CreateEvent() {
       endDate: "",
     },
   });
+
+  const [bannerFile, setBannerFile] = useState(null);
+  const [bannerPreview, setBannerPreview] = useState(null);
 
   /* ================= RECURRENCE HELPERS ================= */
 
@@ -113,6 +116,16 @@ export default function CreateEvent() {
 
     try {
       const res = await createEvent(payload);
+
+      // Upload banner nếu có
+      if (bannerFile && res.slug) {
+        try {
+          await uploadBanner(res.slug, bannerFile);
+        } catch (bannerErr) {
+          console.error("Banner upload error:", bannerErr);
+          // Không dừng tiến trình nếu upload banner lỗi
+        }
+      }
 
       if (role === "admin") {
         alert("Sự kiện đã được tạo.");
@@ -220,6 +233,67 @@ export default function CreateEvent() {
               required
               fullWidth
             />
+
+            {/* ===== BANNER UPLOAD ===== */}
+            <Box>
+              <Typography variant="subtitle2" gutterBottom>
+                Banner sự kiện (không bắt buộc)
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                Ảnh phải nhỏ hơn 2MB
+              </Typography>
+              <Button
+                variant="outlined"
+                component="label"
+                fullWidth
+                sx={{ mb: bannerPreview ? 2 : 0 }}
+              >
+                {bannerFile ? "Thay đổi banner" : "Chọn banner"}
+                <input
+                  type="file"
+                  hidden
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      // Kiểm tra kích thước file (2MB = 2 * 1024 * 1024 bytes)
+                      const maxSize = 2 * 1024 * 1024;
+                      if (file.size > maxSize) {
+                        alert('Ảnh quá lớn! Vui lòng chọn ảnh nhỏ hưn 2MB.');
+                        e.target.value = ''; // Reset input
+                        return;
+                      }
+                      setBannerFile(file);
+                      setBannerPreview(URL.createObjectURL(file));
+                    }
+                  }}
+                />
+              </Button>
+              {bannerPreview && (
+                <Box
+                  sx={{
+                    width: '100%',
+                    height: '150px',
+                    borderRadius: 1,
+                    overflow: 'hidden',
+                    bgcolor: '#f5f5f5',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <img
+                    src={bannerPreview}
+                    alt="Banner preview"
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover'
+                    }}
+                  />
+                </Box>
+              )}
+            </Box>
 
             {/* ===== PRIVACY ===== */}
             <FormControl>

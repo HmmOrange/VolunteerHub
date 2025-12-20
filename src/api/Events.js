@@ -10,6 +10,17 @@ const getHeaders = () => {
   };
 };
 
+// --- HÀM CHỈ LẤY AUTH (CHO UPLOAD) ---
+const getAuthOnlyHeader = () => {
+  const token = localStorage.getItem("token");
+  if (!token) {
+    throw new Error("Not authenticated");
+  }
+  return {
+    "Authorization": `Bearer ${token}`,
+  };
+};
+
 export const createEvent = async (data) => {
   const res = await fetch(`${API_URL}/create`, {
     method: "POST",
@@ -157,3 +168,25 @@ export const updateMemberAttendance = async ({ slug, userId, attendance, request
   return json;
 };
 
+// --- UPLOAD BANNER ---
+export const uploadBanner = async (slug, file) => {
+  // Tạo FormData để upload file
+  const formData = new FormData();
+  formData.append("banner", file);
+
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${API_URL}/${slug}/banner`, {
+    method: "PUT",
+    headers: {
+      "Authorization": `Bearer ${token}`,
+      // Không set Content-Type, browser tự set với boundary cho multipart/form-data
+    },
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.message || "Upload banner failed");
+  }
+  return res.json();
+};

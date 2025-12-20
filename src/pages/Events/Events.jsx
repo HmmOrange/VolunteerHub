@@ -37,6 +37,15 @@ export default function Events() {
     description: "",
   });
 
+  // Helper function để render banner URL
+  const getBannerUrl = (banner) => {
+    if (!banner) return null;
+    if (banner.startsWith("http")) return banner;
+    if (banner.startsWith("data:")) return banner;
+    const path = banner.startsWith("/") ? banner : `/${banner}`;
+    return `http://localhost:5000${path}`;
+  };
+
   /* ================= FILTER & SORT (JOINED EVENTS ONLY) ================= */
 
   const [statusFilter, setStatusFilter] = useState("all");
@@ -216,7 +225,10 @@ export default function Events() {
     return (
       <Grid item xs={12} sm={6} md={4} key={event._id}>
         <Card
-          sx={{ height: "100%" }}
+          sx={{ 
+            height: "100%",
+            minWidth: '20vw'
+          }}
           onClick={() =>
             editing !== event.slug && navigate(`/event/${event.slug}`)
           }
@@ -241,6 +253,42 @@ export default function Events() {
             >
               {eventStatusMap[calculateEventStatus(event)]}
             </Typography>
+
+            {/* Event Banner */}
+            <Box
+              sx={{
+                width: '20vw',
+                height: '15vh',
+                mb: 2,
+                borderRadius: 1,
+                overflow: 'hidden',
+                bgcolor: '#f5f5f5',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              {event.banner ? (
+                <img
+                  src={getBannerUrl(event.banner)}
+                  alt={event.name}
+                  loading="lazy"
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover'
+                  }}
+                />
+              ) : (
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ textAlign: 'center', p: 1 }}
+                >
+                  No banner
+                </Typography>
+              )}
+            </Box>
 
             <Typography variant="body2">
               <b>Ngày:</b>{" "}

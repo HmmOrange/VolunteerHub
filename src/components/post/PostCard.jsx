@@ -61,6 +61,17 @@ export default function PostCard({ post, onPostDeleted, onPostUpdated, eventOwne
     return `http://localhost:5000${path}`;
   };
 
+  // === XỬ LÝ IMAGE URL ===
+  const getImageUrl = (imageUrl) => {
+    if (!imageUrl) return null;
+    if (imageUrl.startsWith("http")) return imageUrl;
+    if (imageUrl.startsWith("data:")) return imageUrl; // base64
+    const path = imageUrl.startsWith("/") ? imageUrl : `/${imageUrl}`;
+    const fullUrl = `http://localhost:5000${path}`;
+    console.log("PostCard getImageUrl:", imageUrl, "=>", fullUrl);
+    return fullUrl;
+  };
+
   const getAvatarColor = (userRole) => {
     switch (userRole?.toLowerCase()) {
       case 'manager': return '#49BBBD'; 
@@ -220,7 +231,14 @@ export default function PostCard({ post, onPostDeleted, onPostUpdated, eventOwne
 
         {!isEditing && post.imageUrl && (
           <Box className="post-image-container">
-            <CardMedia component="img" image={post.imageUrl} className="post-image" onClick={handleImageClick} sx={{ cursor: 'pointer' }} />
+            <CardMedia 
+              component="img" 
+              image={getImageUrl(post.imageUrl)} 
+              className="post-image" 
+              onClick={handleImageClick} 
+              loading="lazy"
+              sx={{ cursor: 'pointer' }} 
+            />
           </Box>
         )}
 
@@ -287,7 +305,7 @@ export default function PostCard({ post, onPostDeleted, onPostUpdated, eventOwne
       <Modal open={lightboxOpen} onClose={handleCloseLightbox} closeAfterTransition>
         <Fade in={lightboxOpen}>
           <Box onClick={handleCloseLightbox} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', width: '100vw', outline: 'none' }}>
-            <img src={post.imageUrl} alt="Post lightbox" style={{ maxHeight: '90vh', maxWidth: '90vw', objectFit: 'contain' }} />
+            <img src={getImageUrl(post.imageUrl)} alt="Post lightbox" style={{ maxHeight: '90vh', maxWidth: '90vw', objectFit: 'contain' }} />
           </Box>
         </Fade>
       </Modal>

@@ -2,7 +2,13 @@ import Post from "../models/Post.js";
 import User from "../models/User.js";
 import Event from "../models/Event.js"; 
 import Comment from "../models/Comment.js"; 
-import { createNotificationInternal } from "../controllers/notificationController.js"; 
+import { createNotificationInternal } from "../controllers/notificationController.js";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename); 
 
 // 1. Lấy tất cả bài đăng của sự kiện
 export const getPostsByEvent = async (req, res) => {
@@ -31,8 +37,31 @@ export const createPost = async (req, res) => {
     const user = await User.findOne({ username });
     if (!user) return res.status(404).json({ message: "Không tìm thấy người dùng" });
 
+    let finalImageUrl = imageUrl;
+
+    // Nếu imageUrl là banner path, copy sang thư mục post-images
+    if (imageUrl && imageUrl.startsWith("/uploads/banners/")) {
+      try {
+        const postImagesDir = path.join(__dirname, "../uploads/post-images");
+        if (!fs.existsSync(postImagesDir)) {
+          fs.mkdirSync(postImagesDir, { recursive: true });
+        }
+
+        const sourcePath = path.join(__dirname, "..", imageUrl);
+        const fileName = path.basename(imageUrl);
+        const destPath = path.join(postImagesDir, fileName);
+
+        // Copy file thay vì move
+        fs.copyFileSync(sourcePath, destPath);
+        finalImageUrl = `/uploads/post-images/${fileName}`;
+      } catch (copyErr) {
+        console.error("Error copying banner to post-images:", copyErr);
+        // Nếu copy lỗi, vẫn dùng imageUrl gốc
+      }
+    }
+
     const newPost = new Post({
-      content, imageUrl, isAnonymous, eventId,
+      content, imageUrl: finalImageUrl, isAnonymous, eventId,
       createdBy: user._id, likes: [],
     });
     await newPost.save();

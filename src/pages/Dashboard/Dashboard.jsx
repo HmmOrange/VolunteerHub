@@ -11,7 +11,9 @@ import {
   Grid,
   Paper,
   Box,
+  IconButton,
 } from "@mui/material";
+import { ChevronLeft, ChevronRight } from "@mui/icons-material";
 
 import "./Dashboard.css";
 import PostCard from "../../components/post/PostCard";
@@ -25,6 +27,16 @@ export default function Dashboard() {
   const [feedPosts, setFeedPosts] = useState([]);
   const [hotEvents, setHotEvents] = useState([]);
   const [currentPage, setCurrentPage] = useState(0);
+  const [upcomingScrollIndex, setUpcomingScrollIndex] = useState(0);
+
+  // Helper function để render banner URL
+  const getBannerUrl = (banner) => {
+    if (!banner) return null;
+    if (banner.startsWith("http")) return banner;
+    if (banner.startsWith("data:")) return banner;
+    const path = banner.startsWith("/") ? banner : `/${banner}`;
+    return `http://localhost:5000${path}`;
+  };
 
   // === HÀM TÍNH TRẠNG THÁI TỰ ĐỘNG ===
   const calculateEventStatus = (event) => {
@@ -263,7 +275,7 @@ export default function Dashboard() {
           mx: 'auto',
         }}
       >
-        {/* Sự kiện sắp diễn ra - 100% chiều rộng container */}
+        {/* Sự kiện sắp diễn ra - Carousel */}
         <Paper elevation={2} sx={{ p: 3, mb: 4, mt: 3 }}>
           <Typography variant="h6" fontWeight="bold" mb={2}>
             Sự kiện sắp diễn ra bạn đã tham gia
@@ -274,27 +286,86 @@ export default function Dashboard() {
             Bạn không có sự kiện sắp diễn ra
           </Typography>
         ) : (
-          <Grid container spacing={2}>
-            {upcomingJoinedEvents.map((event) => {
-              const eventStatusMap = {
-                upcoming: "Sắp diễn ra",
-                ongoing: "Đang diễn ra",
-                completed: "Đã hoàn thành",
-                cancelled: "Đã bị hủy"
-              };
+          <Box sx={{ position: 'relative' }}>
+            {/* Nút trái */}
+            {upcomingScrollIndex > 0 && (
+              <IconButton
+                onClick={() => setUpcomingScrollIndex(prev => Math.max(0, prev - 1))}
+                sx={{
+                  position: 'absolute',
+                  left: -20,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  zIndex: 2,
+                  bgcolor: 'white',
+                  boxShadow: 2,
+                  '&:hover': { bgcolor: '#f5f5f5' }
+                }}
+              >
+                <ChevronLeft />
+              </IconButton>
+            )}
 
-              const eventStatusColor = {
-                upcoming: "#1976d2",
-                ongoing: "#2e7d32",
-                completed: "#757575",
-                cancelled: "#d32f2f"
-              };
+            {/* Nút phải */}
+            {upcomingScrollIndex < upcomingJoinedEvents.length - 1 && (
+              <IconButton
+                onClick={() => setUpcomingScrollIndex(prev => Math.min(upcomingJoinedEvents.length - 1, prev + 1))}
+                sx={{
+                  position: 'absolute',
+                  right: -20,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  zIndex: 2,
+                  bgcolor: 'white',
+                  boxShadow: 2,
+                  '&:hover': { bgcolor: '#f5f5f5' }
+                }}
+              >
+                <ChevronRight />
+              </IconButton>
+            )}
 
-              return (
-                <Grid item xs={12} sm={6} md={4} key={event._id}>
+            {/* Container chứa events */}
+            <Box
+              sx={{
+                display: 'flex',
+                gap: 2,
+                overflow: 'hidden',
+                transition: 'all 0.3s ease',
+              }}
+            >
+              {upcomingJoinedEvents.map((event, index) => {
+                const eventStatusMap = {
+                  upcoming: "Sắp diễn ra",
+                  ongoing: "Đang diễn ra",
+                  completed: "Đã hoàn thành",
+                  cancelled: "Đã bị hủy"
+                };
+
+                const eventStatusColor = {
+                  upcoming: "#1976d2",
+                  ongoing: "#2e7d32",
+                  completed: "#757575",
+                  cancelled: "#d32f2f"
+                };
+
+                return (
                   <Card
+                    key={event._id}
                     className="event-card-clickable"
                     onClick={() => navigate(`/event/${event.slug}`)}
+                    sx={{
+                      minWidth: 'calc(33.33% - 11px)',
+                      maxWidth: 'calc(33.33% - 11px)',
+                      flexShrink: 0,
+                      transform: `translateX(-${upcomingScrollIndex * (100 / 3 + 0.67)}%)`,
+                      transition: 'transform 0.3s ease, box-shadow 0.2s ease',
+                      cursor: 'pointer',
+                      '&:hover': {
+                        transform: `translateX(-${upcomingScrollIndex * (100 / 3 + 0.67)}%) translateY(-8px)`,
+                        boxShadow: 4
+                      }
+                    }}
                   >
                     <CardContent>
                       <Typography variant="h6">{event.name}</Typography>
@@ -309,6 +380,43 @@ export default function Dashboard() {
                       >
                         {eventStatusMap[calculateEventStatus(event)]}
                       </Typography>
+
+                      {/* Event Banner */}
+                      <Box
+                        sx={{
+                          width: '100%',
+                          height: '15vh',
+                          mb: 2,
+                          borderRadius: 1,
+                          overflow: 'hidden',
+                          bgcolor: '#f5f5f5',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}
+                      >
+                        {event.banner ? (
+                          <img
+                            src={getBannerUrl(event.banner)}
+                            alt={event.name}
+                            loading="lazy"
+                            style={{
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'cover'
+                            }}
+                          />
+                        ) : (
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            sx={{ textAlign: 'center', p: 1 }}
+                          >
+                            No banner
+                          </Typography>
+                        )}
+                      </Box>
+
                       <Typography variant="body2" color="text.secondary" mb={1}>
                         {event.description}
                       </Typography>
@@ -323,10 +431,10 @@ export default function Dashboard() {
                       </Typography>
                     </CardContent>
                   </Card>
-                </Grid>
-              );
-            })}
-          </Grid>
+                );
+              })}
+            </Box>
+          </Box>
         )}
       </Paper>
 
@@ -409,6 +517,43 @@ export default function Dashboard() {
                         >
                           {calculateEventStatus(hotEvents[currentPage]) === 'upcoming' ? "Sắp diễn ra" : "Đang diễn ra"}
                         </Typography>
+
+                        {/* Event Banner */}
+                        <Box
+                          sx={{
+                            width: '100%',
+                            height: '15vh',
+                            mb: 2,
+                            borderRadius: 1,
+                            overflow: 'hidden',
+                            bgcolor: '#f5f5f5',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}
+                        >
+                          {hotEvents[currentPage].banner ? (
+                            <img
+                              src={getBannerUrl(hotEvents[currentPage].banner)}
+                              alt={hotEvents[currentPage].name}
+                              loading="lazy"
+                              style={{
+                                width: '100%',
+                                height: '100%',
+                                objectFit: 'cover'
+                              }}
+                            />
+                          ) : (
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              sx={{ textAlign: 'center', p: 1 }}
+                            >
+                              No banner
+                            </Typography>
+                          )}
+                        </Box>
+
                         <Typography variant="body2" color="text.secondary" mb={2} sx={{ lineHeight: 1.6 }}>
                           {hotEvents[currentPage].description}
                         </Typography>
