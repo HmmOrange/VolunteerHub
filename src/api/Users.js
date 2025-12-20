@@ -10,7 +10,16 @@ const authHeader = () => {
   }
 
   return {
-    Authorization: `Bearer ${token}`,
+    "Content-Type": "application/json",
+    "Authorization": token ? `Bearer ${token}` : "",
+  };
+};
+
+// 3. Helper chỉ lấy Auth (Dùng cho Upload file - quan trọng!)
+const getAuthHeader = () => {
+  const token = getToken();
+  return {
+    "Authorization": token ? `Bearer ${token}` : "",
   };
 };
 
@@ -22,6 +31,7 @@ export const getAllUsers = async () => {
   });
 
   if (!res.ok) {
+    // Giữ xử lý lỗi chi tiết của orange
     const err = await res.json();
     throw new Error(err.message || "Failed to fetch users");
   }
@@ -32,10 +42,7 @@ export const getAllUsers = async () => {
 export const updateUserRole = async (userId, newRole) => {
   const res = await fetch(`${API_URL}/${userId}/role`, {
     method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      ...authHeader(),
-    },
+    headers: getJsonHeaders(),
     body: JSON.stringify({ newRole }),
   });
 
@@ -66,10 +73,7 @@ export const toggleUserLock = async (userId) => {
 export const createManager = async (payload) => {
   const res = await fetch(`${API_URL}/admin/create-manager`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...authHeader(),
-    },
+    headers: getJsonHeaders(),
     body: JSON.stringify(payload),
   });
 
@@ -87,12 +91,11 @@ export const getProfile = async () => {
   const res = await fetch(`${API_URL}/profile`, {
     headers: authHeader(),
   });
-
+  
   if (!res.ok) {
     const err = await res.json();
     throw new Error(err.message || "Failed to fetch profile");
   }
-
   return res.json();
 };
 
@@ -100,6 +103,11 @@ export const uploadAvatar = async (file) => {
   const formData = new FormData();
   formData.append("avatar", file);
 
+  // LƯU Ý QUAN TRỌNG:
+  // Không dùng getJsonHeaders() ở đây vì FormData tự động set Content-Type là multipart/form-data kèm boundary.
+  // Nếu set cứng application/json thì upload sẽ lỗi.
+  // Dùng getAuthHeader() (giống logic của orange) là chuẩn nhất.
+  
   const res = await fetch(`${API_URL}/profile/avatar`, {
     method: "PUT",
     headers: authHeader(), // ❗ DO NOT set Content-Type for FormData
@@ -110,6 +118,5 @@ export const uploadAvatar = async (file) => {
     const err = await res.json();
     throw new Error(err.message || "Upload avatar failed");
   }
-
   return res.json();
 };

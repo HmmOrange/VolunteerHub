@@ -3,6 +3,7 @@ import User from "../models/User.js";
 import JoinRequest from "../models/JoinRequest.js";
 import slugify from "slugify";
 import mongoose from "mongoose";
+import { createNotificationInternal } from "../controllers/notificationController.js"; // Import Notification
 
 // ---------------------- CREATE EVENT ----------------------
 export const createEvent = async (req, res) => {
@@ -117,22 +118,35 @@ export const getEventBySlug = async (req, res) => {
     const { slug } = req.params;
     const { userId, role } = req.query;
 
-    let event;
+    // --- DEBUG LOG (Xem kết quả ở Terminal của Backend) ---
+    console.log("🔻 [GET EVENT] Đang tìm kiếm:", slug);
 
-    // --- SỬA ĐỔI QUAN TRỌNG Ở ĐÂY ---
-    // 1. Kiểm tra xem 'slug' truyền lên có đúng format của ObjectId không
+    let query;
+
+    // Logic tìm kiếm bao quát nhất:
+    // Nếu chuỗi gửi lên giống ID -> Tìm xem nó là _id HOẶC là slug
     if (mongoose.Types.ObjectId.isValid(slug)) {
-      // Nếu giống ID, thử tìm bằng ID trước
-      event = await Event.findById(slug)
-        .populate("createdBy", "username email avatar role")
-        .populate("volunteers", "username email role avatar");
+      query = {
+        $or: [
+          { _id: slug },    // Trường hợp nó là ID thật
+          { slug: slug }    // Trường hợp hiếm: slug đặt tên giống ID
+        ]
+      };
+    } else {
+      // Nếu không giống ID -> Chắc chắn là slug
+      query = { slug: slug };
     }
 
-    // 2. Nếu chưa tìm thấy (hoặc không phải ID), thì tìm theo field 'slug'
+    console.log("🔍 Query Object:", JSON.stringify(query));
+
+    const event = await Event.findOne(query)
+      .populate("createdBy", "username email avatar role")
+      .populate("volunteers", "username email role avatar");
+
+    // --- DEBUG KẾT QUẢ ---
     if (!event) {
-      event = await Event.findOne({ slug: slug })
-        .populate("createdBy", "username email avatar role")
-        .populate("volunteers", "username email role avatar");
+      console.log("❌ Không tìm thấy Event nào trong Database!");
+      return res.status(404).json({ message: "Không tìm thấy event trong Database" });
     }
     // ----------------------------------
 
@@ -145,6 +159,9 @@ export const getEventBySlug = async (req, res) => {
       return res.status(403).json({ message: "Sự kiện chưa được duyệt" });
     }
 
+    // =========================================================
+    // LOGIC XỬ LÝ QUYỀN HẠN (GIỮ NGUYÊN)
+    // =========================================================
     const result = event.toObject();
 
     result.isJoined = false;
@@ -153,14 +170,11 @@ export const getEventBySlug = async (req, res) => {
     result.requests = [];
 
     if (userId) {
-      // Logic check tham gia (GIỮ NGUYÊN - Logic này của bạn viết tốt rồi)
       const isVolunteer = event.volunteers?.some(
         (v) => (v._id ? v._id.toString() : v.toString()) === userId
       );
       result.isJoined = isVolunteer;
 
-      // Check chủ sở hữu
-      // Lưu ý: vì đã populate createdBy nên nó là Object
       const creatorId = event.createdBy._id 
         ? event.createdBy._id.toString() 
         : event.createdBy.toString();
@@ -199,7 +213,7 @@ export const getEventBySlug = async (req, res) => {
 
     res.json(result);
   } catch (err) {
-    console.error("Get Event Error:", err); // Log lỗi ra console server để dễ debug
+    console.error("🔥 Get Event Error:", err);
     res.status(500).json({ message: err.message });
   }
 };
@@ -407,8 +421,27 @@ export const respondToJoinRequest = async (req, res) => {
         { _id: request.event },
         { $addToSet: { volunteers: request.user } }
       );
+      
+      // --- THÔNG BÁO: Duyệt thành viên ---
+      await createNotificationInternal({
+        recipientId: request.user,
+        type: "VOLUNTEER_ACCEPTED",
+        message: `Chúc mừng! Yêu cầu tham gia sự kiện "${event.name}" của bạn đã được chấp nhận.`,
+        relatedId: event._id,
+        relatedModel: "Event"
+      });
+
     } else {
       request.status = "rejected";
+      
+      // --- THÔNG BÁO: Từ chối thành viên ---
+      await createNotificationInternal({
+        recipientId: request.user,
+        type: "VOLUNTEER_REJECTED",
+        message: `Yêu cầu tham gia sự kiện "${event.name}" của bạn đã bị từ chối.`,
+        relatedId: event._id,
+        relatedModel: "Event"
+      });
     }
 
     await request.save();
