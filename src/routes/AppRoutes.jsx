@@ -7,7 +7,7 @@ import Login from "../pages/Login/Login";
 import Dashboard from "../pages/Dashboard/Dashboard";
 import CreateEvent from "../pages/CreateEvent/CreateEvent";
 import EventGroup from "../pages/EventGroup/EventGroup";
-import UserList from "../pages/UserList/UserList";
+import UserList from "../pages/AdminUserList/AdminUserList";
 import Events from "../pages/Events/Events";
 import Profile from "../pages/Profile/Profile";
 import AdminEventList from "../pages/AdminEventList/AdminEventList";
