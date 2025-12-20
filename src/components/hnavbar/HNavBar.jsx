@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import {
   AppBar,
   Toolbar,
@@ -44,17 +43,27 @@ export default function HNavbar({ onToggleVNavBar }) {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  // === FETCH THÔNG BÁO ===
+  // === FETCH THÔNG BÁO (ĐÃ SỬA DÙNG FETCH) ===
   const fetchNotifications = async () => {
     if (!userId) return;
     try {
-      // Dùng fetch hoặc axios đều được, ở đây giữ axios như code gốc của bạn
-      // Nhưng lưu ý header Authorization nếu backend yêu cầu
-      const res = await axios.get(`http://localhost:5000/api/notifications/${userId}`, {
-         headers: { Authorization: token ? `Bearer ${token}` : "" }
+      const res = await fetch(`http://localhost:5000/api/notifications/${userId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token ? `Bearer ${token}` : "",
+        },
       });
-      setNotifications(res.data.notifications);
-      setUnreadCount(res.data.unreadCount);
+
+      if (!res.ok) {
+        throw new Error("Không thể tải thông báo");
+      }
+
+      const data = await res.json();
+      
+      // Axios trả về res.data, còn Fetch trả về json object trực tiếp
+      setNotifications(data.notifications);
+      setUnreadCount(data.unreadCount);
     } catch (err) {
       console.error("Lỗi lấy thông báo:", err);
     }
@@ -105,7 +114,7 @@ export default function HNavbar({ onToggleVNavBar }) {
 
   const handleNotiMenuClose = () => setAnchorElNoti(null);
 
-  // === LOGIC CLICK THÔNG BÁO (ĐÃ SỬA GỌN) ===
+  // === LOGIC CLICK THÔNG BÁO ===
   const handleNotificationClick = async (noti) => {
     try {
       console.log("🔔 Click Notification:", noti);
@@ -127,17 +136,21 @@ export default function HNavbar({ onToggleVNavBar }) {
       }
 
       // 2. XỬ LÝ NAVIGATE AN TOÀN
-      // Backend có thể gửi relatedId dưới dạng Object (đã populate) hoặc String
+      if (noti.type === "EVENT_PENDING_APPROVAL") {
+        // Điều hướng đến trang danh sách chờ duyệt của Admin
+        // (Bạn thay đường dẫn này khớp với route trong App.js của bạn, ví dụ: /admin/dashboard hoặc /admin/pending)
+        navigate("/admin/events"); 
+        handleNotiMenuClose();
+        return; // Dừng hàm luôn, không chạy logic bên dưới
+      }
+
       let targetId = noti.relatedId;
       
-      // Nếu là Object, lấy _id ra
       if (targetId && typeof targetId === 'object') {
           targetId = targetId._id;
       }
 
       if (targetId) {
-          // Bất kể là Comment hay Post hay Event, giờ chúng ta đều đã lưu ID của Event
-          // Hoặc relatedModel là "Event"
           navigate(`/event/${targetId}`);
       } else {
           alert("Sự kiện này không còn tồn tại.");
