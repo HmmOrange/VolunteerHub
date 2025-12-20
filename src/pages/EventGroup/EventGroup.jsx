@@ -248,7 +248,7 @@ export default function EventGroup() {
   if (!eventData) return <Container sx={{ display: 'flex', justifyContent: 'center', mt: 10 }}><CircularProgress sx={{ color: '#49BBBD' }} /></Container>;
 
   return (
-    <Container maxWidth="lg" sx={{ p: 3 }}>
+    <Container maxWidth="lg" sx={{ p: 3, minHeight: '100vh', bgcolor: '#f1f4f7' }}>
       {/* HEADER TABS */}
       <Paper className="event-group-tabs-paper" elevation={0} variant="outlined">
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 2 }}>
