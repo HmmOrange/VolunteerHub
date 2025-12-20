@@ -58,6 +58,7 @@ export default function Register() {
 
   // ================= STEP 1 =================
   const handleAccountSubmit = async (e) => {
+
     e.preventDefault();
     setError("");
     setMsg("");
