@@ -1,22 +1,32 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  AppBar, Toolbar, Typography, Box, Stack, IconButton,
-  InputBase, Avatar, Menu, MenuItem,
+  AppBar,
+  Toolbar,
+  Typography,
+  Box,
+  Stack,
+  IconButton,
+  InputBase,
+  Avatar,
+  Menu,
+  MenuItem,
 } from "@mui/material";
 import {
-  Menu as MenuIcon, Search as SearchIcon, Add as AddIcon,
+  Menu as MenuIcon,
+  Search as SearchIcon,
+  Add as AddIcon,
   NotificationsNoneOutlined as BellIcon,
 } from "@mui/icons-material";
 
 import "./HNavBar.css";
 
-// Chỉ nhận 'onToggleVNavBar'
-export default function HNavbar({ onToggleVNavBar }) { 
+export default function HNavbar({ onToggleVNavBar }) {
   const navigate = useNavigate();
+
   const username = localStorage.getItem("username") || "User";
   const role = localStorage.getItem("role")?.toLowerCase(); // Lấy role và chuyển về chữ thường
-  const avatar = localStorage.getItem("avatar"); 
+  const avatar = localStorage.getItem("avatar");
 
   const [anchorEl, setAnchorEl] = useState(null);
   const isMenuOpen = Boolean(anchorEl);
@@ -44,6 +54,7 @@ export default function HNavbar({ onToggleVNavBar }) {
 
   const handleProfile = () => {
     handleProfileMenuClose();
+    navigate("/profile");
   };
 
   const handleAddEvent = () => {
@@ -60,22 +71,19 @@ export default function HNavbar({ onToggleVNavBar }) {
   };
 
   return (
-    <AppBar
-      elevation={0}
-      position="fixed" 
-      className="hnavbar-appbar"
-    >
+    <AppBar elevation={0} position="fixed" className="hnavbar-appbar">
       <Toolbar className="hnavbar-toolbar">
-        {/* === 1. BÊN TRÁI === */}
+        {/* ===== LEFT ===== */}
         <Stack direction="row" spacing={1} alignItems="center">
           <IconButton
             edge="start"
             aria-label="open drawer"
-            onClick={onToggleVNavBar} 
+            onClick={onToggleVNavBar}
             className="hnavbar-icon-btn"
           >
             <MenuIcon />
           </IconButton>
+
           <Typography
             variant="h6"
             className="hnavbar-logo"
@@ -86,7 +94,7 @@ export default function HNavbar({ onToggleVNavBar }) {
           </Typography>
         </Stack>
 
-        {/* === 2. GIỮA === */}
+        {/* ===== CENTER ===== */}
         <Box className="hnavbar-search">
           <SearchIcon className="hnavbar-search-icon" />
           <InputBase
@@ -96,17 +104,27 @@ export default function HNavbar({ onToggleVNavBar }) {
           />
         </Box>
 
-        {/* === 3. BÊN PHẢI === */}
+        {/* ===== RIGHT ===== */}
         <Stack direction="row" spacing={0.5} alignItems="center">
+          
+          {/* --- SỬA TẠI ĐÂY: CHỈ HIỂN THỊ NÚT ADD NẾU ROLE LÀ MANAGER --- */}
+          {role === "manager" && (
+            <IconButton
+              className="hnavbar-icon-btn hnavbar-add-btn"
+              onClick={handleAddEvent}
+            >
+              <AddIcon />
+            </IconButton>
+          )}
+          {/* ----------------------------------------------------------- */}
+
           <IconButton
-            className="hnavbar-icon-btn hnavbar-add-btn"
-            onClick={handleAddEvent}
+            className="hnavbar-icon-btn"
+            onClick={handleNotifications}
           >
-            <AddIcon />
-          </IconButton>
-          <IconButton className="hnavbar-icon-btn" onClick={handleNotifications}>
             <BellIcon />
           </IconButton>
+
           <IconButton
             onClick={handleProfileMenuOpen}
             size="small"
@@ -115,9 +133,9 @@ export default function HNavbar({ onToggleVNavBar }) {
             <Avatar
               className="hnavbar-avatar"
               src={avatar ? `http://localhost:5000${avatar}` : undefined}
-              sx={{ 
-                // SỬA TẠI ĐÂY: Nếu có avatar thì transparent, không có thì lấy màu theo role
-                bgcolor: avatar ? 'transparent' : getRoleColor() 
+              sx={{
+                // Nếu có avatar thì transparent, không có thì lấy màu theo role
+                bgcolor: avatar ? "transparent" : getRoleColor(),
               }}
             >
               {!avatar && username.charAt(0).toUpperCase()}
@@ -125,7 +143,7 @@ export default function HNavbar({ onToggleVNavBar }) {
           </IconButton>
         </Stack>
 
-        {/* Menu Avatar */}
+        {/* ===== AVATAR MENU ===== */}
         <Menu
           anchorEl={anchorEl}
           open={isMenuOpen}
@@ -137,11 +155,13 @@ export default function HNavbar({ onToggleVNavBar }) {
           <MenuItem disabled className="hnavbar-menu-user">
             Xin chào, {username}
           </MenuItem>
+
           <MenuItem onClick={handleProfile}>Thông tin cá nhân</MenuItem>
 
-          {/* === HIỂN THỊ CÓ ĐIỀU KIỆN === */}
-          {role === 'admin' && (
-            <MenuItem onClick={handleUserList}>Danh sách người dùng</MenuItem>
+          {role === "admin" && (
+            <MenuItem onClick={handleUserList}>
+              Danh sách người dùng
+            </MenuItem>
           )}
 
           <MenuItem onClick={handleLogout}>Đăng xuất</MenuItem>

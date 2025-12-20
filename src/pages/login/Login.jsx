@@ -57,6 +57,7 @@ export default function Login() {
         localStorage.setItem("userId", res.user.id);
         localStorage.setItem("username", res.user.username);
         localStorage.setItem("role", res.user.role);
+        localStorage.setItem("avatar", res.user.avatar || "");
 
         setMsg("Đăng nhập thành công! Đang chuyển hướng...");
 
@@ -109,7 +110,13 @@ export default function Login() {
       </button>
       
       {msg && (
-        <p className="message" style={{ color: msg.includes("thành công") ? "green" : "red" }}>
+        <p
+          className="message"
+          style={{
+            color: msg.includes("thành công") ? "green" : "red",
+            whiteSpace: "pre-line",
+          }}
+        >
           {msg}
         </p>
       )}

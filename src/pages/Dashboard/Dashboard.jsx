@@ -28,7 +28,10 @@ export default function Dashboard() {
     if (!userId) return;
 
     (async () => {
-      const events = await getAllEvents();
+      const events = (await getAllEvents()).filter(
+        (event) => event.status === "approved"
+      );
+
 
       const now = new Date();
       const today = new Date(
@@ -73,12 +76,23 @@ export default function Dashboard() {
       setUpcomingJoinedEvents(upcoming);
 
       // ===== POSTS FEED (JOINED EVENTS) =====
-      // SỬA ĐỔI: Kèm theo tên sự kiện (eventName) vào bài viết
       const postsArrays = await Promise.all(
         joinedEvents.map(async (event) => {
           const posts = await getPostsByEvent(event._id);
-          // Map thêm tên sự kiện vào từng post
-          return posts.map(p => ({ ...p, eventName: event.name }));
+          
+          // --- SỬA ĐOẠN NÀY ---
+          // Thay vì chỉ map eventName, hãy map cả object event 
+          // để PostCard có thể lấy được event._id (dùng khi click chuyển trang)
+          return posts.map(p => ({ 
+            ...p, 
+            event: {
+              _id: event._id,
+              title: event.name, // PostCard dùng .title hoặc .name đều được
+              name: event.name,
+              slug: event.slug   // Thêm slug nếu muốn navigate theo slug
+            } 
+          }));
+          // --------------------
         })
       );
 

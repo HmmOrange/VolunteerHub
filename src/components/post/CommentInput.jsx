@@ -1,16 +1,41 @@
 import { useState } from "react";
-import { Box, Avatar, TextField, Button, IconButton } from "@mui/material";
-import { Send as SendIcon, PhotoCamera } from "@mui/icons-material";
+import { Box, Avatar, TextField, IconButton } from "@mui/material";
+import { Send as SendIcon } from "@mui/icons-material";
 import { createComment } from "../../api/Comments";
 
 export default function CommentInput({ postId, onCommentPosted }) {
   const [content, setContent] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  // 1. Lấy thông tin từ LocalStorage
   const username = localStorage.getItem("username") || "User";
+  const avatar = localStorage.getItem("avatar");
+  const role = localStorage.getItem("role"); // <--- THÊM DÒNG NÀY
+
+  // 2. Logic xác định màu nền (Giống HNavBar)
+  const getRoleColor = () => {
+    const currentRole = role ? role.toLowerCase() : "";
+    switch (currentRole) {
+      case "admin":
+        return "#d32f2f"; // Đỏ
+      case "manager":
+        return "#49BBBD"; // Teal
+      default:
+        return "#9e9e9e"; // Xám
+    }
+  };
+
+  // 3. Xử lý đường dẫn Avatar an toàn hơn (tránh chuỗi "null" hoặc "undefined")
+  const getAvatarSrc = () => {
+    if (avatar && avatar !== "null" && avatar !== "undefined" && avatar !== "") {
+      return `http://localhost:5000${avatar}`;
+    }
+    return undefined;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!content.trim()) return; // Không gửi nếu trống
+    if (!content.trim()) return;
 
     setIsLoading(true);
     try {
@@ -19,25 +44,38 @@ export default function CommentInput({ postId, onCommentPosted }) {
         username,
         postId,
       });
-      onCommentPosted(newComment); // Gửi bình luận mới lên PostCard
-      setContent(""); // Xóa input
+
+      onCommentPosted(newComment);
+      setContent("");
     } catch (error) {
       console.error("Failed to post comment:", error);
     }
     setIsLoading(false);
   };
 
+  const avatarSrc = getAvatarSrc();
+
   return (
-    <Box 
-      component="form" 
+    <Box
+      component="form"
       onSubmit={handleSubmit}
-      sx={{ display: 'flex', alignItems: 'center', mt: 2 }}
+      sx={{ display: "flex", alignItems: "center", mt: 2 }}
     >
-      <Avatar sx={{ width: 32, height: 32, mr: 1.5, bgcolor: '#49BBBD' }}>
-        {username.charAt(0).toUpperCase()}
+      {/* 4. Áp dụng màu nền vào Avatar */}
+      <Avatar
+        src={avatarSrc}
+        sx={{
+          width: 32,
+          height: 32,
+          mr: 1.5,
+          // Nếu có ảnh -> nền trong suốt. Nếu không -> lấy màu theo role
+          bgcolor: avatarSrc ? "transparent" : getRoleColor(),
+        }}
+      >
+        {/* Nếu không có ảnh thì hiện chữ cái đầu */}
+        {!avatarSrc && username.charAt(0).toUpperCase()}
       </Avatar>
-      
-      {/* Input nhập bình luận (Mô phỏng ảnh) */}
+
       <TextField
         variant="outlined"
         fullWidth
@@ -47,21 +85,23 @@ export default function CommentInput({ postId, onCommentPosted }) {
         disabled={isLoading}
         size="small"
         sx={{
-          borderRadius: '20px',
-          '& .MuiOutlinedInput-root': {
-            borderRadius: '20px',
-            backgroundColor: '#f0f2f5',
-            '& fieldset': {
-              border: 'none',
-            },
+          borderRadius: "20px",
+          "& .MuiOutlinedInput-root": {
+            borderRadius: "20px",
+            backgroundColor: "#f0f2f5",
+            "& fieldset": { border: "none" },
           },
         }}
         InputProps={{
           endAdornment: (
-            <IconButton onClick={handleSubmit} disabled={isLoading} sx={{color: '#49BBBD'}}>
+            <IconButton
+              onClick={handleSubmit}
+              disabled={isLoading}
+              sx={{ color: "#49BBBD" }}
+            >
               <SendIcon />
             </IconButton>
-          )
+          ),
         }}
       />
     </Box>
