@@ -26,7 +26,7 @@ export default function HNavbar({ onToggleVNavBar }) {
 
   const username = localStorage.getItem("username") || "User";
   const role = localStorage.getItem("role")?.toLowerCase(); // Lấy role và chuyển về chữ thường
-  const avatar = localStorage.getItem("avatar"); 
+  const avatar = localStorage.getItem("avatar");
 
   const [anchorEl, setAnchorEl] = useState(null);
   const isMenuOpen = Boolean(anchorEl);
@@ -106,12 +106,17 @@ export default function HNavbar({ onToggleVNavBar }) {
 
         {/* ===== RIGHT ===== */}
         <Stack direction="row" spacing={0.5} alignItems="center">
-          <IconButton
-            className="hnavbar-icon-btn hnavbar-add-btn"
-            onClick={handleAddEvent}
-          >
-            <AddIcon />
-          </IconButton>
+          
+          {/* --- SỬA TẠI ĐÂY: CHỈ HIỂN THỊ NÚT ADD NẾU ROLE LÀ MANAGER --- */}
+          {role === "manager" && (
+            <IconButton
+              className="hnavbar-icon-btn hnavbar-add-btn"
+              onClick={handleAddEvent}
+            >
+              <AddIcon />
+            </IconButton>
+          )}
+          {/* ----------------------------------------------------------- */}
 
           <IconButton
             className="hnavbar-icon-btn"
@@ -128,9 +133,9 @@ export default function HNavbar({ onToggleVNavBar }) {
             <Avatar
               className="hnavbar-avatar"
               src={avatar ? `http://localhost:5000${avatar}` : undefined}
-              sx={{ 
-                // SỬA TẠI ĐÂY: Nếu có avatar thì transparent, không có thì lấy màu theo role
-                bgcolor: avatar ? 'transparent' : getRoleColor() 
+              sx={{
+                // Nếu có avatar thì transparent, không có thì lấy màu theo role
+                bgcolor: avatar ? "transparent" : getRoleColor(),
               }}
             >
               {!avatar && username.charAt(0).toUpperCase()}

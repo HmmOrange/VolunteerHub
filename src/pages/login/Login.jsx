@@ -110,7 +110,13 @@ export default function Login() {
       </button>
       
       {msg && (
-        <p className="message" style={{ color: msg.includes("thành công") ? "green" : "red" }}>
+        <p
+          className="message"
+          style={{
+            color: msg.includes("thành công") ? "green" : "red",
+            whiteSpace: "pre-line",
+          }}
+        >
           {msg}
         </p>
       )}

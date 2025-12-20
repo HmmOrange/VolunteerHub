@@ -108,7 +108,7 @@ export const login = async (req, res) => {
 
     if (user.isLocked) {
       return res.status(403).json({
-        message: "Tài khoản của bạn đang bị khóa",
+        message: "Tài khoản của bạn đang bị khóa\nVui lòng liên hệ Admin để biết thêm chi tiết",
       });
     }
 
