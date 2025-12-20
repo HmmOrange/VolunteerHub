@@ -37,6 +37,7 @@ import {
 } from "../../api/Users";
 
 import "./UserList.css";
+import ImportExport from "./ImportExport";
 
 /* ================= MODAL STYLE ================= */
 const modalStyle = {
@@ -194,6 +195,8 @@ export default function AdminUserList() {
           Tạo Manager
         </Button>
       </Stack>
+
+      <ImportExport users={users} onImported={fetchUsers} />
 
       {loading ? (
         <CircularProgress />

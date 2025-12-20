@@ -6,13 +6,16 @@ import {
   updateAvatar,
   updateProfile,
   getProfile,
-  createManager, // ✅ NEW
+  createManager,
+  importUsers,
 } from "../controllers/userController.js";
 
 import { uploadAvatar } from "../middleware/uploadAvatar.js";
-import { protect, adminOnly } from "../middleware/authMiddleware.js"; // ✅ adminOnly REQUIRED
+import { protect, adminOnly } from "../middleware/authMiddleware.js";
+import multer from "multer";
 
 const router = express.Router();
+const upload = multer({ storage: multer.memoryStorage() });
 
 /* ================= USERS ================= */
 
@@ -33,6 +36,16 @@ router.post(
   protect,
   adminOnly,
   createManager
+);
+
+/* ================= IMPORT USERS ================= */
+
+router.post(
+  "/import",
+  protect,
+  adminOnly,
+  upload.single("file"),
+  importUsers
 );
 
 /* ================= PROFILE ================= */

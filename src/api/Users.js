@@ -1,19 +1,24 @@
 const API_URL = "http://localhost:5000/api/users";
 
-// ================= HELPERS =================
+/* ================= HELPERS ================= */
+
 const authHeader = () => {
   const token = localStorage.getItem("token");
+
+  if (!token) {
+    throw new Error("Not authenticated");
+  }
+
   return {
     Authorization: `Bearer ${token}`,
   };
 };
 
-// ================= USERS =================
+/* ================= USERS ================= */
+
 export const getAllUsers = async () => {
   const res = await fetch(`${API_URL}/all`, {
-    headers: {
-      ...authHeader(),
-    },
+    headers: authHeader(),
   });
 
   if (!res.ok) {
@@ -45,9 +50,7 @@ export const updateUserRole = async (userId, newRole) => {
 export const toggleUserLock = async (userId) => {
   const res = await fetch(`${API_URL}/${userId}/lock`, {
     method: "PUT",
-    headers: {
-      ...authHeader(),
-    },
+    headers: authHeader(),
   });
 
   if (!res.ok) {
@@ -58,7 +61,8 @@ export const toggleUserLock = async (userId) => {
   return res.json();
 };
 
-// ================= ADMIN: CREATE MANAGER =================
+/* ================= ADMIN: CREATE MANAGER ================= */
+
 export const createManager = async (payload) => {
   const res = await fetch(`${API_URL}/admin/create-manager`, {
     method: "POST",
@@ -77,12 +81,11 @@ export const createManager = async (payload) => {
   return res.json();
 };
 
-// ================= PROFILE =================
+/* ================= PROFILE ================= */
+
 export const getProfile = async () => {
   const res = await fetch(`${API_URL}/profile`, {
-    headers: {
-      ...authHeader(),
-    },
+    headers: authHeader(),
   });
 
   if (!res.ok) {
@@ -99,9 +102,7 @@ export const uploadAvatar = async (file) => {
 
   const res = await fetch(`${API_URL}/profile/avatar`, {
     method: "PUT",
-    headers: {
-      ...authHeader(),
-    },
+    headers: authHeader(), // ❗ DO NOT set Content-Type for FormData
     body: formData,
   });
 
