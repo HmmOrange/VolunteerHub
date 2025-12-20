@@ -9,7 +9,8 @@ import {
   getLikesByPost,
   uploadImage,
   updatePost, // 1. Import hàm mới
-  deletePost  // 2. Import hàm mới
+  deletePost,
+  getPostById  // 2. Import hàm mới
 } from "../controllers/postController.js";
 
 const router = express.Router();
@@ -32,10 +33,8 @@ router.get("/event/:eventId", getPostsByEvent);
 router.post("/create", createPost);
 router.post("/:postId/like", likePost);
 router.get("/:postId/likes", getLikesByPost);
-
-// === THÊM 2 ROUTE MỚI ===
 router.put("/:postId", updatePost); // Cập nhật bài đăng
 router.delete("/:postId", deletePost); // Xóa bài đăng
-// =========================
+router.get("/:postId", getPostById);
 
 export default router;

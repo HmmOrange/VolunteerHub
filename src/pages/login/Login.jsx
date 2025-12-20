@@ -53,15 +53,27 @@ export default function Login() {
       const res = await loginUser(form);
       
       if (res.token) {
+        // 1. Lưu Token
         localStorage.setItem("token", res.token);
+
+        // 2. QUAN TRỌNG: Lưu "_id" để khớp với logic thông báo
+        // Backend trả về res.user.id, ta lưu vào localStorage là "_id"
+        localStorage.setItem("_id", res.user.id);
+
+        // Lưu thêm userId (nếu code cũ của bạn có chỗ dùng đến) để tránh lỗi
         localStorage.setItem("userId", res.user.id);
+
         localStorage.setItem("username", res.user.username);
         localStorage.setItem("role", res.user.role);
         localStorage.setItem("avatar", res.user.avatar || "");
 
         setMsg("Đăng nhập thành công! Đang chuyển hướng...");
 
-        setTimeout(() => navigate("/dashboard"), 1000);
+        // 3. Dùng window.location.href để reload trang
+        // Giúp HNavBar cập nhật lại state và hiện thông báo ngay lập tức
+        setTimeout(() => {
+            window.location.href = "/dashboard";
+        }, 1000);
       }
     } catch (error) {
       console.error("Login Error:", error);

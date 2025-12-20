@@ -2,13 +2,13 @@ import Post from "../models/Post.js";
 import User from "../models/User.js";
 import Event from "../models/Event.js"; 
 import Comment from "../models/Comment.js"; 
+import { createNotificationInternal } from "../controllers/notificationController.js"; 
 
-// 1. Lấy tất cả bài đăng của sự kiện (SỬA: THÊM role VÀO POPULATE)
+// 1. Lấy tất cả bài đăng của sự kiện
 export const getPostsByEvent = async (req, res) => {
   try {
     const { eventId } = req.params;
     const posts = await Post.find({ eventId: eventId })
-      // --- SỬA TẠI ĐÂY: Thêm "role" vào chuỗi cần lấy ---
       .populate("createdBy", "username avatar role") 
       .sort({ createdAt: -1 });
 
@@ -24,7 +24,7 @@ export const getPostsByEvent = async (req, res) => {
   }
 };
 
-// 2. Tạo bài đăng mới (SỬA: THÊM role VÀO POPULATE)
+// 2. Tạo bài đăng mới
 export const createPost = async (req, res) => {
   try {
     const { content, imageUrl, isAnonymous, username, eventId } = req.body;
@@ -37,7 +37,6 @@ export const createPost = async (req, res) => {
     });
     await newPost.save();
     
-    // --- SỬA TẠI ĐÂY: Thêm "role" để khi tạo xong nó hiện đúng màu ngay ---
     const populatedPost = await newPost.populate("createdBy", "username avatar role");
     
     res.status(201).json({ ...populatedPost.toObject(), commentCount: 0 });
@@ -46,7 +45,7 @@ export const createPost = async (req, res) => {
   }
 };
 
-// 3. Like / Unlike (GIỮ NGUYÊN)
+// 3. Like / Unlike
 export const likePost = async (req, res) => {
   try {
     const { postId } = req.params;
@@ -64,6 +63,19 @@ export const likePost = async (req, res) => {
       post.likes = post.likes.filter(id => id.toString() !== userId.toString());
     } else {
       post.likes.push(userId);
+      
+      // --- THÔNG BÁO: User like bài viết ---
+      if (post.createdBy.toString() !== userId.toString()) {
+        await createNotificationInternal({
+          recipientId: post.createdBy,
+          type: "POST_LIKED",
+          message: `${user.username} đã thích bài viết của bạn.`,
+          
+          // [SỬA] Trỏ thẳng về Event
+          relatedId: post.eventId, 
+          relatedModel: "Event"
+        });
+      }
     }
     await post.save();
     res.status(200).json(post.likes); 
@@ -72,11 +84,10 @@ export const likePost = async (req, res) => {
   }
 };
 
-// 4. Lấy danh sách like (GIỮ NGUYÊN - Đã có role rồi)
+// 4. Lấy danh sách like
 export const getLikesByPost = async (req, res) => {
   try {
     const { postId } = req.params;
-    // Chỗ này bạn đã làm đúng: "username avatar role"
     const post = await Post.findById(postId).populate("likes", "username avatar role"); 
     if (!post) return res.status(404).json({ message: "Post not found" });
     res.status(200).json(post.likes); 
@@ -85,7 +96,7 @@ export const getLikesByPost = async (req, res) => {
   }
 };
 
-// 5. Upload ảnh (GIỮ NGUYÊN)
+// 5. Upload ảnh
 export const uploadImage = async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: "Chưa chọn file" });
@@ -96,7 +107,7 @@ export const uploadImage = async (req, res) => {
   }
 };
 
-// 6. Cập nhật bài đăng (SỬA: THÊM role VÀO POPULATE)
+// 6. Cập nhật bài đăng
 export const updatePost = async (req, res) => {
   try {
     const { postId } = req.params;
@@ -108,7 +119,6 @@ export const updatePost = async (req, res) => {
     const post = await Post.findById(postId);
     if (!post) return res.status(404).json({ message: "Không tìm thấy bài đăng" });
 
-    // Logic: Chỉ người tạo bài viết mới được sửa nội dung
     const isPostOwner = post.createdBy.toString() === user._id.toString();
 
     if (!isPostOwner) {
@@ -118,9 +128,7 @@ export const updatePost = async (req, res) => {
     post.content = content;
     await post.save();
 
-    // --- SỬA TẠI ĐÂY: Thêm "role" để sau khi sửa không bị mất màu ---
     const updatedPost = await Post.findById(postId).populate("createdBy", "username avatar role");
-    
     const commentCount = await Comment.countDocuments({ postId: post._id });
     
     res.status(200).json({ ...updatedPost.toObject(), commentCount: commentCount });
@@ -130,7 +138,7 @@ export const updatePost = async (req, res) => {
   }
 };
 
-// 7. Xóa bài đăng (GIỮ NGUYÊN)
+// 7. Xóa bài đăng
 export const deletePost = async (req, res) => {
   try {
     const { postId } = req.params;
@@ -158,12 +166,41 @@ export const deletePost = async (req, res) => {
       return res.status(403).json({ message: "Bạn không có quyền xóa bài đăng này" });
     }
 
+    // --- THÔNG BÁO: Nếu bài bị xóa bởi người khác ---
+    if (!isPostOwner) {
+       await createNotificationInternal({
+         recipientId: post.createdBy,
+         type: "POST_DELETED_BY_OWNER",
+         message: `Bài viết của bạn trong sự kiện "${event ? event.name : 'Unknown'}" đã bị quản trị viên xóa.`,
+         
+         // [ĐÚNG RỒI] Vẫn giữ nguyên trỏ về Event
+         relatedId: post.eventId, 
+         relatedModel: "Event"
+       });
+    }
+
     await Comment.deleteMany({ postId: postId });
     await Post.findByIdAndDelete(postId);
 
     res.status(200).json({ message: "Xóa bài đăng thành công" });
   } catch (err) {
     console.error("Delete Post Error:", err);
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// [GIỮ LẠI ĐỂ DÙNG NẾU CẦN] Lấy chi tiết 1 bài Post
+export const getPostById = async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const post = await Post.findById(postId).populate("eventId"); 
+
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+    
+    res.status(200).json(post);
+  } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
