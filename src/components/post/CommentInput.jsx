@@ -7,8 +7,31 @@ export default function CommentInput({ postId, onCommentPosted }) {
   const [content, setContent] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  // 1. Lấy thông tin từ LocalStorage
   const username = localStorage.getItem("username") || "User";
-  const avatar = localStorage.getItem("avatar"); // ✅ FIX
+  const avatar = localStorage.getItem("avatar");
+  const role = localStorage.getItem("role"); // <--- THÊM DÒNG NÀY
+
+  // 2. Logic xác định màu nền (Giống HNavBar)
+  const getRoleColor = () => {
+    const currentRole = role ? role.toLowerCase() : "";
+    switch (currentRole) {
+      case "admin":
+        return "#d32f2f"; // Đỏ
+      case "manager":
+        return "#49BBBD"; // Teal
+      default:
+        return "#9e9e9e"; // Xám
+    }
+  };
+
+  // 3. Xử lý đường dẫn Avatar an toàn hơn (tránh chuỗi "null" hoặc "undefined")
+  const getAvatarSrc = () => {
+    if (avatar && avatar !== "null" && avatar !== "undefined" && avatar !== "") {
+      return `http://localhost:5000${avatar}`;
+    }
+    return undefined;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -30,17 +53,27 @@ export default function CommentInput({ postId, onCommentPosted }) {
     setIsLoading(false);
   };
 
+  const avatarSrc = getAvatarSrc();
+
   return (
     <Box
       component="form"
       onSubmit={handleSubmit}
       sx={{ display: "flex", alignItems: "center", mt: 2 }}
     >
+      {/* 4. Áp dụng màu nền vào Avatar */}
       <Avatar
-        sx={{ width: 32, height: 32, mr: 1.5 }}
-        src={avatar ? `http://localhost:5000${avatar}` : undefined}
+        src={avatarSrc}
+        sx={{
+          width: 32,
+          height: 32,
+          mr: 1.5,
+          // Nếu có ảnh -> nền trong suốt. Nếu không -> lấy màu theo role
+          bgcolor: avatarSrc ? "transparent" : getRoleColor(),
+        }}
       >
-        {username.charAt(0).toUpperCase()}
+        {/* Nếu không có ảnh thì hiện chữ cái đầu */}
+        {!avatarSrc && username.charAt(0).toUpperCase()}
       </Avatar>
 
       <TextField

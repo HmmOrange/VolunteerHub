@@ -53,7 +53,7 @@ export default function CreateEvent() {
     e.preventDefault();
 
     // 1. Validate quyền Manager (Frontend check)
-    if (role !== "manager" && role !== "admin") { // Cho phép cả admin nếu cần
+    if (role !== "manager") {
       alert("Bạn cần là manager để tạo sự kiện.");
       return;
     }

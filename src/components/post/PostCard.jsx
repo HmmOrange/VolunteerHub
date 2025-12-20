@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom"; // === 1. IMPORT useNavigate ===
+import { useNavigate } from "react-router-dom";
 import {
   Paper, Box, Avatar, Typography, IconButton, CardMedia, Button, Divider,
   List, ListItem, ListItemAvatar, ListItemText, CircularProgress,
@@ -18,7 +18,6 @@ import CommentInput from "./CommentInput";
 import "./Post.css";
 
 export default function PostCard({ post, onPostDeleted, onPostUpdated, eventOwnerId }) {
-  // === 2. KHAI BÁO NAVIGATE ===
   const navigate = useNavigate();
 
   const currentUserId = localStorage.getItem("userId"); 
@@ -71,19 +70,26 @@ export default function PostCard({ post, onPostDeleted, onPostUpdated, eventOwne
     }
   };
 
+  // --- HÀM NÀY ĐÃ ĐƯỢC SỬA ---
   const renderAvatarProps = (user, isAnonymousPost = false) => {
+    // 1. Trường hợp ẩn danh
     if (isAnonymousPost) {
       return { src: undefined, children: '?', sx: { bgcolor: '#9e9e9e' } };
     }
-    if (user?.avatar) {
+
+    // 2. Trường hợp CÓ Avatar (Không null, không rỗng)
+    if (user?.avatar && user.avatar !== "") {
       return { src: getAvatarUrl(user), children: null, sx: { bgcolor: 'transparent' } };
     }
+
+    // 3. Trường hợp KHÔNG có avatar (null hoặc "") -> Logic fallback hiện tại
     return {
       src: undefined,
       children: user?.username?.charAt(0).toUpperCase() || 'U',
       sx: { bgcolor: getAvatarColor(user?.role) }
     };
   };
+  // ---------------------------
 
   // === HANDLERS ===
   const fetchComments = async () => {
@@ -157,17 +163,14 @@ export default function PostCard({ post, onPostDeleted, onPostUpdated, eventOwne
     <> 
       <Paper className="post-card-paper" elevation={0} variant="outlined">
         
-        {/* === 3. HEADER ĐÃ SỬA === */}
         <Box className="post-header">
           <Avatar {...renderAvatarProps(post.createdBy, post.isAnonymous)} />
           <Box ml={1.5}>
             <Typography variant="body1" component="div">
-              {/* Tên người dùng */}
               <Box component="span" fontWeight="bold">
                 {displayName}
               </Box>
 
-              {/* Logic hiển thị sự kiện */}
               {post.event && (
                 <>
                   <Box component="span" mx={0.5} color="text.secondary">
@@ -181,7 +184,7 @@ export default function PostCard({ post, onPostDeleted, onPostUpdated, eventOwne
                       '&:hover': { textDecoration: 'underline' }
                     }} 
                     onClick={(e) => {
-                      e.stopPropagation(); // Ngăn chặn sự kiện click lan ra ngoài
+                      e.stopPropagation(); 
                       navigate(`/event/${post.event._id}`);
                     }}
                   >
@@ -203,7 +206,6 @@ export default function PostCard({ post, onPostDeleted, onPostUpdated, eventOwne
           )}
         </Box>
 
-        {/* CONTENT & EDIT MODE */}
         {isEditing ? (
           <Box component="form" onSubmit={handleUpdate} sx={{ my: 1 }}>
             <TextField fullWidth multiline variant="outlined" value={editedContent} onChange={(e) => setEditedContent(e.target.value)} autoFocus />
@@ -216,14 +218,12 @@ export default function PostCard({ post, onPostDeleted, onPostUpdated, eventOwne
           <Typography variant="body1" className="post-content">{post.content}</Typography>
         )}
 
-        {/* IMAGE */}
         {!isEditing && post.imageUrl && (
           <Box className="post-image-container">
             <CardMedia component="img" image={post.imageUrl} className="post-image" onClick={handleImageClick} sx={{ cursor: 'pointer' }} />
           </Box>
         )}
 
-        {/* STATS & ACTIONS */}
         {!isEditing && (
           <Box className="post-stats">
             <Typography variant="body2" color="text.secondary" onClick={handleOpenLikeList} sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>{likeCount} lượt thích</Typography>
@@ -238,7 +238,6 @@ export default function PostCard({ post, onPostDeleted, onPostUpdated, eventOwne
           </Box>
         )}
 
-        {/* PREVIEW COMMENTS (INLINE) */}
         {!isEditing && showComments && (
           <>
             <Divider />
@@ -280,13 +279,11 @@ export default function PostCard({ post, onPostDeleted, onPostUpdated, eventOwne
         )}
       </Paper> 
 
-      {/* MENU */}
       <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }} transformOrigin={{ vertical: 'top', horizontal: 'right' }}>
         {canEdit && <MenuItem onClick={handleEditClick}>Chỉnh sửa</MenuItem>}
         {canDelete && <MenuItem onClick={handleDelete} sx={{ color: 'error.main' }}>Xóa</MenuItem>}
       </Menu>
 
-      {/* LIGHTBOX */}
       <Modal open={lightboxOpen} onClose={handleCloseLightbox} closeAfterTransition>
         <Fade in={lightboxOpen}>
           <Box onClick={handleCloseLightbox} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', width: '100vw', outline: 'none' }}>
@@ -295,7 +292,6 @@ export default function PostCard({ post, onPostDeleted, onPostUpdated, eventOwne
         </Fade>
       </Modal>
 
-      {/* LIKE LIST DIALOG */}
       <Dialog open={likeListOpen} onClose={handleCloseLikeList} fullWidth>
         <DialogTitle>Những người đã thích</DialogTitle>
         <DialogContent sx={{py: 0, px: 4}}>
@@ -316,7 +312,6 @@ export default function PostCard({ post, onPostDeleted, onPostUpdated, eventOwne
         <DialogActions><Button onClick={handleCloseLikeList}>Đóng</Button></DialogActions>
       </Dialog>
       
-      {/* COMMENT LIST DIALOG */}
       <Dialog open={commentListOpen} onClose={handleCloseCommentList} fullWidth>
         <DialogTitle>Bình luận</DialogTitle>
         <DialogContent sx={{pb: 0}}>
