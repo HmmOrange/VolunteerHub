@@ -1,14 +1,15 @@
 import Post from "../models/Post.js";
 import User from "../models/User.js";
-import Event from "../models/Event.js"; // Cần import Event để kiểm tra chủ sở hữu
+import Event from "../models/Event.js"; 
 import Comment from "../models/Comment.js"; 
 
-// 1. Lấy tất cả bài đăng của sự kiện (GIỮ NGUYÊN)
+// 1. Lấy tất cả bài đăng của sự kiện (SỬA: THÊM role VÀO POPULATE)
 export const getPostsByEvent = async (req, res) => {
   try {
     const { eventId } = req.params;
     const posts = await Post.find({ eventId: eventId })
-      .populate("createdBy", "username avatar")
+      // --- SỬA TẠI ĐÂY: Thêm "role" vào chuỗi cần lấy ---
+      .populate("createdBy", "username avatar role") 
       .sort({ createdAt: -1 });
 
     const postsWithCommentCount = await Promise.all(
@@ -23,7 +24,7 @@ export const getPostsByEvent = async (req, res) => {
   }
 };
 
-// 2. Tạo bài đăng mới (GIỮ NGUYÊN)
+// 2. Tạo bài đăng mới (SỬA: THÊM role VÀO POPULATE)
 export const createPost = async (req, res) => {
   try {
     const { content, imageUrl, isAnonymous, username, eventId } = req.body;
@@ -35,7 +36,10 @@ export const createPost = async (req, res) => {
       createdBy: user._id, likes: [],
     });
     await newPost.save();
-    const populatedPost = await newPost.populate("createdBy", "username avatar");
+    
+    // --- SỬA TẠI ĐÂY: Thêm "role" để khi tạo xong nó hiện đúng màu ngay ---
+    const populatedPost = await newPost.populate("createdBy", "username avatar role");
+    
     res.status(201).json({ ...populatedPost.toObject(), commentCount: 0 });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -68,11 +72,12 @@ export const likePost = async (req, res) => {
   }
 };
 
-// 4. Lấy danh sách like (GIỮ NGUYÊN)
+// 4. Lấy danh sách like (GIỮ NGUYÊN - Đã có role rồi)
 export const getLikesByPost = async (req, res) => {
   try {
     const { postId } = req.params;
-    const post = await Post.findById(postId).populate("likes", "username avatar role"); // Thêm role để hiển thị màu avatar đúng
+    // Chỗ này bạn đã làm đúng: "username avatar role"
+    const post = await Post.findById(postId).populate("likes", "username avatar role"); 
     if (!post) return res.status(404).json({ message: "Post not found" });
     res.status(200).json(post.likes); 
   } catch (err) {
@@ -91,9 +96,7 @@ export const uploadImage = async (req, res) => {
   }
 };
 
-// ==========================================
-// 6. Cập nhật bài đăng (SỬA LOGIC)
-// ==========================================
+// 6. Cập nhật bài đăng (SỬA: THÊM role VÀO POPULATE)
 export const updatePost = async (req, res) => {
   try {
     const { postId } = req.params;
@@ -115,7 +118,9 @@ export const updatePost = async (req, res) => {
     post.content = content;
     await post.save();
 
-    const updatedPost = await Post.findById(postId).populate("createdBy", "username avatar");
+    // --- SỬA TẠI ĐÂY: Thêm "role" để sau khi sửa không bị mất màu ---
+    const updatedPost = await Post.findById(postId).populate("createdBy", "username avatar role");
+    
     const commentCount = await Comment.countDocuments({ postId: post._id });
     
     res.status(200).json({ ...updatedPost.toObject(), commentCount: commentCount });
@@ -125,9 +130,7 @@ export const updatePost = async (req, res) => {
   }
 };
 
-// ==========================================
-// 7. Xóa bài đăng (SỬA LOGIC QUAN TRỌNG)
-// ==========================================
+// 7. Xóa bài đăng (GIỮ NGUYÊN)
 export const deletePost = async (req, res) => {
   try {
     const { postId } = req.params;
@@ -139,34 +142,23 @@ export const deletePost = async (req, res) => {
     const post = await Post.findById(postId);
     if (!post) return res.status(404).json({ message: "Không tìm thấy bài đăng" });
 
-    // --- KIỂM TRA QUYỀN SỞ HỮU EVENT ---
-    // Tìm sự kiện dựa trên eventId trong bài post
     const event = await Event.findById(post.eventId);
     
-    // Quyền 1: Là người viết bài
     const isPostOwner = post.createdBy.toString() === user._id.toString();
     
-    // Quyền 2: Là người tạo ra Event (Chủ nhóm)
-    // Cần kiểm tra xem event có tồn tại không trước khi check createdBy
     let isEventOwner = false;
     if (event) {
-        // Kiểm tra createdBy của Event (có thể là object hoặc string ID tùy cách lưu)
         const eventCreatorId = event.createdBy._id ? event.createdBy._id.toString() : event.createdBy.toString();
         isEventOwner = eventCreatorId === user._id.toString();
     }
     
-    // Quyền 3 (Tùy chọn): Admin hệ thống
     const isSystemAdmin = user.role === 'admin';
 
-    // Chỉ cho phép nếu là Post Owner HOẶC Event Owner HOẶC Admin
     if (!isPostOwner && !isEventOwner && !isSystemAdmin) {
       return res.status(403).json({ message: "Bạn không có quyền xóa bài đăng này" });
     }
 
-    // Xóa tất cả bình luận liên quan
     await Comment.deleteMany({ postId: postId });
-    
-    // Xóa bài đăng
     await Post.findByIdAndDelete(postId);
 
     res.status(200).json({ message: "Xóa bài đăng thành công" });

@@ -2,6 +2,7 @@ import Event from "../models/Event.js";
 import User from "../models/User.js";
 import JoinRequest from "../models/JoinRequest.js";
 import slugify from "slugify";
+import mongoose from "mongoose";
 
 // ---------------------- CREATE EVENT ----------------------
 export const createEvent = async (req, res) => {
@@ -116,9 +117,24 @@ export const getEventBySlug = async (req, res) => {
     const { slug } = req.params;
     const { userId, role } = req.query;
 
-    const event = await Event.findOne({ slug })
-      .populate("createdBy", "username email avatar role")
-      .populate("volunteers", "username email role avatar");
+    let event;
+
+    // --- SỬA ĐỔI QUAN TRỌNG Ở ĐÂY ---
+    // 1. Kiểm tra xem 'slug' truyền lên có đúng format của ObjectId không
+    if (mongoose.Types.ObjectId.isValid(slug)) {
+      // Nếu giống ID, thử tìm bằng ID trước
+      event = await Event.findById(slug)
+        .populate("createdBy", "username email avatar role")
+        .populate("volunteers", "username email role avatar");
+    }
+
+    // 2. Nếu chưa tìm thấy (hoặc không phải ID), thì tìm theo field 'slug'
+    if (!event) {
+      event = await Event.findOne({ slug: slug })
+        .populate("createdBy", "username email avatar role")
+        .populate("volunteers", "username email role avatar");
+    }
+    // ----------------------------------
 
     if (!event) {
       return res.status(404).json({ message: "Không tìm thấy event" });
@@ -137,14 +153,22 @@ export const getEventBySlug = async (req, res) => {
     result.requests = [];
 
     if (userId) {
-      const isVolunteer = event.volunteers.some(
-        v => (v._id ? v._id.toString() : v.toString()) === userId
+      // Logic check tham gia (GIỮ NGUYÊN - Logic này của bạn viết tốt rồi)
+      const isVolunteer = event.volunteers?.some(
+        (v) => (v._id ? v._id.toString() : v.toString()) === userId
       );
       result.isJoined = isVolunteer;
 
-      const isCreator = event.createdBy._id.toString() === userId;
-      const userInEvent = event.volunteers.find(
-        v => (v._id ? v._id.toString() : v.toString()) === userId
+      // Check chủ sở hữu
+      // Lưu ý: vì đã populate createdBy nên nó là Object
+      const creatorId = event.createdBy._id 
+        ? event.createdBy._id.toString() 
+        : event.createdBy.toString();
+        
+      const isCreator = creatorId === userId;
+
+      const userInEvent = event.volunteers?.find(
+        (v) => (v._id ? v._id.toString() : v.toString()) === userId
       );
 
       const isRoleManager = userInEvent?.role === "manager";
@@ -175,6 +199,7 @@ export const getEventBySlug = async (req, res) => {
 
     res.json(result);
   } catch (err) {
+    console.error("Get Event Error:", err); // Log lỗi ra console server để dễ debug
     res.status(500).json({ message: err.message });
   }
 };
