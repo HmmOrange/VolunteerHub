@@ -2,8 +2,20 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createEvent } from "../../api/Events";
 import {
-  Box, Button, Container, TextField, Typography, Paper, Stack,
-  Checkbox, FormControlLabel, MenuItem, FormControl, FormLabel, RadioGroup, Radio,
+  Box,
+  Button,
+  Container,
+  TextField,
+  Typography,
+  Paper,
+  Stack,
+  Checkbox,
+  FormControlLabel,
+  MenuItem,
+  FormControl,
+  FormLabel,
+  RadioGroup,
+  Radio,
 } from "@mui/material";
 
 import "./CreateEvent.css";
@@ -18,7 +30,7 @@ export default function CreateEvent() {
   const [form, setForm] = useState({
     name: "",
     date: "",
-    endDate: "",            // ✅ NEW
+    endDate: "",
     startTime: "",
     endTime: "",
     location: "",
@@ -34,6 +46,8 @@ export default function CreateEvent() {
     },
   });
 
+  /* ================= RECURRENCE HELPERS ================= */
+
   const toggleDay = (day) => {
     const days = form.recurrence.daysOfWeek;
     setForm({
@@ -41,11 +55,13 @@ export default function CreateEvent() {
       recurrence: {
         ...form.recurrence,
         daysOfWeek: days.includes(day)
-          ? days.filter(d => d !== day)
+          ? days.filter((d) => d !== day)
           : [...days, day],
       },
     });
   };
+
+  /* ================= SUBMIT ================= */
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -61,8 +77,8 @@ export default function CreateEvent() {
       return;
     }
 
-    if (!form.endDate) {
-      alert("Ngày kết thúc là bắt buộc.");
+    if (!form.date || !form.endDate) {
+      alert("Ngày bắt đầu và ngày kết thúc là bắt buộc.");
       return;
     }
 
@@ -84,6 +100,10 @@ export default function CreateEvent() {
       return;
     }
 
+    if (form.recurrence.enabled && !form.recurrence.endDate) {
+      alert("Vui lòng chọn ngày kết thúc lặp.");
+      return;
+    }
 
     const payload = {
       ...form,
@@ -109,7 +129,13 @@ export default function CreateEvent() {
   return (
     <Container maxWidth="sm">
       <Paper elevation={3} sx={{ p: 4, mt: 12 }}>
-        <Typography variant="h5" textAlign="center" fontWeight="bold" mb={3} color={PRIMARY_COLOR}>
+        <Typography
+          variant="h5"
+          textAlign="center"
+          fontWeight="bold"
+          mb={3}
+          color={PRIMARY_COLOR}
+        >
           Tạo sự kiện mới
         </Typography>
 
@@ -120,9 +146,11 @@ export default function CreateEvent() {
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               required
+              fullWidth
             />
 
-            <Stack direction="row" spacing={2}>
+            {/* ===== DATE RANGE ===== */}
+            <Stack direction="row" spacing={2} width="100%">
               <TextField
                 label="Ngày bắt đầu"
                 type="date"
@@ -139,26 +167,34 @@ export default function CreateEvent() {
                 InputLabelProps={{ shrink: true }}
                 value={form.endDate}
                 onChange={(e) => setForm({ ...form, endDate: e.target.value })}
+                required
                 fullWidth
               />
             </Stack>
 
-            <Stack direction="row" spacing={2}>
+            {/* ===== TIME ===== */}
+            <Stack direction="row" spacing={2} width="100%">
               <TextField
                 label="Giờ bắt đầu"
                 type="time"
                 InputLabelProps={{ shrink: true }}
                 value={form.startTime}
-                onChange={(e) => setForm({ ...form, startTime: e.target.value })}
+                onChange={(e) =>
+                  setForm({ ...form, startTime: e.target.value })
+                }
                 required
                 fullWidth
               />
+
               <TextField
                 label="Giờ kết thúc"
                 type="time"
                 InputLabelProps={{ shrink: true }}
                 value={form.endTime}
-                onChange={(e) => setForm({ ...form, endTime: e.target.value })}
+                onChange={(e) =>
+                  setForm({ ...form, endTime: e.target.value })
+                }
+                required
                 fullWidth
               />
             </Stack>
@@ -166,8 +202,11 @@ export default function CreateEvent() {
             <TextField
               label="Địa điểm"
               value={form.location}
-              onChange={(e) => setForm({ ...form, location: e.target.value })}
+              onChange={(e) =>
+                setForm({ ...form, location: e.target.value })
+              }
               required
+              fullWidth
             />
 
             <TextField
@@ -175,8 +214,11 @@ export default function CreateEvent() {
               multiline
               rows={4}
               value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              onChange={(e) =>
+                setForm({ ...form, description: e.target.value })
+              }
               required
+              fullWidth
             />
 
             {/* ===== PRIVACY ===== */}
@@ -185,7 +227,9 @@ export default function CreateEvent() {
               <RadioGroup
                 row
                 value={form.privacy}
-                onChange={(e) => setForm({ ...form, privacy: e.target.value })}
+                onChange={(e) =>
+                  setForm({ ...form, privacy: e.target.value })
+                }
               >
                 <FormControlLabel value="Public" control={<Radio />} label="Công khai" />
                 <FormControlLabel value="Private" control={<Radio />} label="Riêng tư" />
@@ -196,13 +240,23 @@ export default function CreateEvent() {
               <TextField
                 label="Câu hỏi cho thành viên"
                 value={form.question}
-                onChange={(e) => setForm({ ...form, question: e.target.value })}
+                onChange={(e) =>
+                  setForm({ ...form, question: e.target.value })
+                }
                 required
+                fullWidth
               />
             )}
 
-            {/* ===== RECURRENCE (UNCHANGED) ===== */}
-            <Box sx={{ border: "1px solid #e0e0e0", p: 2 }}>
+            {/* ===== RECURRENCE (FULL WIDTH FIXED) ===== */}
+            <Box
+              sx={{
+                border: "1px solid #e0e0e0",
+                p: 2,
+                borderRadius: 1,
+                width: "100%",
+              }}
+            >
               <FormControlLabel
                 control={
                   <Checkbox
@@ -210,24 +264,36 @@ export default function CreateEvent() {
                     onChange={(e) =>
                       setForm({
                         ...form,
-                        recurrence: { ...form.recurrence, enabled: e.target.checked },
+                        recurrence: {
+                          ...form.recurrence,
+                          enabled: e.target.checked,
+                        },
                       })
                     }
+                    sx={{
+                      color: PRIMARY_COLOR,
+                      "&.Mui-checked": { color: PRIMARY_COLOR },
+                    }}
                   />
                 }
                 label="Cài đặt sự kiện lặp lại"
               />
 
               {form.recurrence.enabled && (
-                <Stack spacing={2}>
+                <Stack spacing={2} mt={2} width="100%">
                   <TextField
                     select
                     label="Tần suất"
+                    size="small"
+                    fullWidth
                     value={form.recurrence.frequency}
                     onChange={(e) =>
                       setForm({
                         ...form,
-                        recurrence: { ...form.recurrence, frequency: e.target.value },
+                        recurrence: {
+                          ...form.recurrence,
+                          frequency: e.target.value,
+                        },
                       })
                     }
                   >
@@ -237,22 +303,90 @@ export default function CreateEvent() {
                   </TextField>
 
                   <TextField
+                    label="Lặp lại mỗi"
+                    type="number"
+                    size="small"
+                    fullWidth
+                    inputProps={{ min: 1 }}
+                    value={form.recurrence.interval}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        recurrence: {
+                          ...form.recurrence,
+                          interval: Number(e.target.value),
+                        },
+                      })
+                    }
+                  />
+
+                  {form.recurrence.frequency === "weekly" && (
+                    <Box width="100%">
+                      <Typography variant="caption" mb={1} display="block">
+                        Chọn ngày trong tuần:
+                      </Typography>
+                      <Stack direction="row" spacing={1} flexWrap="wrap">
+                        {["CN", "T2", "T3", "T4", "T5", "T6", "T7"].map(
+                          (label, idx) => (
+                            <Button
+                              key={idx}
+                              size="small"
+                              variant={
+                                form.recurrence.daysOfWeek.includes(idx)
+                                  ? "contained"
+                                  : "outlined"
+                              }
+                              onClick={() => toggleDay(idx)}
+                              sx={{
+                                minWidth: 36,
+                                backgroundColor:
+                                  form.recurrence.daysOfWeek.includes(idx)
+                                    ? PRIMARY_COLOR
+                                    : "transparent",
+                                color: form.recurrence.daysOfWeek.includes(idx)
+                                  ? "#fff"
+                                  : PRIMARY_COLOR,
+                                borderColor: PRIMARY_COLOR,
+                              }}
+                            >
+                              {label}
+                            </Button>
+                          )
+                        )}
+                      </Stack>
+                    </Box>
+                  )}
+
+                  <TextField
                     label="Ngày kết thúc lặp"
                     type="date"
+                    size="small"
+                    fullWidth
                     InputLabelProps={{ shrink: true }}
                     value={form.recurrence.endDate}
                     onChange={(e) =>
                       setForm({
                         ...form,
-                        recurrence: { ...form.recurrence, endDate: e.target.value },
+                        recurrence: {
+                          ...form.recurrence,
+                          endDate: e.target.value,
+                        },
                       })
                     }
+                    required
                   />
                 </Stack>
               )}
             </Box>
 
-            <Button type="submit" variant="contained">
+            <Button
+              type="submit"
+              variant="contained"
+              sx={{
+                backgroundColor: PRIMARY_COLOR,
+                "&:hover": { backgroundColor: "#3aa6a8" },
+              }}
+            >
               Tạo sự kiện
             </Button>
           </Stack>
