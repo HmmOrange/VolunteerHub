@@ -145,3 +145,15 @@ export const removeMember = async ({ slug, memberId, managerId }) => {
   if (!res.ok) throw new Error(json.message || "Lỗi khi xóa thành viên");
   return json;
 };
+
+export const updateMemberAttendance = async ({ slug, userId, attendance, requesterId }) => {
+  const res = await fetch(`${API_URL}/${slug}/attendance`, {
+    method: "PUT",
+    headers: getHeaders(),
+    body: JSON.stringify({ userId, attendance, requesterId }),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.message || "Lỗi khi cập nhật trạng thái tham gia");
+  return json;
+};
+

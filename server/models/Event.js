@@ -86,6 +86,16 @@ const eventSchema = new mongoose.Schema(
 
     volunteers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
 
+    // --- TRẠNG THÁI THAM GIA CỦA VOLUNTEERS ---
+    attendance: [{
+      user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+      status: {
+        type: String,
+        enum: ['pending', 'completed', 'absent'],
+        default: 'pending'
+      }
+    }],
+
     // --- TÍNH NĂNG LẶP LẠI ---
     recurrence: {
       type: recurrenceSchema,

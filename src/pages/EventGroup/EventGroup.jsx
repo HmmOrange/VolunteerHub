@@ -7,12 +7,12 @@ import {
   TextField, Badge, FormControl, FormLabel, RadioGroup, FormControlLabel, Radio,
   Menu, MenuItem
 } from "@mui/material";
-import { Close as CloseIcon, LockOutlined, Edit as EditIcon, ErrorOutline, MoreVert as MoreVertIcon, Cancel, Stop, AccessTime } from "@mui/icons-material";
+import { Close as CloseIcon, LockOutlined, Edit as EditIcon, ErrorOutline, MoreVert as MoreVertIcon, Cancel, Stop, AccessTime, CheckCircle, PersonOff } from "@mui/icons-material";
 
 // Import API
 import {
   getEventBySlug, joinEvent, leaveEvent, removeMember,
-  getPendingRequests, respondToJoinRequest, updateEvent
+  getPendingRequests, respondToJoinRequest, updateEvent, updateMemberAttendance
 } from "../../api/Events";
 import { getPostsByEvent } from "../../api/Posts";
 
@@ -51,6 +51,10 @@ export default function EventGroup() {
   const [anchorElActions, setAnchorElActions] = useState(null);
   const [openExtendDialog, setOpenExtendDialog] = useState(false);
   const [extendHours, setExtendHours] = useState(1);
+
+  // State cho attendance menu
+  const [anchorElAttendance, setAnchorElAttendance] = useState(null);
+  const [selectedMember, setSelectedMember] = useState(null);
 
   // State cho countdown timer
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
@@ -376,6 +380,41 @@ export default function EventGroup() {
             setEventData(p => ({...p, volunteers: p.volunteers.filter(v => (v._id || v) !== memberId)})); 
         } catch(e){ alert(e.message) }
     }
+  };
+
+  const handleOpenAttendanceMenu = (event, member) => {
+    setAnchorElAttendance(event.currentTarget);
+    setSelectedMember(member);
+  };
+
+  const handleCloseAttendanceMenu = () => {
+    setAnchorElAttendance(null);
+    setSelectedMember(null);
+  };
+
+  const handleMarkAttendance = async (status) => {
+    if (!selectedMember) return;
+    
+    try {
+      await updateMemberAttendance({
+        slug: eventData.slug,
+        userId: selectedMember._id,
+        attendance: status,
+        requesterId: currentUserId
+      });
+
+      // Cập nhật local state
+      setEventData(prev => ({
+        ...prev,
+        volunteers: prev.volunteers.map(v => 
+          v._id === selectedMember._id ? { ...v, attendance: status } : v
+        )
+      }));
+    } catch (error) {
+      alert(error.message);
+    }
+
+    handleCloseAttendanceMenu();
   };
 
   const handleOpenActionsMenu = (event) => {
@@ -949,12 +988,51 @@ export default function EventGroup() {
                     const memberIsCreator = memberId === (eventData.createdBy?._id || eventData.createdBy);
                     
                     const avatarProps = renderAvatarProps(member);
+                    
+                    // Kiểm tra trạng thái sự kiện để hiển thị attendance options
+                    const currentEventStatus = autoEventStatus || calculateEventStatus(eventData);
+                    const canMarkAttendance = isOwner && memberId !== currentUserId && 
+                                             (currentEventStatus === 'completed' || currentEventStatus === 'ongoing');
 
                     return (
                         <ListItem key={memberId} secondaryAction={
-                            isOwner && memberId !== currentUserId && (
-                                <IconButton onClick={() => handleKickMember(memberId)}><CloseIcon fontSize="small" /></IconButton>
-                            )
+                            <Stack direction="row" spacing={1} alignItems="center">
+                              {/* Hiển thị trạng thái attendance */}
+                              {member.attendance && member.attendance !== 'pending' && (
+                                <Chip 
+                                  icon={member.attendance === 'completed' ? <CheckCircle /> : <PersonOff />}
+                                  label={member.attendance === 'completed' ? 'Đã tham gia' : 'Không tham gia'} 
+                                  size="small"
+                                  color={member.attendance === 'completed' ? 'success' : 'error'}
+                                  variant="outlined"
+                                  sx={{ height: 24, fontSize: '0.75rem' }}
+                                />
+                              )}
+                              
+                              {/* Menu attendance cho quản lý (khi sự kiện ongoing hoặc completed) */}
+                              {isOwner && memberId !== currentUserId && 
+                               (currentEventStatus === 'completed' || currentEventStatus === 'ongoing') && (
+                                <IconButton 
+                                  size="small"
+                                  onClick={(e) => handleOpenAttendanceMenu(e, member)}
+                                  sx={{ color: '#49BBBD' }}
+                                  title="Đánh dấu tham gia"
+                                >
+                                  <MoreVertIcon fontSize="small" />
+                                </IconButton>
+                              )}
+                              
+                              {/* Nút kick member - luôn hiển thị cho owner */}
+                              {isOwner && memberId !== currentUserId && (
+                                <IconButton 
+                                  onClick={() => handleKickMember(memberId)}
+                                  title="Xóa khỏi sự kiện"
+                                  size="small"
+                                >
+                                  <CloseIcon fontSize="small" />
+                                </IconButton>
+                              )}
+                            </Stack>
                         }>
                             <ListItemAvatar>
                                 <Avatar {...avatarProps} />
@@ -979,6 +1057,22 @@ export default function EventGroup() {
                     );
                 })}
             </List>
+            
+            {/* Menu attendance */}
+            <Menu
+              anchorEl={anchorElAttendance}
+              open={Boolean(anchorElAttendance)}
+              onClose={handleCloseAttendanceMenu}
+            >
+              <MenuItem onClick={() => handleMarkAttendance('completed')}>
+                <CheckCircle sx={{ mr: 1, color: 'success.main' }} fontSize="small" />
+                Đánh dấu hoàn thành
+              </MenuItem>
+              <MenuItem onClick={() => handleMarkAttendance('absent')}>
+                <PersonOff sx={{ mr: 1, color: 'error.main' }} fontSize="small" />
+                Đánh dấu không tham gia
+              </MenuItem>
+            </Menu>
           </Paper>
         )}
 

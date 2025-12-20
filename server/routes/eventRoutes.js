@@ -11,7 +11,8 @@ import {
   leaveEvent,
   removeMember,
   approveEvent,
-  rejectEvent // <--- 1. NHỚ IMPORT CÁI NÀY
+  rejectEvent,
+  updateMemberAttendance
 } from "../controllers/eventController.js";
 
 const router = express.Router();
@@ -43,6 +44,9 @@ router.get("/admin/all", async (req, res) => {
 // 2. SỬA ĐOẠN NÀY: Tách ra để gửi đúng thông báo
 router.put("/admin/:id/approved", approveEvent); // Gọi hàm duyệt (gửi thông báo chúc mừng)
 router.put("/admin/:id/rejected", rejectEvent);  // Gọi hàm từ chối (gửi thông báo chia buồn)
+
+// Route cập nhật trạng thái tham gia
+router.put("/:slug/attendance", updateMemberAttendance);
 
 // ⚠️ Route slug để cuối cùng
 router.get("/:slug", getEventBySlug);

@@ -8,6 +8,12 @@ const joinRequestSchema = new mongoose.Schema({
     type: String, 
     enum: ['pending', 'approved', 'rejected'], 
     default: 'pending' 
+  },
+  // Trạng thái tham gia sau khi sự kiện kết thúc
+  attendance: {
+    type: String,
+    enum: ['pending', 'completed', 'absent'],
+    default: 'pending'
   }
 }, { timestamps: true });
 

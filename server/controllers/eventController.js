@@ -218,6 +218,25 @@ export const getEventBySlug = async (req, res) => {
       }
     }
 
+    // Lấy thông tin attendance từ Event model
+    const attendanceMap = {};
+    if (event.attendance && Array.isArray(event.attendance)) {
+      event.attendance.forEach(att => {
+        attendanceMap[att.user.toString()] = att.status || 'pending';
+      });
+    }
+
+    // Thêm attendance vào từng volunteer
+    if (result.volunteers && Array.isArray(result.volunteers)) {
+      result.volunteers = result.volunteers.map(vol => {
+        const volId = vol._id.toString();
+        return {
+          ...vol,
+          attendance: attendanceMap[volId] || 'pending'
+        };
+      });
+    }
+
     res.json(result);
   } catch (err) {
     console.error("Get Event Error:", err);
@@ -790,6 +809,87 @@ export const rejectEvent = async (req, res) => {
 
     res.status(200).json({ message: "Đã từ chối sự kiện", event });
   } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// ---------------------- CẬP NHẬT TRẠNG THÁI THAM GIA (ATTENDANCE) ----------------------
+export const updateMemberAttendance = async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const { userId, attendance } = req.body; // attendance: 'completed' hoặc 'absent'
+    const requesterId = req.user?.id || req.body.requesterId;
+
+    // Kiểm tra input
+    if (!userId || !attendance) {
+      return res.status(400).json({ message: "Thiếu userId hoặc attendance" });
+    }
+
+    if (!['completed', 'absent', 'pending'].includes(attendance)) {
+      return res.status(400).json({ message: "Trạng thái attendance không hợp lệ" });
+    }
+
+    // Tìm event
+    const event = await Event.findOne({ slug })
+      .populate("createdBy", "_id username")
+      .populate("volunteers", "_id username role");
+
+    if (!event) {
+      return res.status(404).json({ message: "Không tìm thấy sự kiện" });
+    }
+
+    // Kiểm tra quyền: chỉ creator hoặc manager được phép
+    const isCreator = event.createdBy._id.toString() === requesterId;
+    const requesterInEvent = event.volunteers?.find(
+      v => v._id.toString() === requesterId
+    );
+    const isManager = requesterInEvent?.role === 'manager';
+
+    if (!isCreator && !isManager) {
+      return res.status(403).json({ 
+        message: "Chỉ người tổ chức hoặc quản lý mới có quyền cập nhật trạng thái tham gia" 
+      });
+    }
+
+    // Kiểm tra user có trong volunteers không
+    const userInVolunteers = event.volunteers?.some(
+      v => v._id.toString() === userId
+    );
+
+    if (!userInVolunteers) {
+      return res.status(404).json({ 
+        message: "Người dùng này không phải là thành viên của sự kiện" 
+      });
+    }
+
+    // Khởi tạo attendance array nếu chưa có
+    if (!event.attendance) {
+      event.attendance = [];
+    }
+
+    // Tìm hoặc tạo attendance record cho user
+    const existingAttendance = event.attendance.find(
+      a => a.user.toString() === userId
+    );
+
+    if (existingAttendance) {
+      existingAttendance.status = attendance;
+    } else {
+      event.attendance.push({
+        user: userId,
+        status: attendance
+      });
+    }
+
+    await event.save();
+
+    res.status(200).json({ 
+      message: "Cập nhật trạng thái tham gia thành công",
+      attendance: attendance
+    });
+
+  } catch (err) {
+    console.error("Update Attendance Error:", err);
     res.status(500).json({ message: err.message });
   }
 };
