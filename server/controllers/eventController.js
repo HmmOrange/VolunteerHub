@@ -8,50 +8,68 @@ import mongoose from "mongoose";
 export const createEvent = async (req, res) => {
   try {
     const {
-      name, date, startTime, endTime, location,
+      name, date, endDate, startTime, endTime, location,
       description, username, recurrence, privacy, question,
     } = req.body;
 
-    console.log("Create Request Body:", req.body); // LOG ĐỂ DEBUG
+    console.log("Create Request Body:", req.body);
 
-    // 1. Validate cơ bản
-    if (!startTime) {
-      return res.status(400).json({ message: "Giờ bắt đầu là bắt buộc" });
+    if (!startTime || !endTime) {
+      return res.status(400).json({
+        message: "Giờ bắt đầu và giờ kết thúc là bắt buộc",
+      });
     }
 
-    // So sánh chuỗi giờ (VD: "14:00" vs "13:00")
-    if (endTime && startTime) {
-        if (endTime <= startTime) {
-            return res.status(400).json({ message: "Giờ kết thúc phải sau giờ bắt đầu" });
-        }
+    // ✅ FIXED: proper datetime comparison
+    const startDateTime = new Date(`${date}T${startTime}`);
+    const effectiveEndDate = endDate || date;
+    const endDateTime = new Date(`${effectiveEndDate}T${endTime}`);
+
+    if (isNaN(startDateTime) || isNaN(endDateTime)) {
+      return res.status(400).json({
+        message: "Thời gian không hợp lệ",
+      });
+    }
+
+    console.log("Parsed Start DateTime:", startDateTime);
+    console.log("Parsed End DateTime:", endDateTime);
+
+    if (endDateTime <= startDateTime) {
+      return res.status(400).json({
+        message: "Giờ kết thúc phải sau giờ bắt đầu",
+      });
     }
 
     if (!username) {
-        return res.status(400).json({ message: "Thiếu thông tin người tạo (username)" });
+      return res.status(400).json({
+        message: "Thiếu thông tin người tạo (username)",
+      });
     }
 
-    // 2. Tìm User
     const user = await User.findOne({ username });
     if (!user) {
-      return res.status(400).json({ message: `Không tìm thấy người dùng có username: ${username}` });
+      return res.status(400).json({
+        message: `Không tìm thấy người dùng có username: ${username}`,
+      });
     }
 
-    // 3. Xử lý Recurrence
     let recurrenceData = null;
     if (recurrence && recurrence.enabled) {
       recurrenceData = recurrence;
     }
 
-    // 4. Tạo Slug
-    // Sử dụng Date.now() để đảm bảo unique
-    const baseSlug = slugify(name || "event", { lower: true, strict: true, locale: 'vi' });
+    const baseSlug = slugify(name || "event", {
+      lower: true,
+      strict: true,
+      locale: "vi",
+    });
     const finalSlug = `${baseSlug}-${Date.now()}`;
 
-    // 5. Tạo Event mới
     const newEvent = new Event({
       name,
       slug: finalSlug,
-      date, // Đảm bảo date gửi lên đúng định dạng YYYY-MM-DD
+      date,
+      endDate,
       startTime,
       endTime,
       location,
@@ -61,6 +79,8 @@ export const createEvent = async (req, res) => {
       recurrence: recurrenceData,
       privacy: privacy || "Public",
       question: privacy === "Private" ? question : "",
+      status: "pending",
+      approvedAt: null,
     });
 
     await newEvent.save();
@@ -69,18 +89,22 @@ export const createEvent = async (req, res) => {
       message: "Tạo Event thành công",
       slug: newEvent.slug,
       eventId: newEvent._id,
+      status: newEvent.status,
     });
   } catch (err) {
     console.error("Create Event Error:", err);
-    // Trả về lỗi chi tiết để frontend hiển thị
-    res.status(500).json({ message: err.message || "Lỗi Server Internal" });
+    res.status(500).json({
+      message: err.message || "Lỗi Server Internal",
+    });
   }
 };
 
 // ---------------------- GET ALL EVENTS ----------------------
 export const getAllEvents = async (req, res) => {
   try {
-    const events = await Event.find().populate("createdBy", "username role avatar");
+    const events = await Event.find()
+      .populate("createdBy", "username role avatar");
+
     res.json(events);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -91,7 +115,7 @@ export const getAllEvents = async (req, res) => {
 export const getEventBySlug = async (req, res) => {
   try {
     const { slug } = req.params;
-    const { userId } = req.query;
+    const { userId, role } = req.query;
 
     let event;
 
@@ -112,12 +136,17 @@ export const getEventBySlug = async (req, res) => {
     }
     // ----------------------------------
 
-    if (!event)
+    if (!event) {
       return res.status(404).json({ message: "Không tìm thấy event" });
+    }
+
+    // ✅ ADDED: block unapproved events (admin can still view)
+    if (event.status !== "approved" && role !== "admin") {
+      return res.status(403).json({ message: "Sự kiện chưa được duyệt" });
+    }
 
     const result = event.toObject();
 
-    // Default values
     result.isJoined = false;
     result.isManager = false;
     result.requestStatus = null;
@@ -141,7 +170,7 @@ export const getEventBySlug = async (req, res) => {
       const userInEvent = event.volunteers?.find(
         (v) => (v._id ? v._id.toString() : v.toString()) === userId
       );
-      
+
       const isRoleManager = userInEvent?.role === "manager";
       result.isManager = isCreator || isRoleManager;
 
@@ -175,18 +204,18 @@ export const getEventBySlug = async (req, res) => {
   }
 };
 
-// ---------------------- JOIN EVENT (SỬA) ----------------------
+// ---------------------- JOIN EVENT ----------------------
 export const joinEvent = async (req, res) => {
   try {
     const { slug, userId, answer } = req.body;
 
     const event = await Event.findOne({ slug });
-    if (!event)
+    if (!event) {
       return res.status(404).json({ message: "Sự kiện không tồn tại" });
+    }
 
-    // Check joined
     const isAlreadyMember = event.volunteers.some(
-         v => (v._id || v).toString() === userId
+      v => (v._id || v).toString() === userId
     );
 
     if (isAlreadyMember) {
@@ -204,8 +233,6 @@ export const joinEvent = async (req, res) => {
     }
 
     if (event.privacy === "Public") {
-      // SỬA: Thay vì push + save, dùng updateOne với $addToSet
-      // $addToSet giúp tránh trùng lặp và không trigger validation toàn bộ doc
       await Event.updateOne(
         { _id: event._id },
         { $addToSet: { volunteers: userId } }
@@ -213,7 +240,6 @@ export const joinEvent = async (req, res) => {
       return res.json({ message: "Tham gia thành công", status: "joined" });
     }
 
-    // Private logic (Lưu vào JoinRequest collection nên không ảnh hưởng validation Event)
     const newRequest = new JoinRequest({
       event: event._id,
       user: userId,
@@ -228,14 +254,13 @@ export const joinEvent = async (req, res) => {
   }
 };
 
-// ---------------------- LEAVE EVENT (SỬA) ----------------------
+// ---------------------- LEAVE EVENT ----------------------
 export const leaveEvent = async (req, res) => {
   try {
     const { slug, userId } = req.body;
-    
-    // SỬA: Dùng findOneAndUpdate + $pull để bypass validation
+
     const event = await Event.findOneAndUpdate(
-      { slug: slug },
+      { slug },
       { $pull: { volunteers: userId } },
       { new: true }
     );
@@ -244,43 +269,39 @@ export const leaveEvent = async (req, res) => {
       return res.status(404).json({ message: "Sự kiện không tồn tại" });
     }
 
-    if (JoinRequest) {
-        await JoinRequest.deleteMany({ event: event._id, user: userId });
-    }
+    await JoinRequest.deleteMany({ event: event._id, user: userId });
 
     res.json({ message: "Đã rời khỏi sự kiện" });
   } catch (err) {
-    console.error("Leave Event Error:", err);
     res.status(500).json({ message: err.message });
   }
 };
 
-// ---------------------- REMOVE MEMBER (SỬA) ----------------------
+// ---------------------- REMOVE MEMBER ----------------------
 export const removeMember = async (req, res) => {
   try {
     const { slug, memberId, managerId } = req.body;
 
     const event = await Event.findOne({ slug });
-    if (!event) return res.status(404).json({ message: "Sự kiện không tồn tại" });
+    if (!event) {
+      return res.status(404).json({ message: "Sự kiện không tồn tại" });
+    }
 
-    // Logic check quyền (giữ nguyên)
     const isOwner = event.createdBy.toString() === managerId;
     if (!isOwner) {
-      const manager = await User.findById(managerId);
-      if (!manager || manager.role !== "manager") {
-         const managerInEvent = event.volunteers.find(v => (v._id || v).toString() === managerId);
-         if(managerInEvent?.role !== 'manager') {
-             return res.status(403).json({ message: "Bạn không có quyền xóa thành viên này" });
-         }
+      const managerInEvent = event.volunteers.find(
+        v => (v._id || v).toString() === managerId
+      );
+      if (managerInEvent?.role !== "manager") {
+        return res.status(403).json({ message: "Bạn không có quyền xóa thành viên này" });
       }
     }
 
-    // SỬA: Thay vì filter + save, dùng findOneAndUpdate + $pull
     await Event.findOneAndUpdate(
-        { slug: slug },
-        { $pull: { volunteers: memberId } }
+      { slug },
+      { $pull: { volunteers: memberId } }
     );
-    
+
     await JoinRequest.deleteMany({ event: event._id, user: memberId });
 
     res.json({ message: "Đã xóa thành viên" });
@@ -289,7 +310,7 @@ export const removeMember = async (req, res) => {
   }
 };
 
-// ---------------------- UPDATE EVENT (SỬA) ----------------------
+// ---------------------- UPDATE EVENT ----------------------
 export const updateEvent = async (req, res) => {
   try {
     const { slug, username, name, date, location, description, privacy, question } = req.body;
@@ -304,31 +325,23 @@ export const updateEvent = async (req, res) => {
       return res.status(403).json({ message: "Bạn không có quyền chỉnh sửa sự kiện này" });
     }
 
-    // SỬA: Gom các field cần update vào object updateFields
-    // Dùng findOneAndUpdate để tránh lỗi validation các field cũ không liên quan
     const updateFields = {};
     if (name) updateFields.name = name;
     if (date) updateFields.date = date;
     if (location) updateFields.location = location;
     if (description) updateFields.description = description;
-    
-    // Logic privacy
+
     if (privacy) {
-        updateFields.privacy = privacy;
-        if (privacy === "Public") {
-            updateFields.question = ""; // Xóa câu hỏi nếu public
-        } else if (question) {
-            updateFields.question = question;
-        }
-    } else if (question && event.privacy === 'Private') {
-        // Trường hợp chỉ update câu hỏi mà không gửi privacy
-        updateFields.question = question;
+      updateFields.privacy = privacy;
+      updateFields.question = privacy === "Public" ? "" : question;
+    } else if (question && event.privacy === "Private") {
+      updateFields.question = question;
     }
 
     const updatedEvent = await Event.findOneAndUpdate(
-        { slug: slug },
-        { $set: updateFields },
-        { new: true } // Trả về data mới
+      { slug },
+      { $set: updateFields },
+      { new: true }
     );
 
     res.json(updatedEvent);
@@ -353,7 +366,6 @@ export const deleteEvent = async (req, res) => {
     }
 
     await JoinRequest.deleteMany({ event: event._id });
-    // findOneAndDelete an toàn, không trigger validate
     await Event.findOneAndDelete({ slug });
 
     res.json({ message: "Xóa sự kiện thành công!" });
@@ -366,6 +378,7 @@ export const deleteEvent = async (req, res) => {
 export const getPendingRequests = async (req, res) => {
   try {
     const { slug } = req.params;
+
     const event = await Event.findOne({ slug });
     if (!event) return res.status(404).json({ message: "Sự kiện không tồn tại" });
 
@@ -380,33 +393,59 @@ export const getPendingRequests = async (req, res) => {
   }
 };
 
-// ---------------------- RESPOND TO JOIN REQUEST (SỬA) ----------------------
+// ---------------------- RESPOND TO JOIN REQUEST ----------------------
 export const respondToJoinRequest = async (req, res) => {
   try {
-    const { requestId, action, managerId } = req.body;
+    const { requestId, action } = req.body;
 
     const request = await JoinRequest.findById(requestId);
     if (!request) return res.status(404).json({ message: "Yêu cầu không tồn tại" });
 
-    const event = await Event.findById(request.event);
-    if (!event) return res.status(404).json({ message: "Sự kiện không còn tồn tại" });
-
     if (action === "approve") {
       request.status = "approved";
-
-      // SỬA: Dùng updateOne + $addToSet thay vì push + save
-      // Logic: Chỉ thêm vào event nếu chưa tồn tại
       await Event.updateOne(
-          { _id: request.event },
-          { $addToSet: { volunteers: request.user } }
+        { _id: request.event },
+        { $addToSet: { volunteers: request.user } }
       );
-      
     } else {
       request.status = "rejected";
     }
 
-    await request.save(); // Save request là OK vì schema request không bị lỗi
+    await request.save();
     res.json({ message: "Đã xử lý yêu cầu", status: request.status });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+/* ====================== ADMIN APPROVE / REJECT EVENT ====================== */
+export const approveEvent = async (req, res) => {
+  try {
+    const { eventId, action } = req.params;
+
+    if (!["approved", "rejected"].includes(action)) {
+      return res.status(400).json({ message: "Hành động không hợp lệ" });
+    }
+
+    const update = {
+      status: action,
+      approvedAt: action === "approved" ? new Date() : null,
+    };
+
+    const event = await Event.findByIdAndUpdate(
+      eventId,
+      { $set: update },
+      { new: true }
+    );
+
+    if (!event) {
+      return res.status(404).json({ message: "Không tìm thấy sự kiện" });
+    }
+
+    res.json({
+      message: "Cập nhật trạng thái thành công",
+      status: event.status,
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

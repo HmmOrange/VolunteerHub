@@ -10,6 +10,7 @@ import EventGroup from "../pages/EventGroup/EventGroup";
 import UserList from "../pages/UserList/UserList";
 import Events from "../pages/Events/Events";
 import Profile from "../pages/Profile/Profile";
+import AdminEventList from "../pages/AdminEventList/AdminEventList";
 
 export default function AppRoutes() {
   return (
@@ -22,6 +23,7 @@ export default function AppRoutes() {
           <Route path="/event/create" element={<CreateEvent />} />
           <Route path="/event/:slug" element={<EventGroup />} />
           <Route path="/admin/users" element={<UserList />} />
+          <Route path="/admin/events" element={<AdminEventList />} />
           <Route path="/profile" element={<Profile />} />
         </Route>
 
