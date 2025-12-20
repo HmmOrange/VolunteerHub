@@ -7,27 +7,49 @@ import slugify from "slugify";
 export const createEvent = async (req, res) => {
   try {
     const {
-      name, date, startTime, endTime, location,
+      name, date, endDate, startTime, endTime, location,
       description, username, recurrence, privacy, question,
     } = req.body;
 
     console.log("Create Request Body:", req.body);
 
-    if (!startTime) {
-      return res.status(400).json({ message: "Giờ bắt đầu là bắt buộc" });
+    if (!startTime || !endTime) {
+      return res.status(400).json({
+        message: "Giờ bắt đầu và giờ kết thúc là bắt buộc",
+      });
     }
 
-    if (endTime && startTime && endTime <= startTime) {
-      return res.status(400).json({ message: "Giờ kết thúc phải sau giờ bắt đầu" });
+    // ✅ FIXED: proper datetime comparison
+    const startDateTime = new Date(`${date}T${startTime}`);
+    const effectiveEndDate = endDate || date;
+    const endDateTime = new Date(`${effectiveEndDate}T${endTime}`);
+
+    if (isNaN(startDateTime) || isNaN(endDateTime)) {
+      return res.status(400).json({
+        message: "Thời gian không hợp lệ",
+      });
+    }
+
+    console.log("Parsed Start DateTime:", startDateTime);
+    console.log("Parsed End DateTime:", endDateTime);
+
+    if (endDateTime <= startDateTime) {
+      return res.status(400).json({
+        message: "Giờ kết thúc phải sau giờ bắt đầu",
+      });
     }
 
     if (!username) {
-      return res.status(400).json({ message: "Thiếu thông tin người tạo (username)" });
+      return res.status(400).json({
+        message: "Thiếu thông tin người tạo (username)",
+      });
     }
 
     const user = await User.findOne({ username });
     if (!user) {
-      return res.status(400).json({ message: `Không tìm thấy người dùng có username: ${username}` });
+      return res.status(400).json({
+        message: `Không tìm thấy người dùng có username: ${username}`,
+      });
     }
 
     let recurrenceData = null;
@@ -35,13 +57,18 @@ export const createEvent = async (req, res) => {
       recurrenceData = recurrence;
     }
 
-    const baseSlug = slugify(name || "event", { lower: true, strict: true, locale: "vi" });
+    const baseSlug = slugify(name || "event", {
+      lower: true,
+      strict: true,
+      locale: "vi",
+    });
     const finalSlug = `${baseSlug}-${Date.now()}`;
 
     const newEvent = new Event({
       name,
       slug: finalSlug,
       date,
+      endDate,
       startTime,
       endTime,
       location,
@@ -51,8 +78,6 @@ export const createEvent = async (req, res) => {
       recurrence: recurrenceData,
       privacy: privacy || "Public",
       question: privacy === "Private" ? question : "",
-
-      // ✅ ADDED (nothing else changed)
       status: "pending",
       approvedAt: null,
     });
@@ -67,7 +92,9 @@ export const createEvent = async (req, res) => {
     });
   } catch (err) {
     console.error("Create Event Error:", err);
-    res.status(500).json({ message: err.message || "Lỗi Server Internal" });
+    res.status(500).json({
+      message: err.message || "Lỗi Server Internal",
+    });
   }
 };
 

@@ -24,7 +24,10 @@ const recurrenceSchema = new mongoose.Schema(
     endDate: {
       type: Date,
       default: null,
-    },
+      required: function () {
+        return this.enabled === true;
+      },
+    }
   },
   { _id: false }
 );
@@ -35,9 +38,10 @@ const eventSchema = new mongoose.Schema(
     slug: { type: String, required: true, unique: true },
 
     // --- THỜI GIAN ---
-    date: { type: Date, required: true },
-    startTime: { type: String, required: true },
-    endTime: { type: String },
+    date: { type: Date, required: true },        // Ngày bắt đầu
+    endDate: { type: Date, required: true },      // ✅ NEW: Ngày kết thúc (có thể null)
+    startTime: { type: String, required: true }, // HH:mm
+    endTime: { type: String },                   // HH:mm
 
     location: String,
     description: String,

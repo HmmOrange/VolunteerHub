@@ -29,6 +29,7 @@ export default function Events() {
   const [form, setForm] = useState({
     name: "",
     date: "",
+    endDate: "",            // ✅ ADDED
     startTime: "",
     endTime: "",
     location: "",
@@ -42,7 +43,6 @@ export default function Events() {
 
       if (!userId) return;
 
-      // ✅ JOINED EVENTS: APPROVED ONLY
       const joined = data.filter(
         (event) =>
           event.status === "approved" &&
@@ -59,7 +59,6 @@ export default function Events() {
 
   /* ================= DERIVED DATA ================= */
 
-  // ✅ MANAGER PENDING EVENTS
   const pendingManagerEvents =
     role === "manager"
       ? events.filter(
@@ -69,11 +68,7 @@ export default function Events() {
         )
       : [];
 
-  // ✅ VISIBLE EVENTS
-  const visibleEvents =
-    role === "manager"
-      ? events.filter((e) => e.status === "approved")
-      : events.filter((e) => e.status === "approved");
+  const visibleEvents = events.filter((e) => e.status === "approved");
 
   /* ================= ACTIONS ================= */
 
@@ -92,6 +87,7 @@ export default function Events() {
     setForm({
       name: event.name,
       date: event.date.split("T")[0],
+      endDate: event.endDate.split("T")[0], // ✅ ADDED
       startTime: event.startTime || "",
       endTime: event.endTime || "",
       location: event.location || "",
@@ -119,10 +115,13 @@ export default function Events() {
     setEditing(null);
   };
 
-  const renderTime = (start, end) => {
-    if (!start) return "Không rõ thời gian";
-    return end ? `${start} – ${end}` : start;
+  const renderDateRange = (start, end) => {
+    const s = new Date(start).toLocaleDateString();
+    const e = new Date(end).toLocaleDateString();
+    return s === e ? s : `${s} → ${e}`;
   };
+
+  const renderTime = (start, end) => `${start} – ${end}`;
 
   const renderEventCard = (event) => {
     const isCreator = event.createdBy?.username === username;
@@ -147,8 +146,9 @@ export default function Events() {
                     }
                     required
                   />
+
                   <TextField
-                    label="Ngày"
+                    label="Ngày bắt đầu"
                     type="date"
                     value={form.date}
                     onChange={(e) =>
@@ -157,6 +157,18 @@ export default function Events() {
                     InputLabelProps={{ shrink: true }}
                     required
                   />
+
+                  <TextField
+                    label="Ngày kết thúc"
+                    type="date"
+                    value={form.endDate}
+                    onChange={(e) =>
+                      setForm({ ...form, endDate: e.target.value })
+                    }
+                    InputLabelProps={{ shrink: true }}
+                    required
+                  />
+
                   <TextField
                     label="Giờ bắt đầu"
                     type="time"
@@ -167,6 +179,7 @@ export default function Events() {
                     InputLabelProps={{ shrink: true }}
                     required
                   />
+
                   <TextField
                     label="Giờ kết thúc"
                     type="time"
@@ -175,7 +188,9 @@ export default function Events() {
                       setForm({ ...form, endTime: e.target.value })
                     }
                     InputLabelProps={{ shrink: true }}
+                    required
                   />
+
                   <TextField
                     label="Địa điểm"
                     value={form.location}
@@ -183,6 +198,7 @@ export default function Events() {
                       setForm({ ...form, location: e.target.value })
                     }
                   />
+
                   <TextField
                     label="Mô tả"
                     value={form.description}
@@ -192,6 +208,7 @@ export default function Events() {
                     multiline
                     rows={3}
                   />
+
                   <Button type="submit" variant="contained">
                     Lưu
                   </Button>
@@ -201,20 +218,23 @@ export default function Events() {
             ) : (
               <>
                 <Typography variant="h6">{event.name}</Typography>
+
                 <Typography variant="body2" color="text.secondary" mb={1}>
                   {event.description}
                 </Typography>
+
                 <Typography variant="body2">
                   <b>Địa điểm:</b> {event.location || "Chưa xác định"}
                 </Typography>
+
                 <Typography variant="body2">
-                  <b>Ngày:</b>{" "}
-                  {new Date(event.date).toLocaleDateString()}
+                  <b>Ngày:</b> {renderDateRange(event.date, event.endDate)}
                 </Typography>
+
                 <Typography variant="body2">
-                  <b>Thời gian:</b>{" "}
-                  {renderTime(event.startTime, event.endTime)}
+                  <b>Thời gian:</b> {renderTime(event.startTime, event.endTime)}
                 </Typography>
+
                 <Typography variant="caption" display="block" mt={1}>
                   Người tạo: {event.createdBy?.username || "Không rõ"}
                 </Typography>
@@ -246,7 +266,6 @@ export default function Events() {
 
   return (
     <Container maxWidth="lg">
-      {/* ================= JOINED EVENTS ================= */}
       <Paper elevation={2} sx={{ p: 3, mb: 4, mt: 12 }}>
         <Typography variant="h5" fontWeight="bold" mb={2}>
           Sự kiện bạn đã tham gia
@@ -263,7 +282,6 @@ export default function Events() {
         )}
       </Paper>
 
-      {/* ================= MANAGER PENDING EVENTS ================= */}
       {role === "manager" && pendingManagerEvents.length > 0 && (
         <Paper elevation={2} sx={{ p: 3, mb: 4 }}>
           <Typography variant="h5" fontWeight="bold" mb={2}>
@@ -276,7 +294,6 @@ export default function Events() {
         </Paper>
       )}
 
-      {/* ================= ALL EVENTS ================= */}
       <Typography variant="h5" fontWeight="bold" mb={3}>
         Tất cả sự kiện
       </Typography>
