@@ -20,8 +20,8 @@ export default function Login() {
     if (!value) {
       return "Vui lòng nhập mật khẩu";
     }
-    if (value.length < 6) {
-      return "Mật khẩu phải có ít nhất 6 ký tự";
+    if (value.length < 3) {
+      return "Mật khẩu phải có ít nhất 3 ký tự";
     }
     return "";
   };
