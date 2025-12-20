@@ -218,3 +218,103 @@ export const updateAvatar = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+export const importUsers = async (req, res) => {
+  try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
+
+    const raw = req.file.buffer.toString("utf-8");
+    let users = [];
+
+    /* ===== PARSE FILE ===== */
+    if (req.file.originalname.endsWith(".json")) {
+      users = JSON.parse(raw);
+    } else if (req.file.originalname.endsWith(".csv")) {
+      const lines = raw.split("\n").filter(Boolean);
+      const headers = lines.shift().split(",").map(h => h.trim());
+
+      users = lines.map(line => {
+        const values = line.split(",");
+        return headers.reduce((obj, key, i) => {
+          obj[key] = values[i]?.trim();
+          return obj;
+        }, {});
+      });
+    } else {
+      return res.status(400).json({ message: "Unsupported file type" });
+    }
+
+    let created = 0;
+    let skipped = 0;
+
+    for (const u of users) {
+      const {
+        username,
+        email,
+        password,
+        fullName,
+        role,
+        dateOfBirth,
+        address,
+        avatar,
+        isLocked,
+        isEmailVerified,
+      } = u;
+
+      // REQUIRED CORE FIELDS
+      if (!username || !email || !password) {
+        skipped++;
+        continue;
+      }
+
+      const exists = await User.findOne({
+        $or: [{ username }, { email }],
+      });
+
+      if (exists) {
+        skipped++;
+        continue;
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      await User.create({
+        username,
+        email,
+        password: hashedPassword,
+
+        // 🔑 REQUIRED BY SCHEMA — DEFAULT IF MISSING
+        fullName: fullName?.trim() || username,
+
+        // OPTIONAL FIELDS
+        role: ["admin", "manager", "volunteer"].includes(role)
+          ? role
+          : "volunteer",
+
+        dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
+        address: address || "",
+        avatar: avatar || "",
+
+        isLocked: isLocked === "true" || isLocked === true,
+        isEmailVerified: isEmailVerified === "true" || isEmailVerified === true,
+      });
+
+      created++;
+    }
+
+    res.json({
+      message: "Import completed",
+      created,
+      skipped,
+    });
+  } catch (err) {
+    console.error("IMPORT USERS ERROR:", err);
+    res.status(500).json({ message: err.message });
+  }
+};
