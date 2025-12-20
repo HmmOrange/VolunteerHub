@@ -1,81 +1,114 @@
 const API_URL = "http://localhost:5000/api/users";
 
+// ================= HELPERS =================
+const authHeader = () => {
+  const token = localStorage.getItem("token");
+  return {
+    Authorization: `Bearer ${token}`,
+  };
+};
+
+// ================= USERS =================
 export const getAllUsers = async () => {
-  const res = await fetch(`${API_URL}/all`);
+  const res = await fetch(`${API_URL}/all`, {
+    headers: {
+      ...authHeader(),
+    },
+  });
+
   if (!res.ok) {
-    throw new Error("Failed to fetch users");
+    const err = await res.json();
+    throw new Error(err.message || "Failed to fetch users");
   }
+
   return res.json();
 };
 
 export const updateUserRole = async (userId, newRole) => {
   const res = await fetch(`${API_URL}/${userId}/role`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...authHeader(),
+    },
     body: JSON.stringify({ newRole }),
   });
-  
+
   if (!res.ok) {
-    const errorData = await res.json();
-    throw new Error(errorData.message || "Failed to update role");
+    const err = await res.json();
+    throw new Error(err.message || "Failed to update role");
   }
-  
+
   return res.json();
 };
 
 export const toggleUserLock = async (userId) => {
   const res = await fetch(`${API_URL}/${userId}/lock`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
-  });
-  
-  if (!res.ok) {
-    const errorData = await res.json();
-    throw new Error(errorData.message || "Failed to toggle lock");
-  }
-  
-  return res.json();
-};
-
-export const getProfile = async () => {
-  const token = localStorage.getItem("token");
-
-  const res = await fetch("http://localhost:5000/api/users/profile", {
     headers: {
-      Authorization: `Bearer ${token}`,
+      ...authHeader(),
     },
   });
 
   if (!res.ok) {
-    const errorData = await res.json();
-    throw new Error(errorData.message || "Failed to fetch profile");
+    const err = await res.json();
+    throw new Error(err.message || "Failed to toggle lock");
+  }
+
+  return res.json();
+};
+
+// ================= ADMIN: CREATE MANAGER =================
+export const createManager = async (payload) => {
+  const res = await fetch(`${API_URL}/admin/create-manager`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...authHeader(),
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.message || "Failed to create manager");
+  }
+
+  return res.json();
+};
+
+// ================= PROFILE =================
+export const getProfile = async () => {
+  const res = await fetch(`${API_URL}/profile`, {
+    headers: {
+      ...authHeader(),
+    },
+  });
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.message || "Failed to fetch profile");
   }
 
   return res.json();
 };
 
 export const uploadAvatar = async (file) => {
-  const token = localStorage.getItem("token");
-
   const formData = new FormData();
   formData.append("avatar", file);
 
-  const res = await fetch(
-    "http://localhost:5000/api/users/profile/avatar",
-    {
-      method: "PUT",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      body: formData,
-    }
-  );
+  const res = await fetch(`${API_URL}/profile/avatar`, {
+    method: "PUT",
+    headers: {
+      ...authHeader(),
+    },
+    body: formData,
+  });
 
   if (!res.ok) {
-    const errorData = await res.json();
-    throw new Error(errorData.message || "Upload avatar failed");
+    const err = await res.json();
+    throw new Error(err.message || "Upload avatar failed");
   }
 
   return res.json();
 };
-
