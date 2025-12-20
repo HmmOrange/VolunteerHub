@@ -137,30 +137,57 @@ export default function Dashboard() {
           </Typography>
         ) : (
           <Grid container spacing={2}>
-            {upcomingJoinedEvents.map((event) => (
-              <Grid item xs={12} sm={6} md={4} key={event._id}>
-                <Card
-                  className="event-card-clickable"
-                  onClick={() => navigate(`/event/${event.slug}`)}
-                >
-                  <CardContent>
-                    <Typography variant="h6">{event.name}</Typography>
-                    <Typography variant="body2" color="text.secondary" mb={1}>
-                      {event.description}
-                    </Typography>
-                    <Typography variant="body2">
-                      <b>Địa điểm:</b> {event.location || "Chưa xác định"}
-                    </Typography>
-                    <Typography variant="body2">
-                      <b>Ngày:</b> {new Date(event.date).toLocaleDateString()}
-                    </Typography>
-                    <Typography variant="body2">
-                      <b>Thời gian:</b> {renderTime(event.startTime, event.endTime)}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
+            {upcomingJoinedEvents.map((event) => {
+              const eventStatusMap = {
+                upcoming: "Sắp diễn ra",
+                ongoing: "Đang diễn ra",
+                completed: "Đã hoàn thành",
+                cancelled: "Đã bị hủy"
+              };
+
+              const eventStatusColor = {
+                upcoming: "#1976d2",
+                ongoing: "#2e7d32",
+                completed: "#757575",
+                cancelled: "#d32f2f"
+              };
+
+              return (
+                <Grid item xs={12} sm={6} md={4} key={event._id}>
+                  <Card
+                    className="event-card-clickable"
+                    onClick={() => navigate(`/event/${event.slug}`)}
+                  >
+                    <CardContent>
+                      <Typography variant="h6">{event.name}</Typography>
+                      <Typography 
+                        variant="caption" 
+                        display="block"
+                        sx={{ 
+                          color: eventStatusColor[event.eventStatus || 'upcoming'],
+                          fontWeight: 'bold',
+                          mb: 1
+                        }}
+                      >
+                        {eventStatusMap[event.eventStatus || 'upcoming']}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" mb={1}>
+                        {event.description}
+                      </Typography>
+                      <Typography variant="body2">
+                        <b>Địa điểm:</b> {event.location || "Chưa xác định"}
+                      </Typography>
+                      <Typography variant="body2">
+                        <b>Ngày:</b> {new Date(event.date).toLocaleDateString()}
+                      </Typography>
+                      <Typography variant="body2">
+                        <b>Thời gian:</b> {renderTime(event.startTime, event.endTime)}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              );
+            })}
           </Grid>
         )}
       </Paper>

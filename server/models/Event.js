@@ -77,6 +77,13 @@ const eventSchema = new mongoose.Schema(
       default: null,
     },
 
+    // --- TRẠNG THÁI SỰ KIỆN ---
+    eventStatus: {
+      type: String,
+      enum: ["upcoming", "ongoing", "completed", "cancelled"],
+      default: "upcoming",
+    },
+
     volunteers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
 
     // --- TÍNH NĂNG LẶP LẠI ---

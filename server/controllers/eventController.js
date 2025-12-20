@@ -396,7 +396,7 @@ export const removeMember = async (req, res) => {
 // ---------------------- UPDATE EVENT ----------------------
 export const updateEvent = async (req, res) => {
   try {
-    const { slug, username, name, date, location, description, privacy, question } = req.body;
+    const { slug, username, name, date, endDate, startTime, endTime, location, description, privacy, question, action, extendHours } = req.body;
 
     const user = await User.findOne({ username });
     if (!user) return res.status(404).json({ message: "Không tìm thấy người dùng" });
@@ -409,8 +409,58 @@ export const updateEvent = async (req, res) => {
     }
 
     const updateFields = {};
+    
+    // Xử lý các actions đặc biệt
+    if (action) {
+      const now = new Date();
+      
+      switch(action) {
+        case 'cancel':
+          // Hủy sự kiện
+          updateFields.eventStatus = 'cancelled';
+          break;
+          
+        case 'end_early':
+          // Kết thúc sớm - cập nhật endDate và endTime về hiện tại
+          updateFields.eventStatus = 'completed';
+          updateFields.endDate = now;
+          const hours = String(now.getHours()).padStart(2, '0');
+          const minutes = String(now.getMinutes()).padStart(2, '0');
+          updateFields.endTime = `${hours}:${minutes}`;
+          break;
+          
+        case 'extend':
+          // Extend thời gian - chỉ cho phép khi đang diễn ra
+          if (!extendHours || extendHours <= 0) {
+            return res.status(400).json({ message: "Số giờ extend phải lớn hơn 0" });
+          }
+          
+          const currentEndDate = new Date(event.endDate || event.date);
+          if (event.endTime) {
+            const [h, m] = event.endTime.split(':');
+            currentEndDate.setHours(parseInt(h), parseInt(m), 0, 0);
+          }
+          
+          // Thêm số giờ
+          currentEndDate.setHours(currentEndDate.getHours() + parseInt(extendHours));
+          
+          updateFields.endDate = currentEndDate;
+          const newHours = String(currentEndDate.getHours()).padStart(2, '0');
+          const newMinutes = String(currentEndDate.getMinutes()).padStart(2, '0');
+          updateFields.endTime = `${newHours}:${newMinutes}`;
+          break;
+          
+        default:
+          return res.status(400).json({ message: "Action không hợp lệ" });
+      }
+    }
+    
+    // Các trường thông thường
     if (name) updateFields.name = name;
     if (date) updateFields.date = date;
+    if (endDate) updateFields.endDate = endDate;
+    if (startTime) updateFields.startTime = startTime;
+    if (endTime) updateFields.endTime = endTime;
     if (location) updateFields.location = location;
     if (description) updateFields.description = description;
     
@@ -579,7 +629,145 @@ export const approveEvent = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+// ---------------------- BATCH REMOVE MEMBERS ----------------------
+export const batchRemoveMembers = async (req, res) => {
+  try {
+    const { slug, memberIds, username } = req.body;
 
+    if (!memberIds || !Array.isArray(memberIds) || memberIds.length === 0) {
+      return res.status(400).json({ message: "Danh sách thành viên không hợp lệ" });
+    }
+
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.status(404).json({ message: "Người dùng không tồn tại" });
+    }
+
+    const event = await Event.findOne({ slug }).populate("volunteers.user", "username email role avatar");
+    if (!event) {
+      return res.status(404).json({ message: "Sự kiện không tồn tại" });
+    }
+
+    // Kiểm tra quyền (phải là manager hoặc creator)
+    const userVolunteer = event.volunteers.find(v => v.user._id.toString() === user._id.toString());
+    const isCreator = event.createdBy.toString() === user._id.toString();
+    const isManager = userVolunteer && userVolunteer.role === "manager";
+
+    if (!isCreator && !isManager) {
+      return res.status(403).json({ message: "Bạn không có quyền thực hiện hành động này" });
+    }
+
+    // Loại bỏ các thành viên
+    event.volunteers = event.volunteers.filter(v => !memberIds.includes(v.user._id.toString()));
+    await event.save();
+
+    const updatedEvent = await Event.findOne({ slug })
+      .populate("createdBy", "username email avatar role")
+      .populate("volunteers.user", "username email role avatar");
+
+    res.status(200).json(updatedEvent);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// ---------------------- BATCH GRANT MANAGER ROLE ----------------------
+export const batchGrantManager = async (req, res) => {
+  try {
+    const { slug, memberIds, username } = req.body;
+
+    if (!memberIds || !Array.isArray(memberIds) || memberIds.length === 0) {
+      return res.status(400).json({ message: "Danh sách thành viên không hợp lệ" });
+    }
+
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.status(404).json({ message: "Người dùng không tồn tại" });
+    }
+
+    const event = await Event.findOne({ slug }).populate("volunteers.user", "username email role avatar");
+    if (!event) {
+      return res.status(404).json({ message: "Sự kiện không tồn tại" });
+    }
+
+    // Kiểm tra quyền (phải là manager hoặc creator)
+    const userVolunteer = event.volunteers.find(v => v.user._id.toString() === user._id.toString());
+    const isCreator = event.createdBy.toString() === user._id.toString();
+    const isManager = userVolunteer && userVolunteer.role === "manager";
+
+    if (!isCreator && !isManager) {
+      return res.status(403).json({ message: "Bạn không có quyền thực hiện hành động này" });
+    }
+
+    // Cập nhật role
+    event.volunteers.forEach(v => {
+      if (memberIds.includes(v.user._id.toString())) {
+        v.role = "manager";
+      }
+    });
+
+    await event.save();
+
+    const updatedEvent = await Event.findOne({ slug })
+      .populate("createdBy", "username email avatar role")
+      .populate("volunteers.user", "username email role avatar");
+
+    res.status(200).json(updatedEvent);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// ---------------------- BATCH MARK ATTENDANCE ----------------------
+export const batchMarkAttendance = async (req, res) => {
+  try {
+    const { slug, memberIds, attended, username } = req.body;
+
+    if (!memberIds || !Array.isArray(memberIds) || memberIds.length === 0) {
+      return res.status(400).json({ message: "Danh sách thành viên không hợp lệ" });
+    }
+
+    if (!["yes", "no"].includes(attended)) {
+      return res.status(400).json({ message: "Trạng thái tham gia không hợp lệ" });
+    }
+
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.status(404).json({ message: "Người dùng không tồn tại" });
+    }
+
+    const event = await Event.findOne({ slug }).populate("volunteers.user", "username email role avatar");
+    if (!event) {
+      return res.status(404).json({ message: "Sự kiện không tồn tại" });
+    }
+
+    // Kiểm tra quyền (phải là manager hoặc creator)
+    const userVolunteer = event.volunteers.find(v => v.user._id.toString() === user._id.toString());
+    const isCreator = event.createdBy.toString() === user._id.toString();
+    const isManager = userVolunteer && userVolunteer.role === "manager";
+
+    if (!isCreator && !isManager) {
+      return res.status(403).json({ message: "Bạn không có quyền thực hiện hành động này" });
+    }
+
+    // Cập nhật trạng thái tham gia
+    event.volunteers.forEach(v => {
+      if (memberIds.includes(v.user._id.toString())) {
+        v.attended = attended;
+      }
+    });
+
+    await event.save();
+
+    const updatedEvent = await Event.findOne({ slug })
+      .populate("createdBy", "username email avatar role")
+      .populate("volunteers.user", "username email role avatar");
+
+    res.status(200).json(updatedEvent);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
 // 2. Từ chối sự kiện (Reject)
 export const rejectEvent = async (req, res) => {
   try {

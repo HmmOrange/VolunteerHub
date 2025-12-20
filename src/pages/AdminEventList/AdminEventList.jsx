@@ -98,77 +98,102 @@ export default function AdminEventList() {
     );
   }
 
-  const renderEventTable = (events, showActions = false) => (
-    <Table size="small">
-      <TableHead>
-        <TableRow>
-          <TableCell>Tên sự kiện</TableCell>
-          <TableCell>Người tạo</TableCell>
-          <TableCell>Ngày</TableCell>
-          <TableCell>Địa điểm</TableCell>
-          <TableCell>Riêng tư</TableCell>
-          <TableCell>Trạng thái</TableCell>
-          {showActions && <TableCell align="right">Hành động</TableCell>}
-        </TableRow>
-      </TableHead>
-      <TableBody>
-        {events.map((e) => (
-          <TableRow key={e._id}>
-            <TableCell>{e.name}</TableCell>
-            <TableCell>{e.createdBy?.username}</TableCell>
-            <TableCell>
-              {new Date(e.date).toLocaleDateString("vi-VN")}
-            </TableCell>
-            <TableCell>{e.location}</TableCell>
-            <TableCell>{e.privacy}</TableCell>
-            <TableCell>
-              {/* ✅ FIX: render by status */}
-              <Chip
-                size="small"
-                label={
-                  e.status === "approved"
-                    ? "Đã duyệt"
-                    : e.status === "rejected"
-                    ? "Từ chối"
-                    : "Chờ duyệt"
-                }
-                color={
-                  e.status === "approved"
-                    ? "success"
-                    : e.status === "rejected"
-                    ? "error"
-                    : "warning"
-                }
-              />
-            </TableCell>
+  const renderEventTable = (events, showActions = false) => {
+    const eventStatusMap = {
+      upcoming: "Sắp diễn ra",
+      ongoing: "Đang diễn ra",
+      completed: "Đã hoàn thành",
+      cancelled: "Đã bị hủy"
+    };
 
-            {showActions && (
-              <TableCell align="right">
-                <Stack direction="row" spacing={1} justifyContent="flex-end">
-                  <Button
-                    size="small"
-                    variant="contained"
-                    color="success"
-                    onClick={() => handleApprove(e._id)}
-                  >
-                    Duyệt
-                  </Button>
-                  <Button
-                    size="small"
-                    variant="outlined"
-                    color="error"
-                    onClick={() => handleReject(e._id)}
-                  >
-                    Từ chối
-                  </Button>
-                </Stack>
-              </TableCell>
-            )}
+    return (
+      <Table size="small">
+        <TableHead>
+          <TableRow>
+            <TableCell>Tên sự kiện</TableCell>
+            <TableCell>Người tạo</TableCell>
+            <TableCell>Ngày</TableCell>
+            <TableCell>Địa điểm</TableCell>
+            <TableCell>Riêng tư</TableCell>
+            <TableCell>Phê duyệt</TableCell>
+            <TableCell>Trạng thái</TableCell>
+            {showActions && <TableCell align="right">Hành động</TableCell>}
           </TableRow>
-        ))}
-      </TableBody>
-    </Table>
-  );
+        </TableHead>
+        <TableBody>
+          {events.map((e) => (
+            <TableRow key={e._id}>
+              <TableCell>{e.name}</TableCell>
+              <TableCell>{e.createdBy?.username}</TableCell>
+              <TableCell>
+                {new Date(e.date).toLocaleDateString("vi-VN")}
+              </TableCell>
+              <TableCell>{e.location}</TableCell>
+              <TableCell>{e.privacy}</TableCell>
+              <TableCell>
+                {/* ✅ FIX: render by status */}
+                <Chip
+                  size="small"
+                  label={
+                    e.status === "approved"
+                      ? "Đã duyệt"
+                      : e.status === "rejected"
+                      ? "Từ chối"
+                      : "Chờ duyệt"
+                  }
+                  color={
+                    e.status === "approved"
+                      ? "success"
+                      : e.status === "rejected"
+                      ? "error"
+                      : "warning"
+                  }
+                />
+              </TableCell>
+              <TableCell>
+                <Chip
+                  size="small"
+                  label={eventStatusMap[e.eventStatus || 'upcoming']}
+                  color={
+                    e.eventStatus === "ongoing"
+                      ? "success"
+                      : e.eventStatus === "completed"
+                      ? "default"
+                      : e.eventStatus === "cancelled"
+                      ? "error"
+                      : "info"
+                  }
+                />
+              </TableCell>
+
+              {showActions && (
+                <TableCell align="right">
+                  <Stack direction="row" spacing={1} justifyContent="flex-end">
+                    <Button
+                      size="small"
+                      variant="contained"
+                      color="success"
+                      onClick={() => handleApprove(e._id)}
+                    >
+                      Duyệt
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      color="error"
+                      onClick={() => handleReject(e._id)}
+                    >
+                      Từ chối
+                    </Button>
+                  </Stack>
+                </TableCell>
+              )}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    );
+  };
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4 }}>

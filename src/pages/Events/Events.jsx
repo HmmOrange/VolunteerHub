@@ -173,6 +173,20 @@ export default function Events() {
       rejected: "Bị từ chối",
     };
 
+    const eventStatusMap = {
+      upcoming: "Sắp diễn ra",
+      ongoing: "Đang diễn ra",
+      completed: "Đã hoàn thành",
+      cancelled: "Đã bị hủy"
+    };
+
+    const eventStatusColor = {
+      upcoming: "#1976d2",
+      ongoing: "#2e7d32",
+      completed: "#757575",
+      cancelled: "#d32f2f"
+    };
+
     return (
       <Grid item xs={12} sm={6} md={4} key={event._id}>
         <Card
@@ -188,6 +202,18 @@ export default function Events() {
 
             <Typography variant="caption" color="primary" display="block">
               Trạng thái: {statusMap[event.status]}
+            </Typography>
+
+            <Typography 
+              variant="caption" 
+              display="block"
+              sx={{ 
+                color: eventStatusColor[event.eventStatus || 'upcoming'],
+                fontWeight: 'bold',
+                mb: 1
+              }}
+            >
+              {eventStatusMap[event.eventStatus || 'upcoming']}
             </Typography>
 
             <Typography variant="body2">

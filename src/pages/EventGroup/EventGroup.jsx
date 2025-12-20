@@ -4,9 +4,10 @@ import {
   Box, Typography, Paper, Divider, Tabs, Tab, Container, Button,
   CircularProgress, List, ListItem, ListItemAvatar, Avatar, ListItemText,
   IconButton, Chip, Stack, Dialog, DialogTitle, DialogContent, DialogActions,
-  TextField, Badge, FormControl, FormLabel, RadioGroup, FormControlLabel, Radio
+  TextField, Badge, FormControl, FormLabel, RadioGroup, FormControlLabel, Radio,
+  Menu, MenuItem
 } from "@mui/material";
-import { Close as CloseIcon, LockOutlined, Edit as EditIcon, ErrorOutline } from "@mui/icons-material"; // <--- 1. Import thêm icon ErrorOutline
+import { Close as CloseIcon, LockOutlined, Edit as EditIcon, ErrorOutline, MoreVert as MoreVertIcon, Cancel, Stop, AccessTime } from "@mui/icons-material";
 
 // Import API
 import {
@@ -42,8 +43,19 @@ export default function EventGroup() {
   const [openEditModal, setOpenEditModal] = useState(false);
   const [editForm, setEditForm] = useState({
     name: "", description: "", location: "", date: "",
+    endDate: "", startTime: "", endTime: "",
     privacy: "Public", question: ""
   });
+
+  // State cho action menu
+  const [anchorElActions, setAnchorElActions] = useState(null);
+  const [openExtendDialog, setOpenExtendDialog] = useState(false);
+  const [extendHours, setExtendHours] = useState(1);
+
+  // State cho countdown timer
+  const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  const [countdownLabel, setCountdownLabel] = useState("");
+  const [autoEventStatus, setAutoEventStatus] = useState("");
 
   // 2. THÊM STATE ĐỂ LƯU LỖI (NẾU BỊ CHẶN)
   const [errorState, setErrorState] = useState(null); 
@@ -54,6 +66,32 @@ export default function EventGroup() {
   const currentUserIsCreator = eventData?.createdBy?._id === currentUserId || eventData?.createdBy === currentUserId;
   
   const isOwner = currentUserInEvent && currentUserIsCreator && currentUserInEvent.role === 'manager';
+
+  // === HÀM TÍNH TRẠNG THÁI TỰ ĐỘNG ===
+  const calculateEventStatus = (event) => {
+    if (!event) return 'upcoming';
+    
+    // Chỉ giữ trạng thái cancelled nếu đã bị hủy
+    if (event.eventStatus === 'cancelled') return 'cancelled';
+    
+    // Còn lại tất cả dựa vào thời gian thực tế
+    const now = new Date();
+    const startDate = new Date(event.date);
+    if (event.startTime) {
+      const [h, m] = event.startTime.split(':');
+      startDate.setHours(parseInt(h), parseInt(m), 0, 0);
+    }
+    
+    const endDate = new Date(event.endDate || event.date);
+    if (event.endTime) {
+      const [h, m] = event.endTime.split(':');
+      endDate.setHours(parseInt(h), parseInt(m), 0, 0);
+    }
+    
+    if (now < startDate) return 'upcoming';
+    if (now >= startDate && now <= endDate) return 'ongoing';
+    return 'completed';
+  };
 
   // === 1. HÀM XỬ LÝ AVATAR ===
   const getAvatarUrl = (user) => {
@@ -164,6 +202,76 @@ export default function EventGroup() {
     }
   }, [eventData, currentTab, isOwner]);
 
+  // === COUNTDOWN TIMER ===
+  useEffect(() => {
+    if (!eventData) return;
+
+    const calculateCountdown = () => {
+      const now = new Date();
+      
+      // Tính trạng thái tự động
+      const currentStatus = calculateEventStatus(eventData);
+      setAutoEventStatus(currentStatus);
+      
+      // Nếu sự kiện đã hoàn thành hoặc bị hủy
+      if (currentStatus === 'completed' || currentStatus === 'cancelled') {
+        setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+        setCountdownLabel(currentStatus === 'completed' ? 'Sự kiện đã kết thúc' : 'Sự kiện đã bị hủy');
+        return;
+      }
+
+      // Tạo thời gian bắt đầu và kết thúc
+      const startDate = new Date(eventData.date);
+      if (eventData.startTime) {
+        const [h, m] = eventData.startTime.split(':');
+        startDate.setHours(parseInt(h), parseInt(m), 0, 0);
+      }
+
+      const endDate = new Date(eventData.endDate || eventData.date);
+      if (eventData.endTime) {
+        const [h, m] = eventData.endTime.split(':');
+        endDate.setHours(parseInt(h), parseInt(m), 0, 0);
+      }
+
+      let targetDate;
+      let label;
+
+      // Xác định thời gian đích dựa trên trạng thái tự động
+      if (currentStatus === 'upcoming' || now < startDate) {
+        targetDate = startDate;
+        label = 'Thời gian đến khi sự kiện bắt đầu';
+      } else if (currentStatus === 'ongoing' || (now >= startDate && now < endDate)) {
+        targetDate = endDate;
+        label = 'Thời gian đến khi sự kiện kết thúc';
+      } else {
+        setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+        setCountdownLabel('Sự kiện đã kết thúc');
+        return;
+      }
+
+      const diff = targetDate - now;
+
+      if (diff <= 0) {
+        setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+        setCountdownLabel('Sự kiện đã kết thúc');
+        return;
+      }
+
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+      setCountdown({ days, hours, minutes, seconds });
+      setCountdownLabel(label);
+    };
+
+    calculateCountdown();
+    const interval = setInterval(calculateCountdown, 1000);
+
+    return () => clearInterval(interval);
+  }, [eventData]);
+
   // === HANDLERS (Giữ nguyên không đổi) ===
   const handleEditClick = () => {
     setEditForm({
@@ -171,6 +279,9 @@ export default function EventGroup() {
       description: eventData.description,
       location: eventData.location,
       date: new Date(eventData.date).toISOString().split('T')[0],
+      endDate: eventData.endDate ? new Date(eventData.endDate).toISOString().split('T')[0] : new Date(eventData.date).toISOString().split('T')[0],
+      startTime: eventData.startTime || "",
+      endTime: eventData.endTime || "",
       privacy: eventData.privacy || "Public",
       question: eventData.question || "Tại sao bạn muốn tham gia sự kiện này?"
     });
@@ -185,10 +296,21 @@ export default function EventGroup() {
           questionToSend = "Tại sao bạn muốn tham gia sự kiện này?";
       }
       const updated = await updateEvent({ ...editForm, question: questionToSend, slug: eventData.slug, username: currentUserUsername });
-      setEventData(prev => ({ ...updated, createdBy: prev.createdBy, volunteers: prev.volunteers, requests: prev.requests }));
+      
+      // Cập nhật eventData với thông tin mới
+      setEventData(prev => ({ 
+        ...updated, 
+        createdBy: prev.createdBy, 
+        volunteers: prev.volunteers, 
+        requests: prev.requests 
+      }));
+      
+      // Tính toán và cập nhật trạng thái mới ngay lập tức
+      const newStatus = calculateEventStatus(updated);
+      setAutoEventStatus(newStatus);
+      
       setOpenEditModal(false);
       alert("Cập nhật thành công!");
-      window.location.reload();
     } catch (error) { alert("Lỗi: " + error.message); }
   };
 
@@ -256,6 +378,82 @@ export default function EventGroup() {
     }
   };
 
+  const handleOpenActionsMenu = (event) => {
+    setAnchorElActions(event.currentTarget);
+  };
+
+  const handleCloseActionsMenu = () => {
+    setAnchorElActions(null);
+  };
+
+  const handleCancelEvent = async () => {
+    if (!window.confirm('Bạn có chắc chắn muốn HỦY sự kiện này? Hành động này không thể hoàn tác!')) {
+      return;
+    }
+    
+    try {
+      const updated = await updateEvent({ 
+        slug: eventData.slug,
+        action: 'cancel',
+        username: currentUserUsername 
+      });
+      setEventData(prev => ({ ...prev, eventStatus: updated.eventStatus }));
+      handleCloseActionsMenu();
+      alert('Đã hủy sự kiện!');
+    } catch (error) {
+      alert('Lỗi: ' + error.message);
+    }
+  };
+
+  const handleEndEarly = async () => {
+    if (!window.confirm('Bạn có chắc chắn muốn KẾT THÚC SỚM sự kiện này?')) {
+      return;
+    }
+    
+    try {
+      const updated = await updateEvent({ 
+        slug: eventData.slug,
+        action: 'end_early',
+        username: currentUserUsername 
+      });
+      setEventData(prev => ({ 
+        ...prev, 
+        eventStatus: updated.eventStatus,
+        endDate: updated.endDate,
+        endTime: updated.endTime
+      }));
+      handleCloseActionsMenu();
+      alert('Đã kết thúc sự kiện!');
+    } catch (error) {
+      alert('Lỗi: ' + error.message);
+    }
+  };
+
+  const handleExtendEvent = async () => {
+    if (!extendHours || extendHours <= 0) {
+      return alert('Vui lòng nhập số giờ hợp lệ');
+    }
+    
+    try {
+      const updated = await updateEvent({ 
+        slug: eventData.slug,
+        action: 'extend',
+        extendHours: extendHours,
+        username: currentUserUsername 
+      });
+      setEventData(prev => ({ 
+        ...prev,
+        endDate: updated.endDate,
+        endTime: updated.endTime
+      }));
+      setOpenExtendDialog(false);
+      handleCloseActionsMenu();
+      alert(`Đã gia hạn sự kiện thêm ${extendHours} giờ!`);
+    } catch (error) {
+      alert('Lỗi: ' + error.message);
+    }
+  };
+
   // 4. KIỂM TRA LỖI VÀ RENDER MÀN HÌNH CHẶN (THÊM ĐOẠN NÀY TRƯỚC LOADING)
   if (errorState) {
     return (
@@ -308,7 +506,7 @@ export default function EventGroup() {
     // ... (Phần render giao diện chính GIỮ NGUYÊN không thay đổi gì cả)
     <Container maxWidth="lg" sx={{ p: 3, minHeight: '100vh', bgcolor: '#f1f4f7' }}>
       {/* HEADER TABS */}
-      <Paper className="event-group-tabs-paper" elevation={0} variant="outlined">
+      <Paper className="event-group-tabs-paper" elevation={0} variant="outlined" sx={{ mb: 2 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 2 }}>
           <Tabs value={currentTab} onChange={(e, v) => setCurrentTab(v)} sx={{ flexGrow: 1, '& .Mui-selected': { color: '#49BBBD !important' }, '& .MuiTabs-indicator': { backgroundColor: '#49BBBD' } }}>
             <Tab label="Bài đăng" />
@@ -335,14 +533,45 @@ export default function EventGroup() {
               }
             </Button>
           ) : (
-            <Button variant="outlined" color="inherit" size="small" onClick={handleLeaveEvent} sx={{ ml: 2, color: 'gray', borderColor: 'gray' }}>
-              Rời khỏi
-            </Button>
+            // Người tổ chức thấy menu actions, người khác thấy nút rời khỏi
+            currentUserIsCreator ? (
+              <>
+                <IconButton 
+                  size="small" 
+                  onClick={handleOpenActionsMenu} 
+                  sx={{ ml: 2, color: '#49BBBD' }}
+                >
+                  <MoreVertIcon />
+                </IconButton>
+                <Menu
+                  anchorEl={anchorElActions}
+                  open={Boolean(anchorElActions)}
+                  onClose={handleCloseActionsMenu}
+                >
+                  <MenuItem onClick={handleCancelEvent}>
+                    <Cancel sx={{ mr: 1}} />
+                    <Typography color="error">Hủy sự kiện</Typography>
+                  </MenuItem>
+                  <MenuItem onClick={handleEndEarly}>
+                    <Stop sx={{ mr: 1}} />
+                    <Typography color="warning.main">Kết thúc sớm</Typography>
+                  </MenuItem>
+                  <MenuItem onClick={() => { handleCloseActionsMenu(); setOpenExtendDialog(true); }}>
+                    <AccessTime sx={{ mr: 1}} />
+                    <Typography color="primary">Gia hạn sự kiện</Typography>
+                  </MenuItem>
+                </Menu>
+              </>
+            ) : (
+              <Button variant="outlined" color="inherit" size="small" onClick={handleLeaveEvent} sx={{ ml: 2, color: 'gray', borderColor: 'gray' }}>
+                Rời khỏi
+              </Button>
+            )
           )}
         </Box>
       </Paper>
 
-      <Box className="event-group-content-area">
+      <Box className="event-group-content-area" sx={{ mt: 0 }}>
         {/* TAB 0: POSTS */}
         {currentTab === 0 && (
           (eventData.privacy === 'Private' && !isJoined) ? (
@@ -353,13 +582,325 @@ export default function EventGroup() {
               {requestStatus !== 'pending' && <Button variant="contained" onClick={handleJoinClick} sx={{ mt: 2, bgcolor: '#49BBBD' }}>Tham gia ngay</Button>}
             </Paper>
           ) : (
-            <>
-              {isJoined && <CreatePost eventId={eventData._id} onPostCreated={(p) => setPosts([p, ...posts])} />}
-              {isLoadingPosts ? <Box sx={{ p: 5, textAlign: 'center' }}><CircularProgress sx={{ color: '#49BBBD' }}/></Box> : 
-               posts.length === 0 ? <Typography textAlign="center" sx={{ mt: 2 }}>Chưa có bài đăng nào.</Typography> :
-               posts.map(post => <PostCard key={post._id} post={post} eventOwnerId={eventData.createdBy?._id || eventData.createdBy} onPostDeleted={(id) => setPosts(posts.filter(p => p._id !== id))} onPostUpdated={(updated) => setPosts(posts.map(p => p._id === updated._id ? updated : p))} />)
-              }
-            </>
+            <Box sx={{ display: 'flex', gap: 3 }}>
+              {/* PHẦN BÀI ĐĂNG BÊN TRÁI */}
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                {isJoined && <CreatePost eventId={eventData._id} onPostCreated={(p) => setPosts([p, ...posts])} />}
+                {isLoadingPosts ? <Box sx={{ p: 5, textAlign: 'center' }}><CircularProgress sx={{ color: '#49BBBD' }}/></Box> : 
+                 posts.length === 0 ? <Typography textAlign="center" sx={{ mt: 2 }}>Chưa có bài đăng nào.</Typography> :
+                 posts.map(post => <PostCard key={post._id} post={post} eventOwnerId={eventData.createdBy?._id || eventData.createdBy} onPostDeleted={(id) => setPosts(posts.filter(p => p._id !== id))} onPostUpdated={(updated) => setPosts(posts.map(p => p._id === updated._id ? updated : p))} />)
+                }
+              </Box>
+
+              {/* COUNTDOWN TIMER BÊN PHẢI */}
+              <Paper 
+                elevation={3}
+                sx={{ 
+                  width: '320px',
+                  flexShrink: 0,
+                  height: 'fit-content',
+                  position: 'sticky',
+                  top: '85px',
+                  overflow: 'hidden',
+                  background: 'linear-gradient(135deg, #49BBBD 0%, #3daeb0 100%)',
+                  borderRadius: 3
+                }}
+              >
+                {/* HEADER */}
+                <Box sx={{ 
+                  bgcolor: 'rgba(255,255,255,0.15)', 
+                  backdropFilter: 'blur(10px)',
+                  p: 2.5,
+                  textAlign: 'center',
+                  borderBottom: '1px solid rgba(255,255,255,0.2)'
+                }}>
+                  <Typography 
+                    variant="h6" 
+                    fontWeight="bold" 
+                    sx={{ 
+                      color: 'white',
+                      textShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                      letterSpacing: '0.5px'
+                    }}
+                  >
+                    Đồng hồ sự kiện
+                  </Typography>
+                </Box>
+                
+                {/* COUNTDOWN DISPLAY */}
+                <Box sx={{ p: 3, bgcolor: 'rgba(255,255,255,0.1)' }}>
+                  <Box sx={{ 
+                    display: 'grid',
+                    gridTemplateColumns: countdown.days > 0 ? 'repeat(4, 1fr)' : 'repeat(3, 1fr)',
+                    gap: 1.5,
+                    mb: 2
+                  }}>
+                    {/* Days */}
+                    {countdown.days > 0 && (
+                      <Box sx={{ textAlign: 'center' }}>
+                        <Box sx={{ 
+                          bgcolor: 'white',
+                          borderRadius: 2,
+                          p: 1.5,
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                          minHeight: '64px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          justifyContent: 'center'
+                        }}>
+                          <Typography 
+                            variant="h5" 
+                            fontWeight="bold"
+                            sx={{ 
+                              color: '#49BBBD',
+                              lineHeight: 1,
+                              fontFamily: 'monospace'
+                            }}
+                          >
+                            {String(countdown.days).padStart(2, '0')}
+                          </Typography>
+                        </Box>
+                        <Typography 
+                          variant="caption" 
+                          sx={{ 
+                            mt: 0.5, 
+                            display: 'block',
+                            color: 'white',
+                            fontWeight: 600,
+                            fontSize: '0.7rem',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.5px'
+                          }}
+                        >
+                          Ngày
+                        </Typography>
+                      </Box>
+                    )}
+                    
+                    {/* Hours */}
+                    <Box sx={{ textAlign: 'center' }}>
+                      <Box sx={{ 
+                        bgcolor: 'white',
+                        borderRadius: 2,
+                        p: 1.5,
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                        minHeight: '64px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center'
+                      }}>
+                        <Typography 
+                          variant="h5" 
+                          fontWeight="bold"
+                          sx={{ 
+                            color: '#49BBBD',
+                            lineHeight: 1,
+                            fontFamily: 'monospace'
+                          }}
+                        >
+                          {String(countdown.hours).padStart(2, '0')}
+                        </Typography>
+                      </Box>
+                      <Typography 
+                        variant="caption" 
+                        sx={{ 
+                          mt: 0.5, 
+                          display: 'block',
+                          color: 'white',
+                          fontWeight: 600,
+                          fontSize: '0.7rem',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px'
+                        }}
+                      >
+                        Giờ
+                      </Typography>
+                    </Box>
+                    
+                    {/* Minutes */}
+                    <Box sx={{ textAlign: 'center' }}>
+                      <Box sx={{ 
+                        bgcolor: 'white',
+                        borderRadius: 2,
+                        p: 1.5,
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                        minHeight: '64px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center'
+                      }}>
+                        <Typography 
+                          variant="h5" 
+                          fontWeight="bold"
+                          sx={{ 
+                            color: '#49BBBD',
+                            lineHeight: 1,
+                            fontFamily: 'monospace'
+                          }}
+                        >
+                          {String(countdown.minutes).padStart(2, '0')}
+                        </Typography>
+                      </Box>
+                      <Typography 
+                        variant="caption" 
+                        sx={{ 
+                          mt: 0.5, 
+                          display: 'block',
+                          color: 'white',
+                          fontWeight: 600,
+                          fontSize: '0.7rem',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px'
+                        }}
+                      >
+                        Phút
+                      </Typography>
+                    </Box>
+                    
+                    {/* Seconds */}
+                    <Box sx={{ textAlign: 'center' }}>
+                      <Box sx={{ 
+                        bgcolor: 'white',
+                        borderRadius: 2,
+                        p: 1.5,
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                        minHeight: '64px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center'
+                      }}>
+                        <Typography 
+                          variant="h5" 
+                          fontWeight="bold"
+                          sx={{ 
+                            color: '#49BBBD',
+                            lineHeight: 1,
+                            fontFamily: 'monospace'
+                          }}
+                        >
+                          {String(countdown.seconds).padStart(2, '0')}
+                        </Typography>
+                      </Box>
+                      <Typography 
+                        variant="caption" 
+                        sx={{ 
+                          mt: 0.5, 
+                          display: 'block',
+                          color: 'white',
+                          fontWeight: 600,
+                          fontSize: '0.7rem',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px'
+                        }}
+                      >
+                        Giây
+                      </Typography>
+                    </Box>
+                  </Box>
+
+                  {/* COUNTDOWN LABEL */}
+                  <Box sx={{ 
+                    bgcolor: 'rgba(255,255,255,0.2)',
+                    borderRadius: 2,
+                    p: 1.5,
+                    mt: 2
+                  }}>
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        color: 'white',
+                        fontWeight: 500,
+                        fontSize: '0.85rem',
+                        textAlign: 'center'
+                      }}
+                    >
+                      {countdownLabel}
+                    </Typography>
+                  </Box>
+                </Box>
+
+                {/* TRẠNG THÁI SỰ KIỆN */}
+                <Box sx={{ 
+                  p: 2.5, 
+                  bgcolor: 'rgba(255,255,255,0.1)',
+                  borderTop: '1px solid rgba(255,255,255,0.2)'
+                }}>
+                  <Typography 
+                    variant="subtitle2" 
+                    fontWeight="bold" 
+                    sx={{ mb: 1.5, color: 'white', textAlign: 'center' }}
+                  >
+                    Trạng thái sự kiện
+                  </Typography>
+                  <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                    <Chip
+                      label={
+                        autoEventStatus === 'upcoming' ? 'Sắp diễn ra' :
+                        autoEventStatus === 'ongoing' ? 'Đang diễn ra' :
+                        autoEventStatus === 'completed' ? 'Đã hoàn thành' :
+                        autoEventStatus === 'cancelled' ? 'Đã bị hủy' :
+                        'Sắp diễn ra'
+                      }
+                      sx={{ 
+                        fontWeight: 'bold', 
+                        fontSize: '0.85rem',
+                        bgcolor: 'white',
+                        color: autoEventStatus === 'upcoming' ? '#1976d2' :
+                               autoEventStatus === 'ongoing' ? '#2e7d32' :
+                               autoEventStatus === 'completed' ? '#757575' :
+                               autoEventStatus === 'cancelled' ? '#d32f2f' :
+                               '#1976d2',
+                        px: 2,
+                        py: 1.5,
+                        '& .MuiChip-label': {
+                          px: 1
+                        }
+                      }}
+                    />
+                  </Box>
+                </Box>
+
+                {/* THÔNG TIN THỜI GIAN */}
+                <Box sx={{ 
+                  p: 2.5, 
+                  bgcolor: 'rgba(0,0,0,0.2)',
+                  borderTop: '1px solid rgba(255,255,255,0.1)'
+                }}>
+                  <Stack spacing={1}>
+                    <Box sx={{ 
+                      display: 'flex', 
+                      alignItems: 'center',
+                      bgcolor: 'rgba(255,255,255,0.1)',
+                      borderRadius: 1.5,
+                      p: 1.5
+                    }}>
+                      <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.9)', flex: 1 }}>
+                        <b>Bắt đầu:</b>
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: 'white', fontWeight: 600 }}>
+                        {new Date(eventData.date).toLocaleDateString('vi-VN')}
+                        {eventData.startTime && ` ${eventData.startTime}`}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ 
+                      display: 'flex', 
+                      alignItems: 'center',
+                      bgcolor: 'rgba(255,255,255,0.1)',
+                      borderRadius: 1.5,
+                      p: 1.5
+                    }}>
+                      <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.9)', flex: 1 }}>
+                        <b>Kết thúc:</b>
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: 'white', fontWeight: 600 }}>
+                        {new Date(eventData.endDate || eventData.date).toLocaleDateString('vi-VN')}
+                        {eventData.endTime && ` ${eventData.endTime}`}
+                      </Typography>
+                    </Box>
+                  </Stack>
+                </Box>
+              </Paper>
+            </Box>
           )
         )}
 
@@ -381,6 +922,13 @@ export default function EventGroup() {
                 <Typography><b>Địa điểm:</b> {eventData.location}</Typography>
                 <Typography><b>Ngày tổ chức:</b> {new Date(eventData.date).toLocaleDateString('vi-VN')}</Typography>
                 <Typography><b>Quyền riêng tư:</b> {eventData.privacy === 'Private' ? 'Riêng tư' : 'Công khai'}</Typography>
+                <Typography><b>Trạng thái:</b> {
+                  autoEventStatus === 'upcoming' ? 'Sắp diễn ra' :
+                  autoEventStatus === 'ongoing' ? 'Đang diễn ra' :
+                  autoEventStatus === 'completed' ? 'Đã hoàn thành' :
+                  autoEventStatus === 'cancelled' ? 'Đã bị hủy' :
+                  'Sắp diễn ra'
+                }</Typography>
                 <Typography><b>Người tạo:</b> {eventData.createdBy?.username || "Không xác định"}</Typography>
                 {isOwner && eventData.privacy === 'Private' && eventData.question && (
                     <Typography sx={{ mt: 1 }}><b>Câu hỏi tham gia:</b> {eventData.question}</Typography>
@@ -482,7 +1030,45 @@ export default function EventGroup() {
             <TextField label="Tên" fullWidth value={editForm.name} onChange={(e) => setEditForm({...editForm, name: e.target.value})} />
             <TextField label="Mô tả" fullWidth multiline rows={4} value={editForm.description} onChange={(e) => setEditForm({...editForm, description: e.target.value})} />
             <TextField label="Địa điểm" fullWidth value={editForm.location} onChange={(e) => setEditForm({...editForm, location: e.target.value})} />
-            <TextField label="Ngày" type="date" fullWidth InputLabelProps={{ shrink: true }} value={editForm.date} onChange={(e) => setEditForm({...editForm, date: e.target.value})} />
+            
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+              <TextField 
+                label="Ngày bắt đầu" 
+                type="date" 
+                fullWidth 
+                InputLabelProps={{ shrink: true }} 
+                value={editForm.date} 
+                onChange={(e) => setEditForm({...editForm, date: e.target.value})} 
+              />
+              <TextField 
+                label="Giờ bắt đầu" 
+                type="time" 
+                fullWidth 
+                InputLabelProps={{ shrink: true }} 
+                value={editForm.startTime} 
+                onChange={(e) => setEditForm({...editForm, startTime: e.target.value})} 
+              />
+            </Box>
+
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+              <TextField 
+                label="Ngày kết thúc" 
+                type="date" 
+                fullWidth 
+                InputLabelProps={{ shrink: true }} 
+                value={editForm.endDate} 
+                onChange={(e) => setEditForm({...editForm, endDate: e.target.value})} 
+              />
+              <TextField 
+                label="Giờ kết thúc" 
+                type="time" 
+                fullWidth 
+                InputLabelProps={{ shrink: true }} 
+                value={editForm.endTime} 
+                onChange={(e) => setEditForm({...editForm, endTime: e.target.value})} 
+              />
+            </Box>
+
             <FormControl>
               <FormLabel>Quyền riêng tư</FormLabel>
               <RadioGroup row value={editForm.privacy} onChange={(e) => setEditForm({...editForm, privacy: e.target.value})}>
@@ -498,6 +1084,29 @@ export default function EventGroup() {
         <DialogActions>
           <Button onClick={() => setOpenEditModal(false)}>Hủy</Button>
           <Button onClick={handleUpdateEvent} variant="contained" sx={{ bgcolor: '#49BBBD' }}>Lưu</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* DIALOG GIA HẠN SỰ KIỆN */}
+      <Dialog open={openExtendDialog} onClose={() => setOpenExtendDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Gia hạn sự kiện</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2, mt: 1 }}>
+            Nhập số giờ bạn muốn gia hạn thêm cho sự kiện
+          </Typography>
+          <TextField
+            label="Số giờ gia hạn"
+            type="number"
+            fullWidth
+            value={extendHours}
+            onChange={(e) => setExtendHours(parseInt(e.target.value) || 1)}
+            inputProps={{ min: 1, max: 72 }}
+            helperText="Tối đa 72 giờ"
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenExtendDialog(false)}>Hủy</Button>
+          <Button onClick={handleExtendEvent} variant="contained" sx={{ bgcolor: '#49BBBD' }}>Xác nhận</Button>
         </DialogActions>
       </Dialog>
     </Container>
