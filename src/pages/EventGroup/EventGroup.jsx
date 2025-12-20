@@ -6,7 +6,7 @@ import {
   IconButton, Chip, Stack, Dialog, DialogTitle, DialogContent, DialogActions,
   TextField, Badge, FormControl, FormLabel, RadioGroup, FormControlLabel, Radio
 } from "@mui/material";
-import { Close as CloseIcon, LockOutlined, Edit as EditIcon } from "@mui/icons-material";
+import { Close as CloseIcon, LockOutlined, Edit as EditIcon, ErrorOutline } from "@mui/icons-material"; // <--- 1. Import thêm icon ErrorOutline
 
 // Import API
 import {
@@ -45,14 +45,17 @@ export default function EventGroup() {
     privacy: "Public", question: ""
   });
 
+  // 2. THÊM STATE ĐỂ LƯU LỖI (NẾU BỊ CHẶN)
+  const [errorState, setErrorState] = useState(null); 
+  // ==========================================
+
   // === LOGIC PHÂN QUYỀN ===
   const currentUserInEvent = eventData?.volunteers?.find(v => (v._id || v) === currentUserId);
   const currentUserIsCreator = eventData?.createdBy?._id === currentUserId || eventData?.createdBy === currentUserId;
   
-  // Quyền quản trị: Phải là thành viên VÀ (là người tạo HOẶC có role manager)
   const isOwner = currentUserInEvent && currentUserIsCreator && currentUserInEvent.role === 'manager';
 
-  // === 1. HÀM XỬ LÝ AVATAR (Chuẩn hóa giống PostCard) ===
+  // === 1. HÀM XỬ LÝ AVATAR ===
   const getAvatarUrl = (user) => {
     if (!user || !user.avatar) return undefined;
     if (user.avatar.startsWith("http")) return user.avatar;
@@ -79,7 +82,6 @@ export default function EventGroup() {
       sx: { bgcolor: getAvatarColor(user?.role) }
     };
   };
-  // =======================================================
 
   // === FETCH DATA ===
   useEffect(() => {
@@ -88,6 +90,7 @@ export default function EventGroup() {
         try {
           const data = await getEventBySlug({ slug, userId: currentUserId });
           setEventData(data);
+          setErrorState(null); // Reset lỗi nếu thành công
 
           if (data.volunteers) {
             const joined = data.volunteers.some(v => (v._id ? v._id.toString() : v.toString()) === currentUserId);
@@ -106,7 +109,6 @@ export default function EventGroup() {
                 }
             }
 
-            // Check quyền admin cục bộ để fetch requests ngay lập tức nếu cần
             const userIsAdminLocal = joined && (
                 (data.createdBy?._id || data.createdBy) === currentUserId || 
                 data.volunteers.some(v => (v._id === currentUserId || v === currentUserId) && v.role === 'manager')
@@ -117,7 +119,16 @@ export default function EventGroup() {
             }
           }
         } catch (error) {
-          console.error("Failed to fetch event data:", error);
+          let msg = "";
+            
+            // Bây giờ error.response sẽ tồn tại nhờ Bước 1
+            if (error.response?.status === 403) {
+                msg = "Đã có lỗi xảy ra khi tải sự kiện.";
+            } else {
+                msg = "Sự kiện chưa được duyệt hoặc đã bị từ chối.";
+            }
+            
+            setErrorState(msg);
         }
       })();
     }
@@ -153,7 +164,7 @@ export default function EventGroup() {
     }
   }, [eventData, currentTab, isOwner]);
 
-  // === HANDLERS ===
+  // === HANDLERS (Giữ nguyên không đổi) ===
   const handleEditClick = () => {
     setEditForm({
       name: eventData.name,
@@ -245,10 +256,56 @@ export default function EventGroup() {
     }
   };
 
+  // 4. KIỂM TRA LỖI VÀ RENDER MÀN HÌNH CHẶN (THÊM ĐOẠN NÀY TRƯỚC LOADING)
+  if (errorState) {
+    return (
+      // Giữ nguyên layout nền xám để đồng bộ với App
+      <Container maxWidth="lg" sx={{ p: 3, minHeight: '100vh', bgcolor: '#f1f4f7' }}>
+          <Paper 
+              elevation={0} 
+              sx={{ 
+                  p: 5, 
+                  mt: 4, 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  alignItems: 'center', 
+                  textAlign: 'center',
+                  borderRadius: 2
+              }}
+          >
+              <ErrorOutline sx={{ fontSize: 80, color: '#ff6b6b', mb: 2 }} /> {/* Icon màu đỏ nhạt cho đẹp */}
+              
+              <Typography variant="h5" fontWeight="bold" gutterBottom>
+                  Truy cập bị từ chối
+              </Typography>
+              
+              <Typography variant="body1" color="text.secondary" sx={{ mb: 4, maxWidth: '500px' }}>
+                  {errorState} 
+                  {/* Ở đây giờ sẽ hiện tiếng Việt mượt mà do Bước 1 */}
+              </Typography>
+
+              <Button 
+                  variant="contained" 
+                  onClick={() => navigate('/dashboard')}
+                  sx={{ 
+                      bgcolor: '#49BBBD', 
+                      px: 4, 
+                      py: 1,
+                      '&:hover': { bgcolor: '#3daeb0' }
+                  }}
+              >
+                  Về trang chủ
+              </Button>
+          </Paper>
+      </Container>
+    );
+  }
+  // =========================================================================
+
   if (!eventData) return <Container sx={{ display: 'flex', justifyContent: 'center', mt: 10 }}><CircularProgress sx={{ color: '#49BBBD' }} /></Container>;
 
   return (
-
+    // ... (Phần render giao diện chính GIỮ NGUYÊN không thay đổi gì cả)
     <Container maxWidth="lg" sx={{ p: 3, minHeight: '100vh', bgcolor: '#f1f4f7' }}>
       {/* HEADER TABS */}
       <Paper className="event-group-tabs-paper" elevation={0} variant="outlined">
@@ -263,8 +320,19 @@ export default function EventGroup() {
           </Tabs>
 
           {!isJoined ? (
-            <Button variant="contained" size="small" onClick={handleJoinClick} disabled={requestStatus === 'pending'} sx={{ ml: 2, bgcolor: '#49BBBD' }}>
-              {requestStatus === 'pending' ? "Đang chờ duyệt" : "Tham gia"}
+            <Button 
+              variant="contained" 
+              size="small" 
+              onClick={handleJoinClick} 
+              // Chỉ disable khi đang chờ duyệt, 'rejected' hoặc null đều bấm được
+              disabled={requestStatus === 'pending'} 
+              sx={{ ml: 2, bgcolor: '#49BBBD' }}
+            >
+              {/* Logic hiển thị chữ trên nút */}
+              {requestStatus === 'pending' 
+                ? "Đang chờ duyệt" 
+                : "Tham gia"
+              }
             </Button>
           ) : (
             <Button variant="outlined" color="inherit" size="small" onClick={handleLeaveEvent} sx={{ ml: 2, color: 'gray', borderColor: 'gray' }}>
@@ -281,12 +349,14 @@ export default function EventGroup() {
             <Paper sx={{ py: 8, mt: 2, textAlign: 'center' }} variant="outlined">
               <LockOutlined sx={{ fontSize: 60, color: '#ccc', mb: 2 }} />
               <Typography variant="h6" color="text.secondary">Nhóm riêng tư</Typography>
+              <Typography variant="body2" color="text.secondary">Bạn cần tham gia sự kiện để xem bài đăng</Typography>
               {requestStatus !== 'pending' && <Button variant="contained" onClick={handleJoinClick} sx={{ mt: 2, bgcolor: '#49BBBD' }}>Tham gia ngay</Button>}
             </Paper>
           ) : (
             <>
               {isJoined && <CreatePost eventId={eventData._id} onPostCreated={(p) => setPosts([p, ...posts])} />}
               {isLoadingPosts ? <Box sx={{ p: 5, textAlign: 'center' }}><CircularProgress sx={{ color: '#49BBBD' }}/></Box> : 
+               posts.length === 0 ? <Typography textAlign="center" sx={{ mt: 2 }}>Chưa có bài đăng nào.</Typography> :
                posts.map(post => <PostCard key={post._id} post={post} eventOwnerId={eventData.createdBy?._id || eventData.createdBy} onPostDeleted={(id) => setPosts(posts.filter(p => p._id !== id))} onPostUpdated={(updated) => setPosts(posts.map(p => p._id === updated._id ? updated : p))} />)
               }
             </>
@@ -319,7 +389,7 @@ export default function EventGroup() {
           </Paper>
         )}
 
-        {/* TAB 2: THÀNH VIÊN (ĐÃ SỬA AVATAR) */}
+        {/* TAB 2: THÀNH VIÊN */}
         {currentTab === 2 && (
           <Paper sx={{ mt: 2, p: 2 }} variant="outlined">
             <Typography variant="h6">Thành viên ({eventData?.volunteers?.length || 0})</Typography>
@@ -330,7 +400,6 @@ export default function EventGroup() {
                     const role = member.role?.toLowerCase() || 'volunteer';
                     const memberIsCreator = memberId === (eventData.createdBy?._id || eventData.createdBy);
                     
-                    // Sử dụng hàm renderAvatarProps thay vì code thủ công cũ
                     const avatarProps = renderAvatarProps(member);
 
                     return (
@@ -365,7 +434,7 @@ export default function EventGroup() {
           </Paper>
         )}
 
-        {/* TAB 3: YÊU CẦU THAM GIA (ĐÃ SỬA AVATAR) */}
+        {/* TAB 3: YÊU CẦU THAM GIA */}
         {currentTab === 3 && isOwner && (
           <Paper sx={{ mt: 2 }} variant="outlined">
             <Typography variant="h6" sx={{ p: 2 }}>Yêu cầu ({pendingRequests.length})</Typography>
@@ -379,7 +448,6 @@ export default function EventGroup() {
                   </Stack>
                 }>
                    <ListItemAvatar>
-                      {/* Sử dụng hàm renderAvatarProps */}
                       <Avatar {...renderAvatarProps(req.user)} />
                    </ListItemAvatar>
                    <ListItemText primary={req.user?.username} secondary={req.answer} />

@@ -15,7 +15,12 @@ const notificationSchema = new mongoose.Schema(
         "VOLUNTEER_ACCEPTED", "VOLUNTEER_REJECTED", 
         "POST_LIKED", 
         "POST_COMMENTED", // <-- Đã có cái này
-        "POST_DELETED_BY_OWNER" 
+        "POST_DELETED_BY_OWNER",
+        "EVENT_PENDING_APPROVAL",
+        "NEW_MEMBER_JOINED",
+        "JOIN_REQUEST",
+        "EVENT_DELETED",
+        "MEMBER_REMOVED"
       ], 
       required: true 
     },

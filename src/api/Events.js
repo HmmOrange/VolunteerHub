@@ -42,8 +42,32 @@ export const getEventBySlug = async ({ slug, userId }) => {
   const res = await fetch(url, {
       headers: getHeaders()
   });
-  if (!res.ok) throw new Error(`Failed to fetch event with slug ${slug}`);
-  return res.json();
+
+  // TRƯỜNG HỢP 1: Thành công (200-299)
+  // Trả về JSON ngay lập tức, không làm gì thêm để tránh lỗi parse
+  if (res.ok) {
+    return res.json();
+  }
+
+  // TRƯỜNG HỢP 2: Có lỗi (403, 404, 500...)
+  // Chúng ta cố gắng đọc body để lấy message lỗi từ backend
+  let errorMessage = `Lỗi tải sự kiện (Mã: ${res.status})`;
+  
+  try {
+    const errorData = await res.json(); // Cố đọc JSON lỗi
+    if (errorData && errorData.message) {
+      errorMessage = errorData.message; // Lấy message từ backend nếu có
+    }
+  } catch (e) {
+    // Nếu backend trả về lỗi dạng HTML hoặc text thường (không phải JSON)
+    // thì bỏ qua bước parse JSON và dùng message mặc định ở trên
+    console.error("Không thể đọc lỗi chi tiết từ backend:", e);
+  }
+
+  // Tạo object lỗi và gắn status code vào để VNavBar nhận diện (403 hay 404)
+  const error = new Error(errorMessage);
+  error.status = res.status; 
+  throw error;
 };
 
 export const updateEvent = async (updateData) => {
