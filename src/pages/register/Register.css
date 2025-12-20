@@ -21,11 +21,29 @@
   gap: 12px;
 }
 
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
 .register-form input {
   padding: 10px;
   font-size: 15px;
   border: 1px solid #bbb;
   border-radius: 5px;
+}
+
+.register-form input.input-error {
+  border: 2px solid #d32f2f;
+  background-color: #ffebee;
+}
+
+.error-message {
+  color: #d32f2f;
+  font-size: 13px;
+  margin-top: -3px;
+  display: block;
 }
 
 .register-form button {
