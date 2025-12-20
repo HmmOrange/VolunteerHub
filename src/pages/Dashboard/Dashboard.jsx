@@ -28,7 +28,10 @@ export default function Dashboard() {
     if (!userId) return;
 
     (async () => {
-      const events = await getAllEvents();
+      const events = (await getAllEvents()).filter(
+        (event) => event.status === "approved"
+      );
+
 
       const now = new Date();
       const today = new Date(

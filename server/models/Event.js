@@ -24,7 +24,10 @@ const recurrenceSchema = new mongoose.Schema(
     endDate: {
       type: Date,
       default: null,
-    },
+      required: function () {
+        return this.enabled === true;
+      },
+    }
   },
   { _id: false }
 );
@@ -35,14 +38,15 @@ const eventSchema = new mongoose.Schema(
     slug: { type: String, required: true, unique: true },
 
     // --- THỜI GIAN ---
-    date: { type: Date, required: true }, // Ngày diễn ra
-    startTime: { type: String, required: true }, // Giờ bắt đầu (VD: "18:30")
-    endTime: { type: String }, // Giờ kết thúc (VD: "21:00")
+    date: { type: Date, required: true },        // Ngày bắt đầu
+    endDate: { type: Date, required: true },      // ✅ NEW: Ngày kết thúc (có thể null)
+    startTime: { type: String, required: true }, // HH:mm
+    endTime: { type: String },                   // HH:mm
 
     location: String,
     description: String,
 
-    // --- QUYỀN RIÊNG TƯ (Từ phiên bản cũ) ---
+    // --- QUYỀN RIÊNG TƯ ---
     privacy: {
       type: String,
       enum: ["Public", "Private"],
@@ -50,7 +54,7 @@ const eventSchema = new mongoose.Schema(
     },
     question: {
       type: String,
-      default: "Tại sao bạn muốn tham gia sự kiện này?", // Câu hỏi nếu là Private
+      default: "Tại sao bạn muốn tham gia sự kiện này?",
     },
 
     // --- QUẢN LÝ ---
@@ -59,10 +63,23 @@ const eventSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    approved: { type: Boolean, default: false },
+
+    // 🔴 REPLACEMENT FOR `approved`
+    status: {
+      type: String,
+      enum: ["pending", "approved", "rejected"],
+      default: "pending",
+      index: true,
+    },
+
+    approvedAt: {
+      type: Date,
+      default: null,
+    },
+
     volunteers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
 
-    // --- TÍNH NĂNG LẶP LẠI (Từ phiên bản mới) ---
+    // --- TÍNH NĂNG LẶP LẠI ---
     recurrence: {
       type: recurrenceSchema,
       default: null,
@@ -71,10 +88,11 @@ const eventSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Middleware tự động tạo slug nếu thiếu (Dự phòng)
+// Middleware tự động tạo slug nếu thiếu
 eventSchema.pre("validate", function (next) {
   if (!this.slug && this.name) {
-    this.slug = slugify(this.name, { lower: true, strict: true }) + "-" + Date.now();
+    this.slug =
+      slugify(this.name, { lower: true, strict: true }) + "-" + Date.now();
   }
   next();
 });
