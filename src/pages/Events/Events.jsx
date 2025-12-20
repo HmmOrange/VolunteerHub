@@ -121,6 +121,7 @@ export default function Events() {
                 <Card
                   className="event-card-clickable"
                   onClick={() => navigate(`/event/${event.slug}`)}
+                  sx={{ bgcolor: '#f1f4f7' }}
                 >
                   <CardContent>
                     <Typography variant="h6">{event.name}</Typography>
@@ -151,17 +152,18 @@ export default function Events() {
       </Paper>
 
       {/* ================= ALL EVENTS ================= */}
-      <Typography variant="h5" fontWeight="bold" mb={3}>
-        Tất cả sự kiện
-      </Typography>
-
-      {events.length === 0 ? (
-        <Typography textAlign="center">
-          Chưa có sự kiện nào.
+      <Paper elevation={2} sx={{ p: 3, mb: 4 }}>
+        <Typography variant="h5" fontWeight="bold" mb={2}>
+          Tất cả sự kiện
         </Typography>
-      ) : (
-        <Grid container spacing={3}>
-          {events.map((event) => {
+
+        {events.length === 0 ? (
+          <Typography textAlign="center">
+            Chưa có sự kiện nào.
+          </Typography>
+        ) : (
+          <Grid container spacing={3}>
+            {events.map((event) => {
             // Logic: Chỉ Creator mới được phép thấy nút Sửa/Xóa
             const isCreator = event.createdBy?.username === username;
 
@@ -175,6 +177,7 @@ export default function Events() {
                       navigate(`/event/${event.slug}`);
                     }
                   }}
+                  sx={{ bgcolor: '#f1f4f7' }}
                 >
                   <CardContent>
                     {editing === event.slug ? (
@@ -303,7 +306,8 @@ export default function Events() {
             );
           })}
         </Grid>
-      )}
+        )}
+      </Paper>
     </Container>
   );
 }
