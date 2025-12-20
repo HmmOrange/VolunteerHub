@@ -93,3 +93,18 @@
     display: none;
   }
 }
+
+/* Tùy chỉnh thanh cuộn cho menu thông báo */
+.MuiMenu-paper::-webkit-scrollbar {
+  width: 6px;
+}
+.MuiMenu-paper::-webkit-scrollbar-track {
+  background: #f1f1f1; 
+}
+.MuiMenu-paper::-webkit-scrollbar-thumb {
+  background: #c1c1c1; 
+  border-radius: 3px;
+}
+.MuiMenu-paper::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8; 
+}

@@ -348,6 +348,12 @@ export default function EventGroup() {
                                     <Typography>{member.username}</Typography>
                                     {memberIsCreator && <Chip label="Người tổ chức" size="small" variant="outlined" sx={{ color: '#9c27b0', borderColor: '#9c27b0', height: 20 }} />}
                                     {role === 'manager' && <Chip label="Quản lý" size="small" variant="outlined" sx={{ color: '#49BBBD', borderColor: '#49BBBD', height: 20 }} />}
+                                    {role === 'volunteer' && (
+                                      <Chip label="Tình nguyện viên" size="small" variant="outlined" sx={{ color: 'text.secondary', borderColor: '#e0e0e0', height: 20, fontSize: '0.7rem' }} />
+                                    )}
+                                    {role === 'admin' && (
+                                      <Chip label="Admin" size="small" variant="outlined" sx={{ color: '#d32f2f', borderColor: '#d32f2f', height: 20, fontSize: '0.7rem' }} />
+                                    )}
                                   </Stack>
                                 } 
                                 secondary={member.email} 
