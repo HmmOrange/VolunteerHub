@@ -1,83 +1,363 @@
-.register-container {
+/* --- RESET & LAYOUT (Giống Login) --- */
+.register-wrapper {
+  display: flex;
+  min-height: 100vh;
   width: 100%;
-  max-width: 400px;
-  margin: 80px auto;
-  padding: 30px;
-  background: #ffffff;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+  background-color: #F3FAFA;
+  font-family: 'Poppins', 'Segoe UI', sans-serif;
+  overflow: hidden;
 }
 
-.register-container h2 {
-  text-align: center;
-  margin-bottom: 20px;
-  font-weight: 600;
-}
-
-.register-form {
+/* --- LEFT SIDE: VISUAL (Giống Login) --- */
+.register-visual {
+  flex: 5; /* Thu nhỏ phần ảnh 1 chút so với Login để form rộng hơn */
+  background-size: cover;
+  background-position: center;
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 12px;
 }
 
-.input-group {
+.visual-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(73, 187, 189, 0.4), rgba(0, 0, 0, 0.8));
+  padding: 40px 60px;
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  justify-content: space-between;
 }
 
-.register-form input {
-  padding: 10px;
-  font-size: 15px;
-  border: 1px solid #bbb;
-  border-radius: 5px;
+.brand-header {
+  display: flex;
+  align-items: center;
+  gap: 15px;
 }
 
-.register-form input.input-error {
-  border: 2px solid #d32f2f;
-  background-color: #ffebee;
+.logo-circle {
+  width: 50px;
+  height: 50px;
+  background: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
 
-.error-message {
-  color: #d32f2f;
-  font-size: 13px;
-  margin-top: -3px;
-  display: block;
-}
-
-.register-form button {
-  padding: 10px;
-  font-size: 16px;
-  background-color: #1e88e5;
+.brand-name {
   color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background 0.2s ease;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin: 0;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 
-.register-form button:hover {
-  background-color: #1565c0;
+.quote-container {
+  color: white;
+  max-width: 500px;
+}
+.quote-content { font-size: 22px; font-weight: 300; line-height: 1.5; margin-bottom: 20px; }
+.quote-deco-line { width: 60px; height: 4px; background-color: #49BBBD; border-radius: 2px; }
+
+/* --- RIGHT SIDE: CONTENT --- */
+.register-content {
+  flex: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  background: white;
+  border-top-left-radius: 30px;
+  border-bottom-left-radius: 30px;
+  box-shadow: -10px 0 30px rgba(73, 187, 189, 0.05);
+  margin-left: -20px;
+  z-index: 10;
+  position: relative;
 }
 
-.message {
-  margin-top: 15px;
-  text-align: center;
+.form-box {
+  width: 100%;
+  max-width: 450px; /* Rộng hơn form login một chút */
+}
+
+.form-header { margin-bottom: 25px; text-align: center; }
+.form-header h2 { font-size: 28px; color: #2D3436; font-weight: 800; margin-bottom: 5px; }
+.form-header p { color: #636E72; font-size: 14px; }
+
+/* --- STEPPER (THANH TIẾN TRÌNH) --- */
+.stepper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 30px;
+  position: relative;
+}
+
+.step-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 2;
+  position: relative;
+}
+
+.step-circle {
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  background-color: #E0E0E0;
+  color: #636E72;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
   font-size: 14px;
-  color: #444;
+  transition: all 0.3s ease;
+  border: 3px solid white; /* Tạo viền trắng để tách khỏi line */
 }
 
-.back-home-btn {
-  margin-top: 20px;
+.step-label {
+  margin-top: 5px;
+  font-size: 12px;
+  color: #B2BEC3;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+/* Active Step Style */
+.step-item.active .step-circle {
+  background-color: #49BBBD;
+  color: white;
+  box-shadow: 0 0 0 3px rgba(73, 187, 189, 0.2);
+}
+
+.step-item.active .step-label {
+  color: #49BBBD;
+}
+
+.step-line {
+  flex: 1;
+  height: 2px;
+  background-color: #E0E0E0;
+  margin: 0 10px;
+  margin-bottom: 15px; /* Căn chỉnh với circle */
+  position: relative;
+  z-index: 1;
+}
+
+.step-line.active {
+  background-color: #49BBBD;
+}
+
+/* --- FORM ELEMENTS --- */
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+/* Animation trượt nhẹ khi đổi step */
+.slide-in {
+  animation: slideIn 0.4s ease-out;
+}
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group label { font-size: 13px; font-weight: 600; color: #2D3436; }
+
+.form-group input {
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 1.5px solid #E0E0E0;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  background-color: #FAFAFA;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #49BBBD;
+  background-color: white;
+  box-shadow: 0 0 0 3px rgba(73, 187, 189, 0.15);
+}
+
+.form-row {
+  display: flex;
+  gap: 15px;
+}
+.form-row .form-group { 
+  flex: 1; 
+  min-width: 0;
+}
+.form-row .form-group label {
+  white-space: nowrap;
+}
+
+/* Captcha Styling */
+.captcha-group {
+  background-color: #E0F2F1;
+  padding: 15px;
+  border-radius: 10px;
+  border: 1px dashed #49BBBD;
+}
+.captcha-question {
+  font-weight: 800;
+  color: #2E7D32;
+  font-size: 16px;
+  letter-spacing: 1px;
+}
+
+/* Avatar Upload Styling */
+.avatar-upload-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.avatar-preview {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background-color: #F0FDFD;
+  border: 2px dashed #49BBBD;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  background-size: cover;
+  background-position: center;
+  transition: all 0.3s ease;
+}
+
+.avatar-preview:hover {
+  border-style: solid;
+  border-color: #359698;
+}
+
+.avatar-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.avatar-preview:hover .avatar-overlay { opacity: 1; }
+.avatar-hint { font-size: 12px; color: #636E72; margin-top: 8px; }
+
+/* --- BUTTONS & FOOTER --- */
+.btn-primary {
+  margin-top: 10px;
+  padding: 14px;
+  border: none;
+  border-radius: 50px;
+  background-color: #49BBBD;
+  color: white;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 20px rgba(73, 187, 189, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-primary:hover {
+  background-color: #359698;
+  transform: translateY(-2px);
+  box-shadow: 0 12px 25px rgba(73, 187, 189, 0.4);
+}
+
+.form-footer { margin-top: 25px; text-align: center; font-size: 13px; color: #636E72; }
+.link-highlight { color: #49BBBD; font-weight: 700; cursor: pointer; transition: color 0.2s; }
+.link-highlight:hover { color: #359698; text-decoration: underline; }
+
+.btn-back {
+  margin-top: 10px;
   background: none;
   border: none;
-  color: #1976d2;
-  font-size: 14px;
+  color: #B2BEC3;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   cursor: pointer;
-  text-decoration: underline;
+  width: 100%;
+}
+.btn-back:hover { color: #2D3436; }
+
+/* Container chứa 2 nút ở bước 2 */
+.form-actions {
+  display: flex;
+  gap: 15px;
+  margin-top: 10px;
 }
 
-.back-home-btn:hover {
-  color: #0d47a1;
+/* Nút Primary (Hoàn tất) - chỉnh lại width để nó flex cùng nút quay lại */
+.form-actions .btn-primary {
+  flex: 2; /* Chiếm 2 phần */
+  margin-top: 0; /* Reset margin cũ */
+}
+
+/* Nút Secondary (Quay lại) */
+.btn-secondary {
+  flex: 1; /* Chiếm 1 phần */
+  padding: 14px;
+  border: 2px solid #E0E0E0;
+  border-radius: 50px;
+  background-color: transparent;
+  color: #636E72;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-secondary:hover {
+  border-color: #49BBBD;
+  color: #49BBBD;
+  background-color: #F0FDFD;
+}
+
+.btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Alerts */
+.alert-box { padding: 10px; border-radius: 8px; font-size: 13px; text-align: center; margin-bottom: 15px; }
+.alert-box.error { background: #FFEBEE; color: #C62828; border: 1px solid #FFCDD2; }
+.alert-box.success { background: #E0F2F1; color: #2E7D32; border: 1px solid #A5D6A7; }
+
+/* Spinner */
+.spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: white; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* --- RESPONSIVE --- */
+@media (max-width: 900px) {
+  .register-wrapper { flex-direction: column; overflow-y: auto; }
+  .register-visual { flex: none; height: 200px; }
+  .quote-container { display: none; }
+  .register-content { flex: 1; margin-left: 0; margin-top: -20px; border-radius: 20px 20px 0 0; padding: 30px 20px; }
 }
