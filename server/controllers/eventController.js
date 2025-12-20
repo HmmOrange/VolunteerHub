@@ -79,7 +79,7 @@ export const createEvent = async (req, res) => {
 // ---------------------- GET ALL EVENTS ----------------------
 export const getAllEvents = async (req, res) => {
   try {
-    const events = await Event.find().populate("createdBy", "username role");
+    const events = await Event.find().populate("createdBy", "username role avatar");
     res.json(events);
   } catch (err) {
     res.status(500).json({ message: err.message });

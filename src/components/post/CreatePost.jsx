@@ -102,16 +102,14 @@ export default function CreatePost({ eventId, onPostCreated }) {
     }
   }, [isExpanded, triggerUpload]);
 
-  // Xử lý khi chọn ảnh
   const handleImageChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      setImageFile(file); // Lưu file thật vào state
-      setImagePreview(URL.createObjectURL(file)); // Tạo link blob: để xem trước
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
     }
   };
 
-  // Hủy, quay về box đơn giản
   const handleCancel = () => {
     setIsExpanded(false);
     setPostContent("");
@@ -120,9 +118,7 @@ export default function CreatePost({ eventId, onPostCreated }) {
     setIsAnonymous(false);
   };
 
-  // Gửi bài đăng
   const handleSubmit = async () => {
-    // Kiểm tra xem eventId đã có chưa
     if (!eventId) {
       alert("Đang tải dữ liệu sự kiện, vui lòng thử lại sau giây lát.");
       return;
@@ -132,16 +128,13 @@ export default function CreatePost({ eventId, onPostCreated }) {
     let finalImageUrl = null; 
 
     try {
-      // 1. Kiểm tra xem có file ảnh không
       if (imageFile) {
-        // 2. Nếu có, tạo FormData
         const formData = new FormData();
         formData.append('image', imageFile); 
         const uploadRes = await uploadImage(formData);
         finalImageUrl = uploadRes.imageUrl; 
       }
 
-      // 4. Gọi API createPost với URL thật (hoặc null)
       const newPost = await createPost({
         content: postContent,
         isAnonymous,
@@ -242,8 +235,6 @@ export default function CreatePost({ eventId, onPostCreated }) {
         onChange={(e) => setPostContent(e.target.value)}
         autoFocus 
       />
-      {/* ================= */}
-
 
       {/* Hiển thị ảnh xem trước */}
       {imagePreview && (
@@ -294,7 +285,6 @@ export default function CreatePost({ eventId, onPostCreated }) {
         {isLoading ? "Đang đăng..." : "Đăng"}
       </Button>
 
-      {/* Input ẩn để chọn file */}
       <input
         type="file"
         ref={fileInputRef}
