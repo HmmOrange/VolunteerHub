@@ -1,9 +1,25 @@
 import User from "../models/User.js";
+import bcrypt from "bcryptjs";
 
-// Lấy danh sách tất cả user (chỉ Admin)
+/* ======================================================
+   INTERNAL HELPER — ADMIN ONLY CHECK
+   (minimal, reused, no magic)
+====================================================== */
+const ensureAdmin = (req, res) => {
+  if (!req.user || req.user.role !== "admin") {
+    res.status(403).json({ message: "Chỉ Admin mới được phép thực hiện thao tác này" });
+    return false;
+  }
+  return true;
+};
+
+/* ======================================================
+   GET ALL USERS (ADMIN ONLY)
+====================================================== */
 export const getAllUsers = async (req, res) => {
   try {
-    // Lấy tất cả user nhưng bỏ trường password
+    if (!ensureAdmin(req, res)) return;
+
     const users = await User.find({}, "-password").sort({ createdAt: -1 });
     res.status(200).json(users);
   } catch (err) {
@@ -11,22 +27,85 @@ export const getAllUsers = async (req, res) => {
   }
 };
 
-// Đổi role user (chỉ Admin)
+/* ======================================================
+   CREATE MANAGER (ADMIN ONLY)  ✅ NEW
+====================================================== */
+export const createManager = async (req, res) => {
+  try {
+    if (!ensureAdmin(req, res)) return;
+
+    const {
+      username,
+      email,
+      password,
+      fullName = "",
+      dateOfBirth = null,
+      address = "",
+    } = req.body;
+
+    if (!username || !email || !password) {
+      return res.status(400).json({
+        message: "Username, email và password là bắt buộc",
+      });
+    }
+
+    const existingUser = await User.findOne({
+      $or: [{ username }, { email }],
+    });
+
+    if (existingUser) {
+      return res.status(400).json({
+        message: "Username hoặc email đã tồn tại",
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const newUser = new User({
+      username,
+      email,
+      password: hashedPassword,
+      role: "manager",
+      fullName,
+      dateOfBirth,
+      address,
+      isLocked: false,
+    });
+
+    await newUser.save();
+
+    res.status(201).json({
+      message: "Tạo tài khoản Manager thành công",
+      user: {
+        _id: newUser._id,
+        username: newUser.username,
+        email: newUser.email,
+        role: newUser.role,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+/* ======================================================
+   UPDATE USER ROLE (ADMIN ONLY)
+====================================================== */
 export const updateUserRole = async (req, res) => {
   try {
-    const { userId } = req.params;
-    const { newRole } = req.body; // 'volunteer' hoặc 'manager'
+    if (!ensureAdmin(req, res)) return;
 
-    // Validate role hợp lệ
-    if (!['volunteer', 'manager'].includes(newRole)) {
+    const { userId } = req.params;
+    const { newRole } = req.body;
+
+    if (!["volunteer", "manager"].includes(newRole)) {
       return res.status(400).json({ message: "Role không hợp lệ" });
     }
 
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    // Không cho phép đổi role của chính admin (hoặc các admin khác nếu muốn chặt chẽ hơn)
-    if (user.role === 'admin') {
+    if (user.role === "admin") {
       return res.status(403).json({ message: "Không thể thay đổi quyền của Admin" });
     }
 
@@ -39,35 +118,40 @@ export const updateUserRole = async (req, res) => {
   }
 };
 
+/* ======================================================
+   TOGGLE USER LOCK (ADMIN ONLY)
+====================================================== */
 export const toggleUserLock = async (req, res) => {
   try {
+    if (!ensureAdmin(req, res)) return;
+
     const { userId } = req.params;
-    
+
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    if (user.role === 'admin') {
+    if (user.role === "admin") {
       return res.status(403).json({ message: "Không thể khóa tài khoản Admin" });
     }
 
-    // Đảo ngược trạng thái (True -> False, False -> True)
     user.isLocked = !user.isLocked;
     await user.save();
 
-    res.status(200).json({ 
-      message: user.isLocked ? "Đã khóa tài khoản" : "Đã mở khóa tài khoản", 
-      user 
+    res.status(200).json({
+      message: user.isLocked ? "Đã khóa tài khoản" : "Đã mở khóa tài khoản",
+      user,
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
+/* ======================================================
+   GET PROFILE (AUTHENTICATED)
+====================================================== */
 export const getProfile = async (req, res) => {
   try {
-    const userId = req.user.id; // from auth middleware
-
-    const user = await User.findById(userId).select("-password -__v");
+    const user = await User.findById(req.user.id).select("-password -__v");
 
     if (!user) {
       return res.status(404).json({ message: "Không tìm thấy người dùng" });
@@ -79,6 +163,9 @@ export const getProfile = async (req, res) => {
   }
 };
 
+/* ======================================================
+   UPDATE PROFILE (AUTHENTICATED)
+====================================================== */
 export const updateProfile = async (req, res) => {
   try {
     const { fullName, dateOfBirth, address, avatar } = req.body;
@@ -106,7 +193,9 @@ export const updateProfile = async (req, res) => {
   }
 };
 
-
+/* ======================================================
+   UPDATE AVATAR (AUTHENTICATED)
+====================================================== */
 export const updateAvatar = async (req, res) => {
   try {
     if (!req.file) {
