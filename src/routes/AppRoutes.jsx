@@ -9,6 +9,7 @@ import CreateEvent from "../pages/CreateEvent/CreateEvent";
 import EventGroup from "../pages/EventGroup/EventGroup";
 import UserList from "../pages/UserList/UserList";
 import Events from "../pages/Events/Events";
+import Profile from "../pages/Profile/Profile";
 
 export default function AppRoutes() {
   return (
@@ -21,6 +22,7 @@ export default function AppRoutes() {
           <Route path="/event/create" element={<CreateEvent />} />
           <Route path="/event/:slug" element={<EventGroup />} />
           <Route path="/admin/users" element={<UserList />} />
+          <Route path="/profile" element={<Profile />} />
         </Route>
 
         {/* Các trang KHÔNG có layout */}

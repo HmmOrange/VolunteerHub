@@ -8,7 +8,7 @@ export const getPostsByEvent = async (req, res) => {
   try {
     const { eventId } = req.params;
     const posts = await Post.find({ eventId: eventId })
-      .populate("createdBy", "username")
+      .populate("createdBy", "username avatar")
       .sort({ createdAt: -1 });
 
     const postsWithCommentCount = await Promise.all(
@@ -114,8 +114,8 @@ export const updatePost = async (req, res) => {
 
     post.content = content;
     await post.save();
-    
-    const updatedPost = await Post.findById(postId).populate("createdBy", "username");
+
+    const updatedPost = await Post.findById(postId).populate("createdBy", "username avatar");
     const commentCount = await Comment.countDocuments({ postId: post._id });
     
     res.status(200).json({ ...updatedPost.toObject(), commentCount: commentCount });

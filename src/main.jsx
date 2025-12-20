@@ -3,12 +3,17 @@ import ReactDOM from "react-dom/client";
 import AppRoutes from "./routes/AppRoutes";
 import { ThemeProvider, createTheme, CssBaseline } from "@mui/material";
 import { viVN } from "@mui/material/locale";
+import "./index.css";
 
 const theme = createTheme({
   palette: {
     mode: "light", // or "dark" TEST
     primary: { main: "#4169e1" },
     secondary: { main: "#b50bd3" },
+    background: {
+      default: "#f1f4f7",
+      paper: "#ffffff"
+    }
   },
   typography: {
     fontFamily: "Roboto, sans-serif",

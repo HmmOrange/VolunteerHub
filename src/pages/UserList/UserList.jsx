@@ -2,8 +2,7 @@ import { useEffect, useState } from "react";
 import { 
   Container, Paper, Typography, Table, TableBody, TableCell, 
   TableContainer, TableHead, TableRow, Chip, CircularProgress, 
-  IconButton, Tooltip,
-  Divider
+  IconButton, Tooltip, Divider, Avatar
 } from "@mui/material";
 import { 
   ArrowUpward as UpIcon, 
@@ -13,19 +12,17 @@ import {
 } from "@mui/icons-material";
 
 import { getAllUsers, updateUserRole, toggleUserLock } from "../../api/Users";
-import "./UserList.css"; // Import file CSS
+import "./UserList.css";
 
 export default function UserList() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const currentUserRole = localStorage.getItem("role"); 
+  const currentUserRole = localStorage.getItem("role");
 
   const fetchUsers = async () => {
     try {
       const data = await getAllUsers();
-      // Giả lập thêm trường isBanned cho frontend (vì DB chưa có)
-      const usersWithBanStatus = data.map(u => ({ ...u, isBanned: false }));
-      setUsers(usersWithBanStatus);
+      setUsers(data);
     } catch (error) {
       console.error("Lỗi tải danh sách:", error);
     } finally {
@@ -37,62 +34,41 @@ export default function UserList() {
     fetchUsers();
   }, []);
 
-  // Xử lý thăng/giáng cấp
   const handleRoleChange = async (userId, currentRole) => {
-    const newRole = currentRole === 'volunteer' ? 'manager' : 'volunteer';
-    const actionName = newRole === 'manager' ? 'thăng cấp lên Quản lý' : 'giáng cấp xuống Thành viên';
+    const newRole = currentRole === "volunteer" ? "manager" : "volunteer";
+    if (!window.confirm("Xác nhận thay đổi vai trò?")) return;
 
-    if (window.confirm(`Bạn có chắc muốn ${actionName} cho người dùng này?`)) {
-      try {
-        await updateUserRole(userId, newRole);
-        setUsers(users.map(u => u._id === userId ? { ...u, role: newRole } : u));
-      } catch (error) {
-        alert("Lỗi: " + error.message);
-      }
+    try {
+      await updateUserRole(userId, newRole);
+      setUsers(users.map(u => u._id === userId ? { ...u, role: newRole } : u));
+    } catch (error) {
+      alert(error.message);
     }
   };
 
-  // Xử lý Khóa/Mở khóa (Tạm thời chỉ đổi state ở Frontend)
   const handleToggleBan = async (userId) => {
-    // Tìm user hiện tại để hiển thị confirm đúng thông điệp
-    const userToToggle = users.find(u => u._id === userId);
-    const action = userToToggle.isLocked ? "Mở khóa" : "Khóa";
+    if (!window.confirm("Xác nhận khóa / mở khóa tài khoản?")) return;
 
-    if (window.confirm(`Bạn có chắc muốn ${action} tài khoản này?`)) {
-      try {
-        const res = await toggleUserLock(userId);
-        
-        // Cập nhật state UI ngay lập tức
-        setUsers(users.map(u => 
-          u._id === userId ? { ...u, isLocked: res.user.isLocked } : u
-        ));
-      } catch (error) {
-        alert("Lỗi: " + error.message);
-      }
+    try {
+      const res = await toggleUserLock(userId);
+      setUsers(users.map(u =>
+        u._id === userId ? { ...u, isLocked: res.user.isLocked } : u
+      ));
+    } catch (error) {
+      alert(error.message);
     }
   };
 
-  if (currentUserRole !== 'admin') {
-    return <Typography sx={{ p: 3, color: 'error.main' }}>Bạn không có quyền truy cập trang này.</Typography>;
+  if (currentUserRole !== "admin") {
+    return (
+      <Typography sx={{ p: 3, color: "error.main" }}>
+        Bạn không có quyền truy cập trang này.
+      </Typography>
+    );
   }
 
-  // Helper để lấy class CSS theo role
-  const getRoleClass = (role) => {
-    switch (role) {
-      case 'admin': return 'role-chip-admin';
-      case 'manager': return 'role-chip-manager';
-      default: return 'role-chip-volunteer';
-    }
-  };
-
-  // Helper để lấy Label hiển thị
-  const getRoleLabel = (role) => {
-    switch (role) {
-      case 'admin': return 'Admin';
-      case 'manager': return 'Quản lý';
-      default: return 'Thành viên';
-    }
-  };
+  const roleLabel = (role) =>
+    role === "admin" ? "Admin" : role === "manager" ? "Quản lý" : "Thành viên";
 
   return (
     <Container maxWidth="md" className="user-list-container">
@@ -101,7 +77,7 @@ export default function UserList() {
       <Typography variant="h4" className="user-list-title">
         Danh sách người dùng
       </Typography>
-      
+
       {loading ? (
         <CircularProgress />
       ) : (
@@ -119,8 +95,8 @@ export default function UserList() {
 
             <TableBody>
               {users.map((user) => {
-                const isMySelf = user.username === localStorage.getItem("username"); // Không sửa chính mình
-                const isAdmin = user.role === 'admin';
+                const isSelf = user.username === localStorage.getItem("username");
+                const isAdmin = user.role === "admin";
 
                 return (
                   <TableRow key={user._id} hover>
@@ -135,8 +111,7 @@ export default function UserList() {
 
                     <TableCell>{user.username}</TableCell>
                     <TableCell>{user.email}</TableCell>
-                    
-                    {/* CỘT ROLE + ACTIONS */}
+
                     <TableCell>
                       {/* 3. Thêm wrapper role-cell-wrapper để căn chỉnh flex */}
                       <div className="role-cell-wrapper">
