@@ -202,13 +202,19 @@ export const updateAvatar = async (req, res) => {
       return res.status(400).json({ message: "Không có file được upload" });
     }
 
-    const user = await User.findById(req.user._id);
+    const avatarPath = `/uploads/avatars/${req.file.filename}`;
+
+    // Sử dụng findByIdAndUpdate với validateBeforeSave: false
+    // để tránh validate các field required khác (như fullName)
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { avatar: avatarPath },
+      { new: true, runValidators: false } // runValidators: false để bỏ qua validation
+    );
+
     if (!user) {
       return res.status(404).json({ message: "Người dùng không tồn tại" });
     }
-
-    user.avatar = `/uploads/avatars/${req.file.filename}`;
-    await user.save();
 
     res.json({
       message: "Cập nhật ảnh đại diện thành công",

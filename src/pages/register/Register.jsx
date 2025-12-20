@@ -98,10 +98,10 @@ export default function Register() {
 
       // 2️⃣ GỌI API CẬP NHẬT PROFILE (Sử dụng dữ liệu Bước 2)
       // Lưu ý: Đảm bảo backend endpoint này hoạt động
-      await fetch("http://localhost:5000/api/users/profile", {
+      const profileRes = await fetch("http://localhost:5000/api/users/profile", {
         method: "PUT",
         headers: {
-          // "Content-Type": "application/json",
+          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`, // Dùng token vừa nhận được
         },
         body: JSON.stringify({
@@ -110,6 +110,11 @@ export default function Register() {
           address: profileForm.address,
         }),
       });
+
+      if (!profileRes.ok) {
+        const errData = await profileRes.json();
+        throw new Error(errData.message || "Cập nhật thông tin thất bại");
+      }
 
       // 3️⃣ UPLOAD AVATAR (Nếu có)
       let finalAvatar = "";

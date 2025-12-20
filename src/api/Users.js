@@ -16,10 +16,13 @@ const authHeader = () => {
 };
 
 // 3. Helper chỉ lấy Auth (Dùng cho Upload file - quan trọng!)
-const getAuthHeader = () => {
-  const token = getToken();
+const getAuthOnlyHeader = () => {
+  const token = localStorage.getItem("token");
+  if (!token) {
+    throw new Error("Not authenticated");
+  }
   return {
-    "Authorization": token ? `Bearer ${token}` : "",
+    "Authorization": `Bearer ${token}`,
   };
 };
 
@@ -104,13 +107,13 @@ export const uploadAvatar = async (file) => {
   formData.append("avatar", file);
 
   // LƯU Ý QUAN TRỌNG:
-  // Không dùng getJsonHeaders() ở đây vì FormData tự động set Content-Type là multipart/form-data kèm boundary.
+  // Không dùng authHeader() ở đây vì FormData tự động set Content-Type là multipart/form-data kèm boundary.
   // Nếu set cứng application/json thì upload sẽ lỗi.
-  // Dùng getAuthHeader() (giống logic của orange) là chuẩn nhất.
+  // Dùng getAuthOnlyHeader() để chỉ gửi Authorization mà KHÔNG set Content-Type.
   
   const res = await fetch(`${API_URL}/profile/avatar`, {
     method: "PUT",
-    headers: authHeader(), // ❗ DO NOT set Content-Type for FormData
+    headers: getAuthOnlyHeader(), // ❗ Chỉ gửi Authorization, để browser tự set Content-Type
     body: formData,
   });
 

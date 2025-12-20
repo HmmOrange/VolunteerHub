@@ -86,8 +86,11 @@ export default function Profile() {
     setUploading(true);
 
     try {
+      console.log("Uploading file:", pendingFile);
+      
       // Gọi API upload
       const res = await uploadAvatar(pendingFile);
+      console.log("Upload response:", res);
 
       // Cập nhật LocalStorage
       localStorage.setItem("avatar", res.avatar);
@@ -101,6 +104,8 @@ export default function Profile() {
         severity: "success",
       });
     } catch (err) {
+      console.error("Upload error:", err);
+      
       // Nếu lỗi, reset preview về null để hiện lại ảnh cũ
       setPreviewUrl(null);
       setSnackbar({
