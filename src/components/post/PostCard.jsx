@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom"; // === 1. IMPORT useNavigate ===
 import {
   Paper, Box, Avatar, Typography, IconButton, CardMedia, Button, Divider,
   List, ListItem, ListItemAvatar, ListItemText, CircularProgress,
@@ -16,8 +17,10 @@ import { likePost, getLikesByPost, deletePost, updatePost } from "../../api/Post
 import CommentInput from "./CommentInput"; 
 import "./Post.css";
 
-// === THÊM PROP eventOwnerId ===
 export default function PostCard({ post, onPostDeleted, onPostUpdated, eventOwnerId }) {
+  // === 2. KHAI BÁO NAVIGATE ===
+  const navigate = useNavigate();
+
   const currentUserId = localStorage.getItem("userId"); 
   const currentUsername = localStorage.getItem("username");
 
@@ -51,7 +54,7 @@ export default function PostCard({ post, onPostDeleted, onPostUpdated, eventOwne
   // Chỉ hiện nút 3 chấm nếu có quyền
   const showMenuButton = (canEdit || canDelete) && !isEditing;
 
-  // === XỬ LÝ AVATAR (Dùng chung cho Header, Comment, Like) ===
+  // === XỬ LÝ AVATAR ===
   const getAvatarUrl = (user) => {
     if (!user || !user.avatar) return undefined;
     if (user.avatar.startsWith("http")) return user.avatar;
@@ -153,11 +156,41 @@ export default function PostCard({ post, onPostDeleted, onPostUpdated, eventOwne
   return (
     <> 
       <Paper className="post-card-paper" elevation={0} variant="outlined">
-        {/* HEADER */}
+        
+        {/* === 3. HEADER ĐÃ SỬA === */}
         <Box className="post-header">
           <Avatar {...renderAvatarProps(post.createdBy, post.isAnonymous)} />
           <Box ml={1.5}>
-            <Typography fontWeight="bold">{displayName}</Typography>
+            <Typography variant="body1" component="div">
+              {/* Tên người dùng */}
+              <Box component="span" fontWeight="bold">
+                {displayName}
+              </Box>
+
+              {/* Logic hiển thị sự kiện */}
+              {post.event && (
+                <>
+                  <Box component="span" mx={0.5} color="text.secondary">
+                    &rsaquo;
+                  </Box>
+                  <Box 
+                    component="span" 
+                    fontWeight="bold"
+                    sx={{ 
+                      cursor: 'pointer',
+                      '&:hover': { textDecoration: 'underline' }
+                    }} 
+                    onClick={(e) => {
+                      e.stopPropagation(); // Ngăn chặn sự kiện click lan ra ngoài
+                      navigate(`/event/${post.event._id}`);
+                    }}
+                  >
+                    {post.event.title || post.event.name}
+                  </Box>
+                </>
+              )}
+            </Typography>
+
             <Typography variant="caption" color="text.secondary">
               {new Date(post.createdAt).toLocaleString('vi-VN')}
             </Typography>
@@ -271,7 +304,6 @@ export default function PostCard({ post, onPostDeleted, onPostUpdated, eventOwne
               {likeList.map((user) => (
                 <ListItem key={user._id}>
                   <ListItemAvatar>
-                    {/* SỬ DỤNG renderAvatarProps Ở ĐÂY */}
                     <Avatar {...renderAvatarProps(user)} />
                   </ListItemAvatar>
                   <ListItemText primary={user.username} />
