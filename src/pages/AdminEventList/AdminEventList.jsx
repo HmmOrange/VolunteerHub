@@ -25,6 +25,32 @@ export default function AdminEventList() {
   const [allEvents, setAllEvents] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // === HÀM TÍNH TRẠNG THÁI TỰ ĐỘNG ===
+  const calculateEventStatus = (event) => {
+    if (!event) return 'upcoming';
+    
+    // Chỉ giữ trạng thái cancelled nếu đã bị hủy
+    if (event.eventStatus === 'cancelled') return 'cancelled';
+    
+    // Còn lại tất cả dựa vào thời gian thực tế
+    const now = new Date();
+    const startDate = new Date(event.date);
+    if (event.startTime) {
+      const [h, m] = event.startTime.split(':');
+      startDate.setHours(parseInt(h), parseInt(m), 0, 0);
+    }
+    
+    const endDate = new Date(event.endDate || event.date);
+    if (event.endTime) {
+      const [h, m] = event.endTime.split(':');
+      endDate.setHours(parseInt(h), parseInt(m), 0, 0);
+    }
+    
+    if (now < startDate) return 'upcoming';
+    if (now >= startDate && now <= endDate) return 'ongoing';
+    return 'completed';
+  };
+
   // ===== FETCH EVENTS =====
   const fetchData = async () => {
     setLoading(true);
@@ -153,13 +179,13 @@ export default function AdminEventList() {
               <TableCell>
                 <Chip
                   size="small"
-                  label={eventStatusMap[e.eventStatus || 'upcoming']}
+                  label={eventStatusMap[calculateEventStatus(e)]}
                   color={
-                    e.eventStatus === "ongoing"
+                    calculateEventStatus(e) === "ongoing"
                       ? "success"
-                      : e.eventStatus === "completed"
+                      : calculateEventStatus(e) === "completed"
                       ? "default"
-                      : e.eventStatus === "cancelled"
+                      : calculateEventStatus(e) === "cancelled"
                       ? "error"
                       : "info"
                   }

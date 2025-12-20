@@ -70,6 +70,32 @@ export default function Events() {
 
   const now = new Date();
 
+  // === HÀM TÍNH TRẠNG THÁI TỰ ĐỘNG ===
+  const calculateEventStatus = (event) => {
+    if (!event) return 'upcoming';
+    
+    // Chỉ giữ trạng thái cancelled nếu đã bị hủy
+    if (event.eventStatus === 'cancelled') return 'cancelled';
+    
+    // Còn lại tất cả dựa vào thời gian thực tế
+    const now = new Date();
+    const startDate = new Date(event.date);
+    if (event.startTime) {
+      const [h, m] = event.startTime.split(':');
+      startDate.setHours(parseInt(h), parseInt(m), 0, 0);
+    }
+    
+    const endDate = new Date(event.endDate || event.date);
+    if (event.endTime) {
+      const [h, m] = event.endTime.split(':');
+      endDate.setHours(parseInt(h), parseInt(m), 0, 0);
+    }
+    
+    if (now < startDate) return 'upcoming';
+    if (now >= startDate && now <= endDate) return 'ongoing';
+    return 'completed';
+  };
+
   const filteredAndSortedJoinedEvents = useMemo(() => {
     let list = [...joinedEvents];
 
@@ -208,12 +234,12 @@ export default function Events() {
               variant="caption" 
               display="block"
               sx={{ 
-                color: eventStatusColor[event.eventStatus || 'upcoming'],
+                color: eventStatusColor[calculateEventStatus(event)],
                 fontWeight: 'bold',
                 mb: 1
               }}
             >
-              {eventStatusMap[event.eventStatus || 'upcoming']}
+              {eventStatusMap[calculateEventStatus(event)]}
             </Typography>
 
             <Typography variant="body2">
