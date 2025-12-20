@@ -16,6 +16,7 @@ import {
 } from "@mui/material";
 
 import { getAllEvents, deleteEvent, updateEvent } from "../../api/Events";
+import placeholderImage from "../../assets/img/event_group.jpg";
 
 export default function Events() {
   const navigate = useNavigate();
@@ -39,7 +40,7 @@ export default function Events() {
 
   // Helper function để render banner URL
   const getBannerUrl = (banner) => {
-    if (!banner) return null;
+    if (!banner) return placeholderImage;
     if (banner.startsWith("http")) return banner;
     if (banner.startsWith("data:")) return banner;
     const path = banner.startsWith("/") ? banner : `/${banner}`;
@@ -257,37 +258,36 @@ export default function Events() {
             {/* Event Banner */}
             <Box
               sx={{
-                width: '20vw',
+                width: '100%',
+                maxWidth: '20vw',
                 height: '15vh',
+                minHeight: '150px',
                 mb: 2,
                 borderRadius: 1,
                 overflow: 'hidden',
                 bgcolor: '#f5f5f5',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
+                position: 'relative',
+                flexShrink: 0,
               }}
             >
-              {event.banner ? (
-                <img
-                  src={getBannerUrl(event.banner)}
-                  alt={event.name}
-                  loading="lazy"
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover'
-                  }}
-                />
-              ) : (
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  sx={{ textAlign: 'center', p: 1 }}
-                >
-                  No banner
-                </Typography>
-              )}
+              <img
+                src={getBannerUrl(event.banner)}
+                alt={event.name}
+                loading="lazy"
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  objectPosition: 'center',
+                }}
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = placeholderImage;
+                }}
+              />
             </Box>
 
             <Typography variant="body2">

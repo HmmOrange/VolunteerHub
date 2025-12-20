@@ -13,7 +13,8 @@ import {
   approveEvent,
   rejectEvent,
   updateMemberAttendance,
-  uploadEventBanner
+  uploadEventBanner,
+  searchEvents
 } from "../controllers/eventController.js";
 import { protect } from "../middleware/authMiddleware.js";
 import { uploadBanner } from "../middleware/uploadBanner.js";
@@ -23,6 +24,7 @@ const router = express.Router();
 // ... (Các route cũ giữ nguyên) ...
 router.post("/create", createEvent);
 router.get("/all", getAllEvents);
+router.get("/search", searchEvents); // Route search mới
 router.put("/update", updateEvent);
 router.delete("/delete", deleteEvent);
 router.post("/join", joinEvent);

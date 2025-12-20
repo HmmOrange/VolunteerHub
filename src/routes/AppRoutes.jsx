@@ -11,6 +11,7 @@ import UserList from "../pages/AdminUserList/AdminUserList";
 import Events from "../pages/Events/Events";
 import Profile from "../pages/Profile/Profile";
 import AdminEventList from "../pages/AdminEventList/AdminEventList";
+import SearchResults from "../pages/SearchResults/SearchResults";
 
 export default function AppRoutes() {
   return (
@@ -25,6 +26,7 @@ export default function AppRoutes() {
           <Route path="/admin/users" element={<UserList />} />
           <Route path="/admin/events" element={<AdminEventList />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/search" element={<SearchResults />} />
         </Route>
 
         {/* Các trang KHÔNG có layout */}

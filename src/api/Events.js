@@ -44,6 +44,28 @@ export const getAllEvents = async ({ approvedOnly = true } = {}) => {
   return res.json();
 };
 
+// Search events
+export const searchEvents = async (query = "") => {
+  try {
+    const res = await fetch(`${API_URL}/search?query=${encodeURIComponent(query)}`, {
+      method: "GET",
+      headers: getHeaders(),
+    });
+    
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.message || "Lỗi tìm kiếm");
+    }
+    
+    const result = await res.json();
+    console.log("API searchEvents result:", result);
+    return result;
+  } catch (error) {
+    console.error("searchEvents API error:", error);
+    throw error;
+  }
+};
+
 
 export const getEventBySlug = async ({ slug, userId }) => {
   const url = userId 

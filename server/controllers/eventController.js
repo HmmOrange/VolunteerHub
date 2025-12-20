@@ -122,18 +122,22 @@ export const createEvent = async (req, res) => {
 // Sửa lại để hỗ trợ lọc theo status cho Admin
 export const getAllEvents = async (req, res) => {
   try {
-    const { status } = req.query; 
+    const { status, role } = req.query; 
     let filter = {};
     
     // Nếu có status (ví dụ admin truyền "pending") thì lọc
     if (status) {
       filter.status = status;
+    } else if (role !== "admin") {
+      // Nếu không phải admin và không chỉ định status, chỉ lấy approved
+      filter.status = "approved";
     }
 
     const events = await Event.find(filter)
       .populate("createdBy", "username role avatar")
       .sort({ createdAt: -1 });
 
+    console.log(`getAllEvents - filter:`, filter, `- found ${events.length} events`);
     res.json(events);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -892,6 +896,31 @@ export const updateMemberAttendance = async (req, res) => {
 
   } catch (err) {
     console.error("Update Attendance Error:", err);
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// ===================== SEARCH EVENTS =====================
+export const searchEvents = async (req, res) => {
+  try {
+    const { query } = req.query;
+    
+    // Tìm tất cả events đã được approved với đầy đủ thông tin
+    const events = await Event.find({ status: "approved" })
+      .populate("createdBy", "username role avatar")
+      .select("name slug date endDate startTime endTime location description banner createdAt status volunteers")
+      .lean();
+
+    // Thêm số lượng volunteers vào mỗi event
+    const eventsWithCount = events.map(event => ({
+      ...event,
+      volunteersCount: event.volunteers ? event.volunteers.length : 0
+    }));
+
+    console.log(`searchEvents - query: "${query}" - found ${eventsWithCount.length} approved events`);
+    res.json(eventsWithCount);
+  } catch (err) {
+    console.error("Search Events Error:", err);
     res.status(500).json({ message: err.message });
   }
 };
