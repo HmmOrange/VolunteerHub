@@ -52,47 +52,48 @@ export default function CreateEvent() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // 1. Validate quyền Manager (Frontend check)
-    if (role !== "manager" && role !== "admin") { // Cho phép cả admin nếu cần
+    // 1. Validate quyền
+    if (role !== "manager" && role !== "admin") {
       alert("Bạn cần là manager để tạo sự kiện.");
       return;
     }
 
-    // 2. Validate User (Quan trọng: Nguyên nhân hay gây lỗi 400)
     if (!username) {
       alert("Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.");
       navigate("/login");
       return;
     }
 
-    // 3. Validate Logic Giờ (Frontend check trước khi gửi)
-    if (form.endTime && form.startTime) {
-        if (form.endTime <= form.startTime) {
-            alert("Giờ kết thúc phải sau giờ bắt đầu!");
-            return;
-        }
+    if (form.endTime && form.startTime && form.endTime <= form.startTime) {
+      alert("Giờ kết thúc phải sau giờ bắt đầu!");
+      return;
     }
 
-    // 4. Chuẩn bị Payload
     const payload = {
       ...form,
       recurrence: form.recurrence.enabled ? form.recurrence : null,
-      username: username, // Gửi username lên để backend tìm user._id
+      username,
     };
 
     try {
-      // Gọi API
       const res = await createEvent(payload);
-      
-      // Nếu thành công (API không throw error)
-      alert("Tạo sự kiện thành công!");
-      navigate(`/event/${res.slug}`); // Chuyển hướng thẳng đến trang chi tiết event vừa tạo
+
+      if (role === "admin") {
+        alert("Sự kiện đã được tạo và hiển thị ngay.");
+        navigate(`/event/${res.slug}`);
+      } else {
+        alert(
+          "Sự kiện đã được gửi và đang chờ Admin duyệt.\n" +
+          "Bạn sẽ thấy sự kiện sau khi được phê duyệt."
+        );
+        navigate("/events");
+      }
     } catch (error) {
-      // Bắt lỗi 400 từ backend và hiển thị
       console.error("Create Event Failed:", error);
-      alert(`Thất bại: ${error.message}`); 
+      alert(`Thất bại: ${error.message}`);
     }
   };
+
 
   return (
     <Container maxWidth="sm">

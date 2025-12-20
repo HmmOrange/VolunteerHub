@@ -18,10 +18,18 @@ export const createEvent = async (data) => {
   return result;
 };
 
-export const getAllEvents = async () => {
-  const res = await fetch(`${API_URL}/all`);
+export const getAllEvents = async ({ approvedOnly = true } = {}) => {
+  const url = approvedOnly
+    ? `${API_URL}/all?approved=true`
+    : `${API_URL}/all`;
+
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error("Failed to fetch events");
+  }
   return res.json();
 };
+
 
 export const getEventBySlug = async ({ slug, userId }) => {
   const url = userId 
