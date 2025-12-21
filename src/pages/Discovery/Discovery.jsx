@@ -212,6 +212,26 @@ export default function Discovery() {
       cancelled: "#d32f2f"
     };
 
+    const calcStatus = calculateEventStatus(event);
+    const serverStatusLabel = statusMap[event.status] || '';
+    const timeStatusLabel = eventStatusMap[calcStatus];
+
+    const startDate = new Date(event.date);
+    if (event.startTime) {
+      const [h, m] = event.startTime.split(":");
+      startDate.setHours(parseInt(h), parseInt(m), 0, 0);
+    }
+    const endDate = new Date(event.endDate || event.date);
+    if (event.endTime) {
+      const [h2, m2] = event.endTime.split(":");
+      endDate.setHours(parseInt(h2), parseInt(m2), 0, 0);
+    }
+
+    const fmtDate = (d) => d.toLocaleDateString();
+    const fmtTime = (d) => d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    const shortDesc = event.description ? (event.description.length > 160 ? event.description.slice(0, 157) + '...' : event.description) : 'Không có mô tả';
+
     return (
       <Box 
         key={event._id}
@@ -225,125 +245,32 @@ export default function Discovery() {
         }}
       >
         <Card
-          sx={{ 
-            height: "100%",
-            display: 'flex',
-            flexDirection: 'column',
-            cursor: editing !== event.slug ? 'pointer' : 'default',
-            transition: 'all 0.2s ease',
-            border: '0.0625rem solid #e0e0e0',
-            boxShadow: '0 0.125rem 0.25rem rgba(0,0,0,0.1)',
-            '&:hover': editing !== event.slug ? {
-              transform: 'translateY(-0.25rem)',
-              boxShadow: '0 0.375rem 0.75rem rgba(0,0,0,0.15)'
-            } : {}
-          }}
-          onClick={() =>
-            editing !== event.slug && navigate(`/event/${event.slug}`)
-          }
+          sx={{ height: "100%", minWidth: '20vw', position: 'relative', display: 'flex', flexDirection: 'column', transition: 'transform .18s ease, box-shadow .18s ease', '&:hover': { transform: 'translateY(-6px)', boxShadow: '0 12px 30px rgba(0,0,0,0.12)' }, cursor: editing !== event.slug ? 'pointer' : 'default' }}
+          onClick={() => editing !== event.slug && navigate(`/event/${event.slug}`)}
         >
-          <CardContent sx={{ flexGrow: 1, p: { xs: 1.5, sm: 2 } }}>
-            <Typography 
-              variant="h6" 
-              fontWeight="bold"
-              sx={{ 
-                fontSize: { xs: '1rem', sm: '1.1rem', md: '1.25rem' },
-                mb: 0.5,
-                lineHeight: 1.3
-              }}
-            >
-              {event.name}
-            </Typography>
+          <CardContent sx={{ flex: '1 1 auto' }}>
+            <Typography variant="h6" fontWeight="bold" gutterBottom>{event.name}</Typography>
 
-            <Typography 
-              variant="caption" 
-              display="block"
-              sx={{ 
-                color: eventStatusColor[calculateEventStatus(event)],
-                fontWeight: 'bold',
-                fontSize: { xs: '0.7rem', sm: '0.75rem' },
-                mb: 1
-              }}
-            >
-              {eventStatusMap[calculateEventStatus(event)]}
-            </Typography>
-
-            {/* Event Banner */}
-            <Box
-              sx={{
-                width: '100%',
-                height: { xs: '150px', sm: '180px', md: '200px' },
-                mb: 2,
-                borderRadius: 1,
-                overflow: 'hidden',
-                bgcolor: '#f5f5f5',
-                position: 'relative',
-                flexShrink: 0,
-              }}
-            >
-              <img
-                src={getBannerUrl(event.banner)}
-                alt={event.name}
-                loading="lazy"
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                  objectPosition: 'center',
-                }}
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src = placeholderImage;
-                }}
-              />
+            <Box sx={{ width: '100%', height: 160, mb: 2, borderRadius: 1, overflow: 'hidden', bgcolor: '#f5f5f5', position: 'relative' }}>
+              <img src={getBannerUrl(event.banner)} alt={event.name} loading="lazy" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { e.target.onerror = null; e.target.src = placeholderImage; }} />
             </Box>
 
-            <Typography 
-              variant="body2"
-              sx={{ 
-                fontSize: { xs: '0.8125rem', sm: '0.875rem' },
-                mb: 0.5
-              }}
-            >
-              <b>Ngày:</b>{" "}
-              {renderDateRange(event.date, event.endDate)}
-            </Typography>
+            <Typography variant="body2" sx={{ mb: 0.5 }}><b>Bắt đầu:</b> {fmtDate(startDate)} · {fmtTime(startDate)}</Typography>
+            <Typography variant="body2" sx={{ mb: 1 }}><b>Kết thúc:</b> {fmtDate(endDate)} · {fmtTime(endDate)}</Typography>
 
-            <Typography 
-              variant="body2"
-              sx={{ 
-                fontSize: { xs: '0.8125rem', sm: '0.875rem' },
-                mb: 0.5
-              }}
-            >
-              <b>Thời gian:</b>{" "}
-              {renderTime(event.startTime, event.endTime)}
-            </Typography>
+            <Typography variant="body2" sx={{ mb: 1 }}><b>Địa điểm:</b> {event.location || 'Chưa xác định'}</Typography>
 
-            <Typography 
-              variant="body2"
-              sx={{ 
-                fontSize: { xs: '0.8125rem', sm: '0.875rem' },
-                mb: 0.5
-              }}
-            >
-              <b>Địa điểm:</b>{" "}
-              {event.location || "Chưa xác định"}
-            </Typography>
-
-            <Typography 
-              variant="body2"
-              sx={{ 
-                fontSize: { xs: '0.8125rem', sm: '0.875rem' }
-              }}
-            >
-              <b>Tình nguyện viên:</b>{" "}
-              {event.volunteers?.length || 0} người
-            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>{shortDesc}</Typography>
           </CardContent>
+
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', p: 2, pt: 0 }}>
+            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+              {serverStatusLabel && (<Box sx={{ bgcolor: '#f0f0f0', color: '#333', px: 1, py: '2px', borderRadius: '12px', fontSize: 12, fontWeight: 700 }}>{serverStatusLabel}</Box>)}
+              {timeStatusLabel && (<Box sx={{ bgcolor: eventStatusColor[calcStatus], color: '#fff', px: 1, py: '2px', borderRadius: '12px', fontSize: 12, fontWeight: 700 }}>{timeStatusLabel}</Box>)}
+            </Box>
+          </Box>
+
+          
         </Card>
       </Box>
     );
