@@ -2,10 +2,11 @@
 .register-wrapper {
   display: flex;
   min-height: 100vh;
+  height: 100vh;
   width: 100%;
   background-color: #F3FAFA;
   font-family: 'Poppins', 'Segoe UI', sans-serif;
-  overflow: hidden;
+  overflow-y: auto;
 }
 
 /* --- LEFT SIDE: VISUAL (Giống Login) --- */
@@ -350,6 +351,24 @@
 .alert-box.error { background: #FFEBEE; color: #C62828; border: 1px solid #FFCDD2; }
 .alert-box.success { background: #E0F2F1; color: #2E7D32; border: 1px solid #A5D6A7; }
 
+/* Validation styles */
+.input-error {
+  border-color: #e74c3c !important;
+  box-shadow: 0 0 0 3px rgba(231,76,60,0.06);
+  background-color: #fff7f7;
+}
+.field-error {
+  color: #c62828;
+  font-size: 12px;
+  margin-top: 6px;
+  font-weight: 600;
+}
+.field-hint {
+  color: #636E72;
+  font-size: 12px;
+  margin-top: 6px;
+}
+
 /* Spinner */
 .spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: white; animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -360,4 +379,17 @@
   .register-visual { flex: none; height: 200px; }
   .quote-container { display: none; }
   .register-content { flex: 1; margin-left: 0; margin-top: -20px; border-radius: 20px 20px 0 0; padding: 30px 20px; }
+}
+
+/* Hide scrollbar visuals for register layout to prevent layout shift,
+   but keep scrolling behavior where needed (cross-browser) */
+.register-wrapper,
+.register-content {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+  scrollbar-gutter: stable; /* reserve space to avoid layout shift when scrollbar appears */
+}
+.register-wrapper::-webkit-scrollbar,
+.register-content::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
 }
