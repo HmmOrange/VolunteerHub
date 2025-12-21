@@ -14,11 +14,14 @@ import {
   rejectEvent,
   updateMemberAttendance,
   uploadEventBanner,
+  uploadEventBadge,
+  saveContributions,
   searchEvents,
   getUserEvents
 } from "../controllers/eventController.js";
 import { protect, adminOnly, optionalAuth } from "../middleware/authMiddleware.js";
 import { uploadBanner } from "../middleware/uploadBanner.js";
+import { uploadBadge } from "../middleware/uploadBadge.js";
 
 const router = express.Router();
 
@@ -55,6 +58,12 @@ router.get("/user/:userId", getUserEvents);
 
 // Route upload banner (file upload)
 router.put("/:slug/banner", protect, uploadBanner.single("banner"), uploadEventBanner);
+
+// Route upload badge (file upload)
+router.put("/:slug/badge", protect, uploadBadge.single("badge"), uploadEventBadge);
+
+// Route save contributions
+router.put("/:slug/contributions", protect, saveContributions);
 
 // ⚠️ Route slug để cuối cùng
 router.get("/:slug", getEventBySlug);

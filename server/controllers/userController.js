@@ -324,3 +324,28 @@ export const importUsers = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+/* ======================================================
+   SET BADGE VISIBILITY (AUTHENTICATED USER)
+   Body: { eventId: string, visible: boolean }
+====================================================== */
+export const setBadgeVisibility = async (req, res) => {
+  try {
+    const { eventId, visible } = req.body;
+    if (!eventId) return res.status(400).json({ message: 'eventId is required' });
+
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    user.badges = user.badges || [];
+    const idx = user.badges.findIndex(b => b.eventId && b.eventId.toString() === eventId);
+    if (idx === -1) return res.status(404).json({ message: 'Badge not found' });
+
+    user.badges[idx].visible = !!visible;
+    await user.save();
+
+    res.json({ message: 'Badge visibility updated', badge: user.badges[idx] });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};

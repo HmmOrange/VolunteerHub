@@ -90,6 +90,19 @@ const eventSchema = new mongoose.Schema(
 
     volunteers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
 
+    // --- BADGE FOR EVENT (OPTIONAL) ---
+    // Default badge image path (use default image until owner uploads a custom one)
+    badge: {
+      type: String,
+      default: "/uploads/badges/default.jpg"
+    },
+
+    // --- CONTRIBUTIONS: store contribution level per volunteer ---
+    contributions: [{
+      user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+      value: { type: Number, default: 0 }
+    }],
+
     // --- TRẠNG THÁI THAM GIA CỦA VOLUNTEERS ---
     attendance: [{
       user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },

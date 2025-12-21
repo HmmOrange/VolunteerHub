@@ -123,3 +123,18 @@ export const uploadAvatar = async (file) => {
   }
   return res.json();
 };
+
+export const setBadgeVisibility = async (eventId, visible) => {
+  const res = await fetch(`${API_URL}/profile/badge-visibility`, {
+    method: 'PUT',
+    headers: authHeader(),
+    body: JSON.stringify({ eventId, visible })
+  });
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.message || 'Failed to update badge visibility');
+  }
+
+  return res.json();
+};

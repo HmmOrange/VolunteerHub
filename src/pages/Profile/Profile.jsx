@@ -16,6 +16,7 @@ import {
   Box,
   Grid,
   Chip,
+  Checkbox,
   Divider
 } from "@mui/material";
 
@@ -29,8 +30,9 @@ import {
   AdminPanelSettings,
   Badge
 } from "@mui/icons-material";
+// Removed IconButton/MoreVert imports; using a centered Button for badge editing
 
-import { getProfile, uploadAvatar } from "../../api/Users";
+import { getProfile, uploadAvatar, setBadgeVisibility } from "../../api/Users";
 
 export default function Profile() {
   // Label và màu sắc cho các Role
@@ -60,6 +62,28 @@ export default function Profile() {
     message: "",
     severity: "success",
   });
+  const [manageBadges, setManageBadges] = useState(false);
+
+  const handleToggleManageBadges = () => setManageBadges(m => !m);
+
+  const handleToggleBadge = async (badge) => {
+    try {
+      const eventId = badge.eventId && badge.eventId._id ? badge.eventId._id : (badge.eventId || badge.eventId);
+      const visible = !badge.visible;
+      await setBadgeVisibility(eventId, visible);
+      // update local state
+      setProfile(prev => ({
+        ...prev,
+        badges: prev.badges.map(b => (
+          (b.eventId && b.eventId.toString ? b.eventId.toString() : (b.eventId || b.eventId)) === (eventId.toString ? eventId.toString() : eventId)
+            ? { ...b, visible }
+            : b
+        ))
+      }));
+    } catch (err) {
+      setSnackbar({ open: true, message: err.message || 'Lỗi cập nhật badge', severity: 'error' });
+    }
+  };
 
   // --- 1. LẤY THÔNG TIN PROFILE ---
   useEffect(() => {
@@ -103,6 +127,8 @@ export default function Profile() {
         message: "Cập nhật ảnh đại diện thành công!",
         severity: "success",
       });
+
+      window.location.reload();
     } catch (err) {
       console.error("Upload error:", err);
       
@@ -144,6 +170,23 @@ export default function Profile() {
 
   // Logic hiển thị ảnh: Ưu tiên ảnh Preview -> Ảnh từ Server -> Mặc định
   const displayAvatar = previewUrl || (profile.avatar ? `http://localhost:5000${profile.avatar}` : "");
+
+  // Prepare badges per rules:
+  // - manage mode: show all earned badges (level >=3)
+  // - otherwise: show badges with visible !== false; if user hasn't customized (all visible) and >4, show 4 most recent
+  const allEarnedBadges = Array.isArray(profile.badges) ? profile.badges.filter(b => (b.level || 0) >= 3) : [];
+  const visibleBadges = allEarnedBadges.filter(b => b.visible !== false);
+  let badgesToShow = [];
+  if (manageBadges) {
+    badgesToShow = [...allEarnedBadges].reverse();
+  } else {
+    // if user hasn't customized (all badges are visible) and there are more than 4, show 4 most recent
+    if (visibleBadges.length === allEarnedBadges.length && allEarnedBadges.length > 4) {
+      badgesToShow = [...allEarnedBadges].slice(-4).reverse();
+    } else {
+      badgesToShow = [...visibleBadges].reverse();
+    }
+  }
 
   return (
     <Container maxWidth="md" sx={{ mt: 10, mb: 5 }}>
@@ -223,6 +266,62 @@ export default function Profile() {
               icon={<AdminPanelSettings />}
               sx={{ mt: 1, fontWeight: 600 }}
             />
+            {/* Badges: allow managing visibility */}
+            {badgesToShow.length > 0 && (
+              <Box sx={{ mt: 4, position: 'relative', px: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'center', flex: 1 }}>
+                    {badgesToShow.map((b, idx) => {
+                    const getBadgeUrl = (img) => {
+                      if (!img) return null;
+                      if (img.startsWith('http')) return img;
+                      const path = img.startsWith('/') ? img : `/${img}`;
+                      return `http://localhost:5000${path}`;
+                    };
+                    const visible = b.visible !== undefined ? b.visible : true;
+                    // When not managing we already filtered visible badges; when managing show all
+                    if (!manageBadges && !visible) return null;
+                    return (
+                      <Paper key={idx} elevation={1} sx={{ width: 181, p: 1, textAlign: 'center', position: 'relative' }}>
+                        {manageBadges && (
+                          <Checkbox
+                            checked={visible}
+                            onChange={() => handleToggleBadge(b)}
+                            sx={{ position: 'absolute', top: 4, right: 4 }}
+                          />
+                        )}
+                        <Box sx={{ width: '100%', height: 84, mb: 1, overflow: 'hidden', borderRadius: 1, bgcolor: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          {b.image ? (
+                            <img src={getBadgeUrl(b.image)} alt={b.eventName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          ) : (
+                            <Typography variant="caption" color="text.secondary">No image</Typography>
+                          )}
+                        </Box>
+                        <Typography variant="caption" sx={{ display: 'block', fontWeight: 700 }}>{b.eventName}</Typography>
+                        <Typography variant="caption" color="text.secondary">Đóng góp {b.level}/5</Typography>
+                      </Paper>
+                    );
+                  })}
+                  </Box>
+                </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={handleToggleManageBadges}
+                    sx={{
+                      backgroundColor: "#49BBBD",
+                      color: "white",
+                      textTransform: "none",   // ❌ bỏ viết hoa
+                      fontSize: "11px",        // 🔽 chữ nhỏ hơn nữa
+                      padding: "2px 6px"       // 🔽 thu nhỏ button
+                    }}
+                  >
+                    Chỉnh sửa Badge
+                  </Button>
+                </Box>
+              </Box>
+            )}
           </Box>
 
           <Divider sx={{ my: 4 }} />

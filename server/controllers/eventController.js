@@ -1075,6 +1075,119 @@ export const uploadEventBanner = async (req, res) => {
   }
 };
 
+// -------------------- UPLOAD EVENT BADGE --------------------
+export const uploadEventBadge = async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const event = await Event.findOne({ slug });
+
+    if (!event) return res.status(404).json({ message: "Không tìm thấy sự kiện" });
+
+    // Kiểm tra quyền
+    const isCreator = event.createdBy.toString() === req.user._id.toString();
+    const isManager = req.user.role === "manager" || req.user.role === "admin";
+    if (!isCreator && !isManager) {
+      return res.status(403).json({ message: "Bạn không có quyền cập nhật badge cho sự kiện này" });
+    }
+
+    if (!req.file) return res.status(400).json({ message: "Không có file badge được upload" });
+
+    // Xóa badge cũ nếu có
+    if (event.badge) {
+      const fs = await import("fs");
+      const oldPath = event.badge.startsWith("/") ? `.${event.badge}` : event.badge;
+      if (fs.existsSync(oldPath)) {
+        try { fs.unlinkSync(oldPath); } catch(e){ console.warn('Không xóa được file cũ', e); }
+      }
+    }
+
+    const badgePath = `/uploads/badges/${req.file.filename}`;
+    event.badge = badgePath;
+    await event.save();
+
+    res.json({ message: "Cập nhật badge thành công", badge: event.badge });
+  } catch (err) {
+    console.error("Upload Event Badge Error:", err);
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// -------------------- SAVE CONTRIBUTIONS --------------------
+export const saveContributions = async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const { contributions } = req.body; // expected object: { userId: value }
+
+    if (!contributions || typeof contributions !== 'object') {
+      return res.status(400).json({ message: 'Contributions invalid' });
+    }
+
+    const event = await Event.findOne({ slug });
+    if (!event) return res.status(404).json({ message: 'Sự kiện không tồn tại' });
+
+    // Kiểm tra quyền: chỉ creator
+    const requesterId = req.user._id.toString();
+    const isCreator = event.createdBy.toString() === requesterId;
+    if (!isCreator) return res.status(403).json({ message: 'Bạn không có quyền cập nhật đóng góp' });
+
+    // Update event.contributions array
+    event.contributions = event.contributions || [];
+    for (const [userId, value] of Object.entries(contributions)) {
+      const v = parseInt(value) || 0;
+      const idx = event.contributions.findIndex(c => (c.user.toString ? c.user.toString() : c.user) === userId);
+      if (idx !== -1) {
+        event.contributions[idx].value = v;
+      } else {
+        event.contributions.push({ user: userId, value: v });
+      }
+    }
+
+    await event.save();
+
+    // Gắn/loại bỏ badge cho từng user dựa trên mức >=3
+    const eventBadge = event.badge || null;
+    const updates = [];
+    for (const c of event.contributions) {
+      const uid = c.user.toString ? c.user.toString() : c.user;
+      const level = c.value || 0;
+      const user = await User.findById(uid);
+      if (!user) continue;
+
+      // Ensure badges array
+      user.badges = user.badges || [];
+
+      const existing = user.badges.find(b => b.eventId && b.eventId.toString() === event._id.toString());
+      if (level >= 3) {
+        // Add or update badge (keep existing.visible if present)
+        if (existing) {
+          existing.level = level;
+          existing.image = eventBadge;
+          existing.eventName = event.name;
+        } else {
+          user.badges.push({ eventId: event._id, eventName: event.name, level: level, image: eventBadge, visible: true });
+        }
+      } else {
+        // Remove badge if exists
+        if (existing) {
+          user.badges = user.badges.filter(b => !(b.eventId && b.eventId.toString() === event._id.toString()));
+        }
+      }
+      updates.push(user.save());
+    }
+
+    await Promise.all(updates);
+
+    const updatedEvent = await Event.findOne({ slug })
+      .populate('createdBy', 'username avatar')
+      .populate('volunteers', 'username email role avatar');
+
+    res.json({ message: 'Đã lưu đóng góp', event: updatedEvent });
+  } catch (err) {
+    console.error('Save Contributions Error:', err);
+    res.status(500).json({ message: err.message });
+  }
+};
+
 // ---------------------- GET USER'S JOINED EVENTS ----------------------
 export const getUserEvents = async (req, res) => {
   try {
