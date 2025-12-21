@@ -8,10 +8,8 @@ import { useNavigate } from "react-router-dom";
 import { Box, Typography, CircularProgress, Chip, Paper } from "@mui/material";
 import { EventOutlined } from "@mui/icons-material";
 
-// Setup localizer for moment
 const localizer = momentLocalizer(moment);
 
-// Cấu hình tiếng Việt cho moment
 moment.locale('vi', {
   months: 'Tháng 1_Tháng 2_Tháng 3_Tháng 4_Tháng 5_Tháng 6_Tháng 7_Tháng 8_Tháng 9_Tháng 10_Tháng 11_Tháng 12'.split('_'),
   monthsShort: 'Th1_Th2_Th3_Th4_Th5_Th6_Th7_Th8_Th9_Th10_Th11_Th12'.split('_'),
@@ -54,8 +52,8 @@ moment.locale('vi', {
     return number;
   },
   week: {
-    dow: 1, // Monday is the first day of the week.
-    doy: 4  // The week that contains Jan 4th is the first week of the year.
+    dow: 1,
+    doy: 4 
   }
 });
 
@@ -92,19 +90,16 @@ export default function CalendarPage() {
       }
 
       const data = await getUserEvents(userId);
-      
-      // Transform events for calendar format
+
       const calendarEvents = data.events.map(event => {
-        // Parse start and end times
         const startDate = new Date(event.date);
         const endDate = event.endDate ? new Date(event.endDate) : new Date(event.date);
-        
-        // Parse time strings (format: "HH:MM")
+
         if (event.startTime) {
           const [startHour, startMinute] = event.startTime.split(':');
           startDate.setHours(parseInt(startHour), parseInt(startMinute));
         }
-        
+
         if (event.endTime) {
           const [endHour, endMinute] = event.endTime.split(':');
           endDate.setHours(parseInt(endHour), parseInt(endMinute));
@@ -135,12 +130,10 @@ export default function CalendarPage() {
   };
 
   const handleSelectEvent = (event) => {
-    // Navigate to event detail page when clicking on an event
     navigate(`/event/${event.resource.slug}`);
   };
 
   const handleSelectSlot = ({ start }) => {
-    // Optional: Handle clicking on empty calendar slot
     console.log("Selected date:", start);
   };
 
@@ -152,7 +145,6 @@ export default function CalendarPage() {
     setView(newView);
   };
 
-  // Custom event styling
   const eventStyleGetter = (event) => {
     const style = {
       backgroundColor: '#49BBBD', /* Màu nhấn */
@@ -165,7 +157,6 @@ export default function CalendarPage() {
     return { style };
   };
 
-  // Format event title for week/day views to include time
   const eventTitleAccessor = (event) => {
     if (view === 'week' || view === 'day') {
       const startTime = moment(event.start).format('HH:mm');

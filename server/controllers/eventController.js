@@ -86,7 +86,6 @@ const createEventPost = async (event) => {
  */
 export const createEvent = async (req, res) => {
   try {
-    // 1. Lấy dữ liệu từ Client
     const {
       name, date, endDate, startTime, endTime, location,
       description, username, recurrence, privacy, question, banner,
@@ -94,7 +93,6 @@ export const createEvent = async (req, res) => {
 
     console.log("Create Request Body:", req.body);
 
-    // --- VALIDATION INPUT ---
     if (!startTime || !endTime) {
       return res.status(400).json({ message: "Giờ bắt đầu và giờ kết thúc là bắt buộc" });
     }
@@ -115,19 +113,16 @@ export const createEvent = async (req, res) => {
         return res.status(400).json({ message: "Thiếu thông tin người tạo (username)" });
     }
 
-    // --- TÌM NGƯỜI DÙNG ---
     const user = await User.findOne({ username });
     if (!user) {
       return res.status(400).json({ message: `Không tìm thấy người dùng có username: ${username}` });
     }
 
-    // --- XỬ LÝ LẶP LẠI (RECURRENCE) ---
     let recurrenceData = null;
     if (recurrence && recurrence.enabled) {
       recurrenceData = recurrence;
     }
 
-    // --- TẠO SLUG ---
     const baseSlug = slugify(name || "event", { lower: true, strict: true, locale: 'vi' });
     const finalSlug = `${baseSlug}-${Date.now()}`;
 

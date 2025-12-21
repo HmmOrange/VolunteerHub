@@ -18,16 +18,13 @@ export const register = async (req, res) => {
       captchaToken,
     } = req.body;
 
-    // ===== BASIC VALIDATION =====
     if (!email || !username || !password) {
       return res.status(400).json({ message: "Thiếu thông tin đăng ký" });
     }
-
     if (!captchaAnswer || !captchaToken) {
       return res.status(400).json({ message: "Thiếu captcha" });
     }
-
-    // ===== CAPTCHA VERIFY =====
+    
     try {
       const decoded = jwt.verify(
         captchaToken,
@@ -41,11 +38,9 @@ export const register = async (req, res) => {
       return res.status(400).json({ message: "Captcha đã hết hạn" });
     }
 
-    // ===== NORMALIZE =====
     email = email.toLowerCase().trim();
     username = username.trim();
 
-    // ===== UNIQUE CHECK =====
     if (await User.findOne({ email })) {
       return res.status(400).json({ message: "Email đã được sử dụng" });
     }
@@ -54,27 +49,23 @@ export const register = async (req, res) => {
       return res.status(400).json({ message: "Tên đăng nhập đã được sử dụng" });
     }
 
-    // ===== HASH PASSWORD =====
+    
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // ===== CREATE USER =====
     const user = await User.create({
       email,
       username,
       password: hashedPassword,
-
-      // required by schema
-      fullName: username, // temporary default, updated in step 2
+      fullName: username,
     });
 
-    // ===== ISSUE TOKEN (IMPORTANT) =====
+    
     const token = jwt.sign(
       { id: user._id },
       process.env.JWT_SECRET,
       { expiresIn: "1d" }
     );
 
-    // ===== RESPONSE =====
     res.status(201).json({
       token,
       user: {
