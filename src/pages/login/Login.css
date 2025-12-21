@@ -1,14 +1,13 @@
-/* --- RESET & LAYOUT --- */
+
 .login-wrapper {
   display: flex;
   min-height: 100vh;
   width: 100%;
-  background-color: #f1f4f7; /* Màu thứ cấp (30%) */
+  background-color: #f1f4f7; 
   font-family: 'Poppins', 'Segoe UI', sans-serif;
   overflow: hidden;
 }
 
-/* --- LEFT SIDE: VISUAL IMAGE (60%) --- */
 .login-visual {
   flex: 6;
   background-size: cover;
@@ -19,11 +18,9 @@
   justify-content: space-between;
 }
 
-/* Lớp phủ màu Gradient xanh ngọc */
 .visual-overlay {
   position: absolute;
   inset: 0;
-  /* Gradient từ đen (dưới) lên xanh ngọc trong suốt (trên) */
   background: linear-gradient(to bottom, rgba(73, 187, 189, 0.3), rgba(0, 0, 0, 0.7));
   padding: 2.5rem 3.75rem;
   display: flex;
@@ -72,11 +69,10 @@
 .quote-deco-line {
   width: 3.75rem;
   height: 0.25rem;
-  background-color: #49BBBD; /* Màu chủ đạo */
+  background-color: #49BBBD;
   border-radius: 0.125rem;
 }
 
-/* --- RIGHT SIDE: FORM (40%) --- */
 .login-content {
   flex: 4;
   display: flex;
@@ -84,10 +80,10 @@
   justify-content: center;
   padding: 2.5rem;
   background: white;
-  border-top-left-radius: 1.25rem; /* Bo góc tạo điểm nhấn */
+  border-top-left-radius: 1.25rem;
   border-bottom-left-radius: 1.25rem;
-  box-shadow: -0.625rem 0 1.875rem rgba(73, 187, 189, 0.05); /* Bóng mờ xanh */
-  margin-left: -1.25rem; /* Đè lên ảnh một chút để tạo chiều sâu */
+  box-shadow: -0.625rem 0 1.875rem rgba(73, 187, 189, 0.05);
+  margin-left: -1.25rem;
   z-index: 10;
 }
 
@@ -112,7 +108,6 @@
   font-size: clamp(0.875rem, 1.5vw, 0.9375rem);
 }
 
-/* --- FORM ELEMENTS --- */
 .auth-form {
   display: flex;
   flex-direction: column;
@@ -137,10 +132,9 @@
   border: 0.09375rem solid #E0E0E0;
   font-size: clamp(0.875rem, 1.5vw, 0.9375rem);
   transition: all 0.3s ease;
-  background-color: #f1f4f7; /* Màu thứ cấp */
+  background-color: #f1f4f7;
 }
 
-/* Hiệu ứng Focus với màu chủ đạo #49BBBD */
 .form-group input:focus {
   outline: none;
   border-color: #49BBBD;
@@ -159,23 +153,22 @@
   margin-top: 0.125rem;
 }
 
-/* BUTTON CHÍNH */
 .btn-primary {
   margin-top: 0.625rem;
   padding: 1rem;
   border: none;
-  border-radius: 3.125rem; /* Bo tròn hoàn toàn */
-  background-color: #49BBBD; /* MÀU CHỦ ĐẠO */
+  border-radius: 3.125rem;
+  background-color: #49BBBD;
   color: white;
   font-size: clamp(0.875rem, 1.5vw, 1rem);
   font-weight: 700;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 0.5rem 1.25rem rgba(73, 187, 189, 0.3); /* Đổ bóng màu xanh */
+  box-shadow: 0 0.5rem 1.25rem rgba(73, 187, 189, 0.3);
 }
 
 .btn-primary:hover {
-  background-color: #359698; /* Màu đậm hơn khi hover */
+  background-color: #359698;
   transform: translateY(-0.125rem);
   box-shadow: 0 0.75rem 1.5625rem rgba(73, 187, 189, 0.4);
 }
@@ -187,7 +180,6 @@
   box-shadow: none;
 }
 
-/* --- FOOTER & LINKS --- */
 .form-footer {
   margin-top: 1.875rem;
   text-align: center;
@@ -226,7 +218,6 @@
   color: #2D3436;
 }
 
-/* --- ALERTS --- */
 .alert-box {
   margin-top: 1.25rem;
   padding: 0.75rem;
@@ -237,7 +228,7 @@
 }
 
 .alert-box.success {
-  background-color: #E0F2F1; /* Xanh lá nhạt */
+  background-color: #E0F2F1;
   color: #2E7D32;
   border: 0.0625rem solid #A5D6A7;
 }
@@ -248,7 +239,6 @@
   border: 0.0625rem solid #FFCDD2;
 }
 
-/* Loading Spinner */
 .spinner {
   display: inline-block;
   width: 1.25rem;
@@ -263,7 +253,6 @@
   to { transform: rotate(360deg); }
 }
 
-/* --- RESPONSIVE MOBILE --- */
 @media (max-width: 900px) {
   .login-wrapper {
     flex-direction: column;
@@ -294,13 +283,13 @@
   }
   
   .quote-container {
-    display: none; /* Ẩn quote trên mobile */
+    display: none;
   }
 
   .login-content {
     flex: 1;
     margin-left: 0;
-    margin-top: -30px; /* Đẩy form lên đè ảnh */
+    margin-top: -30px;
     border-radius: 30px 30px 0 0;
     border-top-left-radius: 30px;
     border-bottom-left-radius: 0;
@@ -344,7 +333,6 @@
   }
 }
 
-/* Tablet và màn hình nhỏ hơn */
 @media (max-width: 768px) {
   .login-visual {
     height: 180px;
@@ -355,7 +343,6 @@
   }
 }
 
-/* Mobile nhỏ */
 @media (max-width: 480px) {
   .login-visual {
     height: 160px;
