@@ -17,6 +17,7 @@ import { getCommentsByPost } from "../../api/Comments";
 import { likePost, getLikesByPost, deletePost, updatePost } from "../../api/Posts"; 
 import CommentInput from "./CommentInput"; 
 import "./Post.css";
+import ConfirmDialog from "../common/ConfirmDialog";
 
 export default function PostCard({ post, onPostDeleted, onPostUpdated, eventOwnerId, onPostClick }) {
   const navigate = useNavigate();
@@ -43,6 +44,8 @@ export default function PostCard({ post, onPostDeleted, onPostUpdated, eventOwne
   const [anchorEl, setAnchorEl] = useState(null); 
   const [isEditing, setIsEditing] = useState(false); 
   const [editedContent, setEditedContent] = useState(post.content); 
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmOptions, setConfirmOptions] = useState({ title: '', description: '', onConfirm: null, confirmText: 'Xác nhận', cancelText: 'Hủy' });
 
   // === LOGIC PHÂN QUYỀN ===
   const isPostOwner = (post.createdBy?._id === currentUserId) || (post.createdBy?.username === currentUsername);
@@ -159,14 +162,21 @@ export default function PostCard({ post, onPostDeleted, onPostUpdated, eventOwne
 
   const handleDelete = async () => {
     handleMenuClose();
-    if (window.confirm("Bạn có chắc muốn xóa bài đăng này?")) {
-      try {
-        await deletePost(post._id, currentUsername);
-        onPostDeleted(post._id); 
-      } catch (error) {
-        console.error("Lỗi xóa:", error); showToast("Xóa thất bại.", 'error');
+    setConfirmOptions({
+      title: 'Xóa bài đăng',
+      description: 'Bạn có chắc muốn xóa bài đăng này?',
+      confirmText: 'Xóa',
+      cancelText: 'Hủy',
+      onConfirm: async () => {
+        try {
+          await deletePost(post._id, currentUsername);
+          onPostDeleted(post._id);
+        } catch (error) {
+          console.error("Lỗi xóa:", error); showToast("Xóa thất bại.", 'error');
+        }
       }
-    }
+    });
+    setConfirmOpen(true);
   };
 
   const handleEditClick = () => { handleMenuClose(); setIsEditing(true); };
@@ -401,6 +411,15 @@ export default function PostCard({ post, onPostDeleted, onPostUpdated, eventOwne
         </DialogContent>
         <DialogActions><Button onClick={handleCloseCommentList}>Đóng</Button></DialogActions>
       </Dialog>
+        <ConfirmDialog
+          open={confirmOpen}
+          title={confirmOptions.title}
+          description={confirmOptions.description}
+          confirmText={confirmOptions.confirmText}
+          cancelText={confirmOptions.cancelText}
+          onClose={() => setConfirmOpen(false)}
+          onConfirm={async () => { if (confirmOptions.onConfirm) await confirmOptions.onConfirm(); setConfirmOpen(false); }}
+        />
     </>
   );
 }

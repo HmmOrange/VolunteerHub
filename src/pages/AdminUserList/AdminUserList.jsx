@@ -40,6 +40,7 @@ import {
 } from "@mui/icons-material";
 import CloseIcon from '@mui/icons-material/Close';
 import { useToast } from "../../context/ToastContext";
+import ConfirmDialog from "../../components/common/ConfirmDialog";
 
 import {
   getAllUsers,
@@ -74,6 +75,8 @@ export default function AdminUserList() {
   const [detailOpen, setDetailOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [exportType, setExportType] = useState('csv');
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmOptions, setConfirmOptions] = useState({ title: '', description: '', onConfirm: null });
 
   /* ===== MODAL STATE ===== */
   const [open, setOpen] = useState(false);
@@ -153,33 +156,43 @@ export default function AdminUserList() {
 
   const handleRoleChange = async (userId, currentRole) => {
     const newRole = currentRole === "volunteer" ? "manager" : "volunteer";
-    if (!window.confirm("Xác nhận thay đổi vai trò?")) return;
-
-    try {
-      await updateUserRole(userId, newRole);
-      setUsers((prev) =>
-        prev.map((u) =>
-          u._id === userId ? { ...u, role: newRole } : u
-        )
-      );
-    } catch (error) {
-      showToast(error.message, 'error');
-    }
+    setConfirmOptions({
+      title: 'Thay đổi vai trò',
+      description: 'Xác nhận thay đổi vai trò?',
+      onConfirm: async () => {
+        try {
+          await updateUserRole(userId, newRole);
+          setUsers((prev) =>
+            prev.map((u) =>
+              u._id === userId ? { ...u, role: newRole } : u
+            )
+          );
+        } catch (error) {
+          showToast(error.message, 'error');
+        }
+      }
+    });
+    setConfirmOpen(true);
   };
 
   const handleToggleBan = async (userId) => {
-    if (!window.confirm("Xác nhận khóa / mở khóa tài khoản?")) return;
-
-    try {
-      const res = await toggleUserLock(userId);
-      setUsers((prev) =>
-        prev.map((u) =>
-          u._id === userId ? { ...u, isLocked: res.user.isLocked } : u
-        )
-      );
-    } catch (error) {
-      showToast(error.message, 'error');
-    }
+    setConfirmOptions({
+      title: 'Khóa / Mở khóa',
+      description: 'Xác nhận khóa / mở khóa tài khoản?',
+      onConfirm: async () => {
+        try {
+          const res = await toggleUserLock(userId);
+          setUsers((prev) =>
+            prev.map((u) =>
+              u._id === userId ? { ...u, isLocked: res.user.isLocked } : u
+            )
+          );
+        } catch (error) {
+          showToast(error.message, 'error');
+        }
+      }
+    });
+    setConfirmOpen(true);
   };
 
   /* ================= CREATE MANAGER ================= */
@@ -250,6 +263,7 @@ export default function AdminUserList() {
   const paginatedUsers = filteredUsers.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   return (
+    <>
     <Container maxWidth="md" className="user-list-container">
       <Divider sx={{ mb: 3 }} />
 
@@ -497,5 +511,15 @@ export default function AdminUserList() {
         </Box>
       </Modal>
     </Container>
+      <ConfirmDialog
+        open={confirmOpen}
+        title={confirmOptions.title}
+        description={confirmOptions.description}
+        onConfirm={() => { if (confirmOptions.onConfirm) confirmOptions.onConfirm(); }}
+        onClose={() => setConfirmOpen(false)}
+        confirmText="Xác nhận"
+        cancelText="Hủy"
+      />
+    </>
   );
 }

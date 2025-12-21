@@ -27,6 +27,7 @@ import {
   Box,
 } from "@mui/material";
 import CloseIcon from '@mui/icons-material/Close';
+import ConfirmDialog from "../../components/common/ConfirmDialog";
 
 const API_BASE = "http://localhost:5000/api/events";
 
@@ -82,6 +83,8 @@ export default function AdminEventList() {
   const [detailOpen, setDetailOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const { showToast } = useToast();
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmOptions, setConfirmOptions] = useState({ title: '', description: '', onConfirm: null });
   // === HÀM TÍNH TRẠNG THÁI TỰ ĐỘNG ===
   const calculateEventStatus = (event) => {
     if (!event) return 'upcoming';
@@ -158,29 +161,37 @@ export default function AdminEventList() {
 
   // ===== ACTIONS =====
   const handleApprove = async (eventId) => {
-    if (!window.confirm("Xác nhận duyệt sự kiện này?")) return;
-
-    await fetch(`${API_BASE}/admin/${eventId}/approved`, {
-      method: "PUT",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+    setConfirmOptions({
+      title: 'Duyệt sự kiện',
+      description: 'Xác nhận duyệt sự kiện này?',
+      onConfirm: async () => {
+        await fetch(`${API_BASE}/admin/${eventId}/approved`, {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        fetchData();
+      }
     });
-
-    fetchData();
+    setConfirmOpen(true);
   };
 
   const handleReject = async (eventId) => {
-    if (!window.confirm("Từ chối sự kiện này?")) return;
-
-    await fetch(`${API_BASE}/admin/${eventId}/rejected`, {
-      method: "PUT",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+    setConfirmOptions({
+      title: 'Từ chối sự kiện',
+      description: 'Từ chối sự kiện này?',
+      onConfirm: async () => {
+        await fetch(`${API_BASE}/admin/${eventId}/rejected`, {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        fetchData();
+      }
     });
-
-    fetchData();
+    setConfirmOpen(true);
   };
 
   if (role !== "admin") {
@@ -342,6 +353,7 @@ export default function AdminEventList() {
   );
 
   return (
+    <>
     <Container maxWidth="lg" sx={{ mt: 4 }}>
       {/* ===== PENDING EVENTS ===== */}
       <Typography variant="h5" fontWeight="bold" mb={2}>
@@ -398,6 +410,16 @@ export default function AdminEventList() {
         )}
       </Paper>
       {EventDetailsDialog()}
+      <ConfirmDialog
+        open={confirmOpen}
+        title={confirmOptions.title}
+        description={confirmOptions.description}
+        onConfirm={() => { if (confirmOptions.onConfirm) confirmOptions.onConfirm(); }}
+        onClose={() => setConfirmOpen(false)}
+        confirmText="Xác nhận"
+        cancelText="Hủy"
+      />
     </Container>
+    </>
   );
 }

@@ -17,6 +17,7 @@ import {
 
 import { getAllEvents, deleteEvent, updateEvent } from "../../api/Events";
 import placeholderImage from "../../assets/img/event_group.jpg";
+import ConfirmDialog from "../../components/common/ConfirmDialog";
 
 export default function Events() {
   const navigate = useNavigate();
@@ -37,6 +38,8 @@ export default function Events() {
     location: "",
     description: "",
   });
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmOptions, setConfirmOptions] = useState({ title: '', description: '', onConfirm: null });
 
   // Helper function để render banner URL
   const getBannerUrl = (banner) => {
@@ -149,11 +152,16 @@ export default function Events() {
 
   const handleDelete = async (e, slug) => {
     e.stopPropagation();
-    if (window.confirm("Bạn có chắc muốn xóa sự kiện này?")) {
-      await deleteEvent({ slug, username });
-      const data = await getAllEvents();
-      setEvents(data);
-    }
+    setConfirmOptions({
+      title: 'Xóa sự kiện',
+      description: 'Bạn có chắc muốn xóa sự kiện này?',
+      onConfirm: async () => {
+        await deleteEvent({ slug, username });
+        const data = await getAllEvents();
+        setEvents(data);
+      }
+    });
+    setConfirmOpen(true);
   };
 
   const handleEdit = (e, event) => {
@@ -321,6 +329,7 @@ export default function Events() {
   /* ================= UI ================= */
 
   return (
+    <>
     <Container maxWidth="xl" sx={{ px: { xs: 2, sm: 3, md: 4 }, py: 2 }}>
       {/* FILTERS — JOINED EVENTS ONLY */}
       <Paper sx={{ p: { xs: 2, sm: 2.5, md: 3 }, mb: { xs: 3, md: 4 }, mt: { xs: 6, sm: 7, md: 8 }, border: '2px solid #49BBBD' }}>
@@ -392,5 +401,15 @@ export default function Events() {
         </Box>
       )}
     </Container>
+    <ConfirmDialog
+      open={confirmOpen}
+      title={confirmOptions.title}
+      description={confirmOptions.description}
+      onConfirm={() => { if (confirmOptions.onConfirm) confirmOptions.onConfirm(); }}
+      onClose={() => setConfirmOpen(false)}
+      confirmText="Xóa"
+      cancelText="Hủy"
+    />
+    </>
   );
 }
