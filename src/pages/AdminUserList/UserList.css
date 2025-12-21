@@ -1,4 +1,4 @@
-/* Container chính của trang */
+
 .user-list-container {
   margin-top: 2rem;
   margin-bottom: 2rem;
@@ -7,13 +7,12 @@
 .user-list-title {
   font-weight: bold !important;
   margin-bottom: 1.5rem !important;
-  text-align: center; /* Đảm bảo căn giữa */
+  text-align: center; 
   color: #333;
 }
 
-/* Header bảng */
 .table-header {
-  background-color: #f1f4f7; /* Màu thứ cấp */
+  background-color: #f1f4f7; 
 }
 
 .table-header th {
@@ -21,45 +20,39 @@
   color: #555;
 }
 
-/* === CẤU TRÚC Ô ROLE === */
-/* Container chứa: [Chip Role] + [Mũi tên] + [Khóa] */
 .role-cell-wrapper {
   display: flex;
   align-items: center;
-  gap: 0.75rem; /* Khoảng cách giữa Chip và các nút */
+  gap: 0.75rem; 
 }
 
-/* Style chung cho Chip Role */
 .role-chip {
-  width: 7.5rem !important; /* Độ dài bằng nhau cho mọi role */
-  justify-content: center !important; /* Center text */
+  width: 7.5rem !important; 
+  justify-content: center !important; 
   font-weight: bold !important;
   color: white !important;
   border: none !important;
 }
 
-/* Màu sắc cụ thể cho từng Role */
 .role-chip-admin {
-  background-color: #d32f2f !important; /* Đỏ */
+  background-color: #d32f2f !important; 
 }
 
 .role-chip-manager {
-  background-color: #49BBBD !important; /* Xanh ngọc */
+  background-color: #49BBBD !important; 
 }
 
 .role-chip-volunteer {
-  background-color: #9e9e9e !important; /* Xám mặc định */
+  background-color: #9e9e9e !important; 
   color: #fff !important;
 }
 
-/* Khu vực chứa các nút hành động nhỏ (Mũi tên, Khóa) */
 .action-icons {
   display: flex;
   align-items: center;
   gap: 0.25rem;
 }
 
-/* Nút mũi tên */
 .arrow-btn {
   padding: 0.25rem !important;
 }
@@ -68,7 +61,6 @@
   background-color: rgba(0, 0, 0, 0.04) !important;
 }
 
-/* Nút khóa */
 .lock-btn {
   padding: 0.25rem !important;
   margin-left: 0.25rem !important;

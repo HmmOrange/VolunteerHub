@@ -1,4 +1,4 @@
-/* === BOX ĐƠN GIẢN (TRIGGER) === */
+
 .create-post-trigger-paper {
   width: 100%;
   border-radius: 0.5rem !important;
@@ -8,7 +8,7 @@
   flex-grow: 1;
   border-radius: 1.25rem !important;
   border: 0.0625rem solid #ddd !important;
-  background-color: #f1f4f7 !important; /* Màu thứ cấp */
+  background-color: #f1f4f7 !important; 
   color: #65676b !important;
   text-align: left !important;
   justify-content: flex-start !important;
@@ -21,7 +21,6 @@
   background-color: #e4e6e9 !important;
 }
 
-/* === FORM ĐẦY ĐỦ (EXPANDED) === */
 .create-post-paper {
   width: 100%;
   
@@ -59,8 +58,6 @@
   margin-bottom: 1rem;
 }
 
-
-/* === POST CARD (Hiển thị) === */
 .post-card-paper {
   width: 100%;
   border-radius: 0.5rem !important;
@@ -68,7 +65,6 @@
   padding: 1rem 1rem 0 1rem; 
 }
 
-/* make border invisible by default and show accent on hover */
 .post-card-paper {
   border: 1.5px solid #D3D3D3  !important;
   box-shadow: 0 6px 18px rgba(0,0,0,0.06) !important;

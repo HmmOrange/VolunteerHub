@@ -44,8 +44,6 @@ import "./SearchResults.css";
 
   Mô tả:
   - Trang hiển thị kết quả tìm kiếm sự kiện theo query URL (`q`).
-  - Sử dụng Fuse.js để fuzzy-search trên dữ liệu tải về từ `searchEvents`.
-  - Hỗ trợ lọc trạng thái (upcoming/ongoing/completed/cancelled) và sắp xếp.
 */
 
 export default function SearchResults() {
@@ -56,21 +54,19 @@ export default function SearchResults() {
   const [filteredEvents, setFilteredEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchHistory, setSearchHistory] = useState([]);
-  const [sortBy, setSortBy] = useState("date"); // "date" hoặc "name"
-  const [filterStatus, setFilterStatus] = useState("all"); // "all", "upcoming", "ongoing", "completed", "cancelled"
+  const [sortBy, setSortBy] = useState("date");
+  const [filterStatus, setFilterStatus] = useState("all");
 
-  // Load tất cả events
   useEffect(() => {
     const loadEvents = async () => {
       try {
         setLoading(true);
         const events = await searchEvents("");
         
-        // Fuzzy search với threshold 75%
         if (query.trim() !== "") {
           const fuse = new Fuse(events, {
             keys: ["name", "description", "location"],
-            threshold: 0.25, // ~75% match
+            threshold: 0.25,
             includeScore: true,
           });
           const results = fuse.search(query).map(result => result.item);
@@ -106,7 +102,6 @@ export default function SearchResults() {
     setSearchHistory([]);
   };
 
-  // Helper function để render banner URL
   const getBannerUrl = (banner) => {
     if (!banner) return placeholderImage;
     if (banner.startsWith("http")) return banner;
@@ -115,11 +110,9 @@ export default function SearchResults() {
     return `http://localhost:5000${path}`;
   };
 
-  // Tính toán trạng thái event
   const calculateEventStatus = (event) => {
     if (!event) return 'upcoming';
     
-    // Nếu đã bị hủy
     if (event.eventStatus === 'cancelled') return 'cancelled';
     
     const now = new Date();
@@ -140,7 +133,6 @@ export default function SearchResults() {
     return 'completed';
   };
 
-  // Lấy thông tin trạng thái
   const getStatusInfo = (event) => {
     const status = calculateEventStatus(event);
     const statusMap = {
@@ -152,11 +144,10 @@ export default function SearchResults() {
     return statusMap[status] || statusMap.upcoming;
   };
 
-  // Sort và filter events
   const getSortedAndFilteredEvents = () => {
     let events = [...filteredEvents];
 
-    // Filter theo status
+    // Filter
     if (filterStatus !== "all") {
       events = events.filter(event => calculateEventStatus(event) === filterStatus);
     }
@@ -164,10 +155,8 @@ export default function SearchResults() {
     // Sort
     events.sort((a, b) => {
       if (sortBy === "date") {
-        // Sort theo ngày bắt đầu
         return new Date(a.date) - new Date(b.date);
       } else if (sortBy === "name") {
-        // Sort theo tên
         return a.name.localeCompare(b.name, 'vi');
       }
       return 0;
@@ -218,7 +207,6 @@ export default function SearchResults() {
             </Select>
           </FormControl>
 
-          {/* Filter - Toggle Buttons on desktop, Select on mobile */}
           <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
             <FilterList fontSize="small" color="action" />
             <ToggleButtonGroup
@@ -239,7 +227,6 @@ export default function SearchResults() {
             </ToggleButtonGroup>
           </Box>
 
-          {/* Filter - Select on mobile */}
           <FormControl size="small" sx={{ display: { xs: 'flex', md: 'none' }, minWidth: { xs: '100%', sm: '12.5rem' }, flex: { xs: '1 1 100%', sm: '0 0 auto' } }}>
             <InputLabel id="filter-label">
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -262,7 +249,7 @@ export default function SearchResults() {
           </FormControl>
         </Box>
 
-        {/* Two column layout với flex */}
+
         <Box sx={{ 
           display: 'flex', 
           gap: 3, 
@@ -281,10 +268,10 @@ export default function SearchResults() {
                 {displayEvents.map((event) => (
                   <Box key={event._id} sx={{ 
                     width: { 
-                      xs: '100%',                      // Mobile: 1 event/hàng
-                      sm: 'calc(50% - 1rem)',          // Tablet nhỏ: 2 events/hàng
-                      md: 'calc(50% - 1rem)',          // Tablet: 2 events/hàng
-                      lg: 'calc(33.333% - 1.33rem)'    // Desktop: 3 events/hàng
+                      xs: '100%',                   
+                      sm: 'calc(50% - 1rem)',
+                      md: 'calc(50% - 1rem)',
+                      lg: 'calc(33.333% - 1.33rem)'
                     },
                     flexGrow: 0, 
                     flexShrink: 0 
@@ -312,7 +299,7 @@ export default function SearchResults() {
                           alignItems: 'stretch',
                         }}
                       >
-                        {/* Banner với kích thước cố định */}
+                        {/* Banner */}
                         <Box
                           sx={{
                             width: '100%',
@@ -460,7 +447,6 @@ export default function SearchResults() {
             )}
           </Box>
 
-          {/* Right side - Sidebar - Sticky - Hidden on small screens */}
           <Box sx={{ 
             flex: { xs: '0 0 0', lg: '0 0 17%' }, 
             minWidth: { xs: 0, lg: '15rem' },

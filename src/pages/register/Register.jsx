@@ -16,14 +16,12 @@ const registerImage = "https://images.unsplash.com/photo-1552664730-d307ca884978
 
   Mô tả:
   - Quy trình đăng ký nhiều bước (account -> profile -> avatar) với captcha.
-  - Hàm lớn: validate các bước, `handleNextStep`, `handleFinalSubmit` (gọi `registerUser`), và upload avatar (`uploadAvatar`).
-  - Lưu ý: có validate client-side cho email, username, password và ngày sinh.
 */
 
 export default function Register() {
   const navigate = useNavigate();
 
-  // ===== CAPTCHA =====
+
   const [captcha, setCaptcha] = useState(null);
   const [captchaAnswer, setCaptchaAnswer] = useState("");
 
@@ -34,13 +32,13 @@ export default function Register() {
       .catch(() => setCaptcha(null));
   }, []);
 
-  // ===== STEP CONTROL =====
+
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [msg, setMsg] = useState("");
   const [error, setError] = useState("");
 
-  // ===== DATA STATE =====
+
   const [accountForm, setAccountForm] = useState({
     email: "",
     username: "",
@@ -48,7 +46,6 @@ export default function Register() {
     confirmPassword: "",
   });
 
-  // Validation state
   const [touched, setTouched] = useState({
     email: false,
     username: false,
@@ -65,9 +62,8 @@ export default function Register() {
     captcha: "",
   });
 
-  // Validation rules
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/; // 3-20 chars, letters/numbers/underscore
+  const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
   const passwordRegex = /^(?=.*[0-9])(?=.*[!@#$%^&*()_\-+={}\[\]|\\:;"'<>.,.?/~`]).{8,}$/;
 
   const validateField = (name, value) => {
@@ -113,7 +109,7 @@ export default function Register() {
 
   const [profileForm, setProfileForm] = useState({
     fullName: "",
-    dob: null, // store as Date object
+    dob: null,
     address: "",
   });
 
@@ -131,7 +127,6 @@ export default function Register() {
       const d = value instanceof Date ? value : new Date(value);
       if (!d || isNaN(d.getTime())) return "Ngày sinh không hợp lệ";
       const today = new Date();
-      // compare dates ignoring time
       const dNoTime = new Date(d.getFullYear(), d.getMonth(), d.getDate());
       const tNoTime = new Date(today.getFullYear(), today.getMonth(), today.getDate());
       if (dNoTime > tNoTime) return "Ngày sinh không thể ở tương lai";
@@ -156,12 +151,11 @@ export default function Register() {
   const [avatarPreview, setAvatarPreview] = useState(null);
   const fileInputRef = useRef(null);
 
-  // ================= BƯỚC 1: CHỈ VALIDATE VÀ CHUYỂN BƯỚC =================
+  // VALIDATE
   const handleNextStep = (e) => {
     e.preventDefault();
     setError("");
 
-    // Validate all fields and show inline errors
     const toCheck = ["email", "username", "password", "confirmPassword", "captcha"];
     const newErrors = {};
     let hasError = false;
@@ -180,18 +174,16 @@ export default function Register() {
       return;
     }
 
-    // Chuyển sang bước 2 mà không tạo tài khoản
     setMsg("");
     setStep(2);
   };
 
-  // ================= BƯỚC 2: TẠO TÀI KHOẢN HOÀN CHỈNH =================
+  // ================= TẠO TÀI KHOẢN HOÀN CHỈNH =================
   const handleFinalSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setMsg("");
     
-    // Validate profile fields client-side first
     const pErrors = {
       fullName: validateProfileField("fullName", profileForm.fullName),
       dob: validateProfileField("dob", profileForm.dob),
@@ -205,7 +197,6 @@ export default function Register() {
 
     setIsLoading(true);
     try {
-      // Tạo tài khoản với đầy đủ thông tin
       const res = await registerUser({
         email: accountForm.email,
         username: accountForm.username,
@@ -217,14 +208,12 @@ export default function Register() {
         address: profileForm.address,
       });
 
-      // Lưu token và thông tin user
       const token = res.token;
       localStorage.setItem("token", token);
       localStorage.setItem("userId", res.user.id);
       localStorage.setItem("username", res.user.username);
       localStorage.setItem("role", res.user.role);
 
-      // Upload avatar nếu có
       if (avatarFile) {
         const uploadRes = await uploadAvatar(avatarFile);
         localStorage.setItem("avatar", uploadRes.avatar);
@@ -240,7 +229,6 @@ export default function Register() {
     }
   };
 
-  // ===== AVATAR HANDLER =====
   const handleAvatarChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -268,7 +256,6 @@ export default function Register() {
             <p>Hoàn thành các bước để trở thành thành viên.</p>
           </div>
 
-          {/* STEPPER: Có thể click để quay lại */}
           <div className="stepper">
             <div 
               className={`step-item ${step >= 1 ? "active" : ""}`}
@@ -365,7 +352,7 @@ export default function Register() {
             </form>
           )}
 
-          {/* ===== FORM BƯỚC 2 (CÓ NÚT QUAY LẠI) ===== */}
+          {/* ===== FORM BƯỚC 2 ===== */}
           {step === 2 && (
             <form onSubmit={handleFinalSubmit} className="auth-form slide-in">
               <div className="avatar-upload-section">
@@ -424,12 +411,11 @@ export default function Register() {
                 />
               </div>
 
-              {/* ACTION BUTTONS: QUAY LẠI & HOÀN TẤT */}
               <div className="form-actions">
                 <button 
                   type="button" 
                   className="btn-secondary" 
-                  onClick={() => setStep(1)} // Quay lại bước 1
+                  onClick={() => setStep(1)}
                   disabled={isLoading}
                 >
                   <ArrowLeft size={18}/> Quay lại

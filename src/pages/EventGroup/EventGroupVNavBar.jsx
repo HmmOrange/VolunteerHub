@@ -12,12 +12,12 @@ import {
   ListItemText,
   Avatar,
   CircularProgress,
-  Button // Thêm Button nếu muốn nút quay lại hoặc thử lại
+  Button 
 } from "@mui/material";
-import { ChatOutlined, Public, Lock, ErrorOutline, PeopleOutline } from "@mui/icons-material"; // Thêm ErrorOutline, PeopleOutline
+import { ChatOutlined, Public, Lock, ErrorOutline, PeopleOutline } from "@mui/icons-material"; 
 
 import { getEventBySlug } from "../../api/Events";
-import "./EventGroupVNavBar.css"; // Giữ nguyên CSS cũ
+import "./EventGroupVNavBar.css";
 import eventGroupAvatar from "../../assets/img/event_group.jpg";
 
 const mockChats = [
@@ -31,23 +31,18 @@ const mockChats = [
 
   Mô tả:
   - Thanh điều hướng dọc chuyên dụng cho trang chi tiết một sự kiện (Event Group).
-  - Tải thông tin event theo `slug` (gọi `getEventBySlug`) và hiển thị shortcuts/quick links cho các tab (Bài đăng, Thông tin, Thành viên...).
-  - Xử lý trạng thái loading và error, và đóng drawer khi cần (temporary mode).
 */
 
 export default function EventGroupVNavBar({ isOpen, drawerWidth, drawerVariant, onClose }) {
   const { slug } = useParams();
   const navigate = useNavigate();
   
-  // Thêm state loading và error để kiểm soát UI
   const [eventData, setEventData] = useState(null);
-  const [loading, setLoading] = useState(true); // Mặc định là đang load
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Lấy userId để check quyền (nếu cần thiết cho logic backend)
   const userId = localStorage.getItem("userId");
 
-  // Helper function để render banner URL
   const getBannerUrl = (banner) => {
     if (!banner) return null;
     if (banner.startsWith("http")) return banner;
@@ -58,21 +53,19 @@ export default function EventGroupVNavBar({ isOpen, drawerWidth, drawerVariant, 
 
   useEffect(() => {
     if (slug) {
-      // Reset state mỗi khi đổi slug
       setLoading(true);
       setError(null);
       setEventData(null);
 
       (async () => {
         try {
-          // Gọi API (Hàm này đã sửa ở bước trước để trả về error.status)
           const data = await getEventBySlug({ slug, userId });
           setEventData(data);
         } catch (err) {
           console.error("Failed to fetch event data:", err);
-          setError(err); // Lưu lỗi vào state
+          setError(err);
         } finally {
-          setLoading(false); // QUAN TRỌNG: Tắt loading dù thành công hay thất bại
+          setLoading(false);
         }
       })();
     }
@@ -84,9 +77,7 @@ export default function EventGroupVNavBar({ isOpen, drawerWidth, drawerVariant, 
     }
   };
 
-  // Hàm render nội dung chính để code gọn gàng
   const renderDrawerContent = () => {
-    // 1. TRƯỜNG HỢP ĐANG TẢI
     if (loading) {
       return (
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 200 }}>
@@ -95,7 +86,6 @@ export default function EventGroupVNavBar({ isOpen, drawerWidth, drawerVariant, 
       );
     }
 
-    // 2. TRƯỜNG HỢP CÓ LỖI (Mới thêm)
     if (error) {
       return (
         <Box sx={{ p: 3, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', mt: 2 }}>
@@ -107,7 +97,6 @@ export default function EventGroupVNavBar({ isOpen, drawerWidth, drawerVariant, 
       );
     }
 
-    // 3. TRƯỜNG HỢP THÀNH CÔNG (Hiển thị thông tin event + shortcuts tới các tab)
     if (eventData) {
       const isJoined = (eventData.volunteers || []).some(v => (v._id ? v._id.toString() : v).toString() === userId);
       const currentUserInEvent = (eventData.volunteers || []).find(v => (v._id ? v._id.toString() : v).toString() === userId);
@@ -151,7 +140,6 @@ export default function EventGroupVNavBar({ isOpen, drawerWidth, drawerVariant, 
                 <ListItemButton 
                   key={item.id} 
                   onClick={() => {
-                    // Navigate to event page with tab query param
                     const base = `/event/${slug}`;
                     const url = `${base}?tab=${item.id}`;
                     navigate(url);
@@ -195,7 +183,7 @@ export default function EventGroupVNavBar({ isOpen, drawerWidth, drawerVariant, 
       );
     }
 
-    return null; // Trường hợp null data mà không lỗi
+    return null;
   };
 
   return (
@@ -219,7 +207,6 @@ export default function EventGroupVNavBar({ isOpen, drawerWidth, drawerVariant, 
       <Toolbar />
       <Divider />
       
-      {/* Gọi hàm render nội dung */}
       {renderDrawerContent()}
 
     </Drawer>
