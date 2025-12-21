@@ -320,22 +320,38 @@ export default function Dashboard() {
   }, [hotEvents, currentPage]);
 
   return (
-    <Box className="dashboard-container-split" sx={{ minHeight: '100vh' }}>
-      <Typography variant="h4" textAlign="center" fontWeight="bold" gutterBottom sx={{ pt: 3 }}>
+    <Box className="dashboard-container-split" sx={{ minHeight: '100vh', pb: { xs: 4, md: 2 } }}>
+      <Typography 
+        variant="h4" 
+        textAlign="center" 
+        fontWeight="bold" 
+        gutterBottom 
+        sx={{ 
+          pt: { xs: 2, md: 3 },
+          fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2.125rem' },
+          px: { xs: 2, md: 0 }
+        }}
+      >
         Xin chào, {username || "Người dùng"}!
       </Typography>
 
       {/* Container chính với độ rộng responsive */}
       <Box 
         sx={{ 
-          width: { xs: '100%', md: '90vw', lg: '70vw' },
+          width: { xs: '100%', sm: '95%', md: '90vw', lg: '75vw', xl: '70vw' },
           maxWidth: '100%',
           mx: 'auto',
+          px: { xs: 1, sm: 2 },
         }}
       >
         {/* Sự kiện sắp diễn ra - Carousel */}
-        <Paper elevation={2} sx={{ p: 3, mb: 4, mt: 3 }}>
-          <Typography variant="h6" fontWeight="bold" mb={2}>
+        <Paper elevation={2} sx={{ p: { xs: 2, sm: 2.5, md: 3 }, mb: { xs: 3, md: 4 }, mt: { xs: 2, md: 3 }, borderRadius: { xs: 2, md: 3 } }}>
+          <Typography 
+            variant="h6" 
+            fontWeight="bold" 
+            mb={2}
+            sx={{ fontSize: { xs: '1.1rem', sm: '1.15rem', md: '1.25rem' } }}
+          >
             Sự kiện sắp diễn ra bạn đã tham gia
           </Typography>
 
@@ -345,49 +361,53 @@ export default function Dashboard() {
           </Typography>
         ) : (
           <Box sx={{ position: 'relative' }}>
-            {/* Nút trái */}
+            {/* Nút trái - Hiện trên mobile */}
             {upcomingScrollIndex > 0 && (
               <IconButton
                 onClick={() => setUpcomingScrollIndex(prev => Math.max(0, prev - 1))}
                 sx={{
                   position: 'absolute',
-                  left: -20,
+                  left: { xs: -10, sm: -15, md: -20 },
                   top: '50%',
                   transform: 'translateY(-50%)',
                   zIndex: 2,
                   bgcolor: 'white',
                   boxShadow: 2,
+                  width: { xs: '2rem', md: '2.5rem' },
+                  height: { xs: '2rem', md: '2.5rem' },
                   '&:hover': { bgcolor: '#f5f5f5' }
                 }}
               >
-                <ChevronLeft />
+                <ChevronLeft sx={{ fontSize: { xs: '1.2rem', md: '1.5rem' } }} />
               </IconButton>
             )}
 
-            {/* Nút phải */}
+            {/* Nút phải - Hiện trên mobile */}
             {upcomingScrollIndex < upcomingJoinedEvents.length - 1 && (
               <IconButton
                 onClick={() => setUpcomingScrollIndex(prev => Math.min(upcomingJoinedEvents.length - 1, prev + 1))}
                 sx={{
                   position: 'absolute',
-                  right: -20,
+                  right: { xs: -10, sm: -15, md: -20 },
                   top: '50%',
                   transform: 'translateY(-50%)',
                   zIndex: 2,
                   bgcolor: 'white',
                   boxShadow: 2,
+                  width: { xs: '2rem', md: '2.5rem' },
+                  height: { xs: '2rem', md: '2.5rem' },
                   '&:hover': { bgcolor: '#f5f5f5' }
                 }}
               >
-                <ChevronRight />
+                <ChevronRight sx={{ fontSize: { xs: '1.2rem', md: '1.5rem' } }} />
               </IconButton>
             )}
 
-            {/* Container chứa events */}
+            {/* Container chứa events - Carousel cho mọi màn hình */}
             <Box
               sx={{
                 display: 'flex',
-                gap: 2,
+                gap: { xs: 0, md: 2 },
                 overflow: 'hidden',
                 transition: 'all 0.3s ease',
               }}
@@ -413,27 +433,42 @@ export default function Dashboard() {
                     className="event-card-clickable"
                     onClick={() => navigate(`/event/${event.slug}`)}
                     sx={{
-                      minWidth: 'calc(33.33% - 11px)',
-                      maxWidth: 'calc(33.33% - 11px)',
+                      minWidth: { xs: '100%', md: 'calc(33.33% - 11px)' },
+                      maxWidth: { xs: '100%', md: 'calc(33.33% - 11px)' },
                       flexShrink: 0,
-                      transform: `translateX(-${upcomingScrollIndex * (100 / 3 + 0.67)}%)`,
+                      transform: { 
+                        xs: `translateX(-${upcomingScrollIndex * 100}%)`,
+                        md: `translateX(-${upcomingScrollIndex * (100 / 3 + 0.67)}%)` 
+                      },
                       transition: 'transform 0.3s ease, box-shadow 0.2s ease',
                       cursor: 'pointer',
                       '&:hover': {
-                        transform: `translateX(-${upcomingScrollIndex * (100 / 3 + 0.67)}%) translateY(-8px)`,
+                        transform: { 
+                          xs: `translateX(-${upcomingScrollIndex * 100}%) translateY(-4px)`,
+                          md: `translateX(-${upcomingScrollIndex * (100 / 3 + 0.67)}%) translateY(-8px)` 
+                        },
                         boxShadow: 4
                       }
                     }}
                   >
-                    <CardContent>
-                      <Typography variant="h6">{event.name}</Typography>
+                    <CardContent sx={{ p: { xs: 1.5, sm: 2 } }}>
+                      <Typography 
+                        variant="h6" 
+                        sx={{ 
+                          fontSize: { xs: '1rem', sm: '1.1rem', md: '1.25rem' },
+                          mb: 0.5
+                        }}
+                      >
+                        {event.name}
+                      </Typography>
                       <Typography 
                         variant="caption" 
                         display="block"
                         sx={{ 
                           color: eventStatusColor[calculateEventStatus(event)],
                           fontWeight: 'bold',
-                          mb: 1
+                          mb: 1,
+                          fontSize: { xs: '0.7rem', sm: '0.75rem' }
                         }}
                       >
                         {eventStatusMap[calculateEventStatus(event)]}
@@ -443,7 +478,7 @@ export default function Dashboard() {
                       <Box
                         sx={{
                           width: '100%',
-                          height: '15vh',
+                          height: { xs: '120px', sm: '140px', md: '15vh' },
                           mb: 2,
                           borderRadius: 1,
                           overflow: 'hidden',
@@ -475,16 +510,28 @@ export default function Dashboard() {
                         )}
                       </Box>
 
-                      <Typography variant="body2" color="text.secondary" mb={1}>
+                      <Typography 
+                        variant="body2" 
+                        color="text.secondary" 
+                        mb={1}
+                        sx={{ 
+                          fontSize: { xs: '0.8rem', sm: '0.85rem', md: '0.875rem' },
+                          lineHeight: 1.5,
+                          display: '-webkit-box',
+                          WebkitLineClamp: { xs: 2, sm: 3 },
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden'
+                        }}
+                      >
                         {event.description}
                       </Typography>
-                      <Typography variant="body2">
+                      <Typography variant="body2" sx={{ fontSize: { xs: '0.8rem', sm: '0.85rem', md: '0.875rem' } }}>
                         <b>Địa điểm:</b> {event.location || "Chưa xác định"}
                       </Typography>
-                      <Typography variant="body2">
+                      <Typography variant="body2" sx={{ fontSize: { xs: '0.8rem', sm: '0.85rem', md: '0.875rem' } }}>
                         <b>Ngày:</b> {new Date(event.date).toLocaleDateString()}
                       </Typography>
-                      <Typography variant="body2">
+                      <Typography variant="body2" sx={{ fontSize: { xs: '0.8rem', sm: '0.85rem', md: '0.875rem' } }}>
                         <b>Thời gian:</b> {renderTime(event.startTime, event.endTime)}
                       </Typography>
                     </CardContent>
@@ -497,11 +544,16 @@ export default function Dashboard() {
       </Paper>
 
       {/* Bài viết và Sự kiện Hot - 65% và 30% */}
-      <Box sx={{ mb: 4, display: 'flex', gap: '2%', alignItems: 'flex-start', flexWrap: { xs: 'wrap', md: 'nowrap' }, overflow: 'visible' }}>
-        {/* Cột trái: Danh sách bài viết - 65% */}
-        <Box sx={{ flex: { xs: '1 1 100%', md: '0 0 65%' }, minWidth: 0 }}>
-          <Paper elevation={2} sx={{ p: 3 }}>
-            <Typography variant="h6" fontWeight="bold" mb={2}>
+      <Box sx={{ mb: 4, display: 'flex', gap: { xs: 2, md: '2%' }, alignItems: 'flex-start', flexDirection: { xs: 'column', md: 'row' }, overflow: 'visible' }}>
+        {/* Cột trái: Danh sách bài viết - 100% trên mobile, 65% trên desktop */}
+        <Box sx={{ flex: { xs: '1 1 100%', md: '0 0 65%' }, width: '100%', minWidth: 0 }}>
+          <Paper elevation={2} sx={{ p: { xs: 2, sm: 2.5, md: 3 }, borderRadius: { xs: 2, md: 3 } }}>
+            <Typography 
+              variant="h6" 
+              fontWeight="bold" 
+              mb={2}
+              sx={{ fontSize: { xs: '1.1rem', sm: '1.15rem', md: '1.25rem' } }}
+            >
               Bài viết từ các sự kiện bạn đã tham gia
             </Typography>
 
@@ -546,17 +598,37 @@ export default function Dashboard() {
           </Paper>
         </Box>
 
-        {/* Cột phải: Sự kiện Hot - 30% */}
-        <Box sx={{ flex: { xs: '1 1 100%', md: '0 0 33%' }, minWidth: 0, height: 'fit-content', position: { xs: 'relative', md: 'sticky' }, top: '10vh' }}>
+        {/* Cột phải: Sự kiện Hot - 30% - Ẩn trên mobile */}
+        <Box sx={{ 
+          display: { xs: 'none', md: 'block' },
+          flex: { xs: '1 1 100%', md: '0 0 33%' }, 
+          width: { xs: '100%', md: 'auto' },
+          minWidth: 0, 
+          height: 'fit-content', 
+          position: { xs: 'relative', md: 'sticky' }, 
+          top: { xs: 0, md: '10vh' },
+          mt: { xs: 0, md: 0 }
+        }}>
           <Paper 
             elevation={2} 
             sx={{ 
-              p: 2.5, 
+              p: { xs: 2, sm: 2.5 }, 
               bgcolor: "#f5f5f5", 
-              minHeight: "400px",
+              minHeight: { xs: 'auto', md: '400px' },
+              borderRadius: { xs: 2, md: 3 }
             }}
           >
-              <Typography variant="h6" fontWeight="bold" mb={2} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Typography 
+                variant="h6" 
+                fontWeight="bold" 
+                mb={2} 
+                sx={{ 
+                  display: "flex", 
+                  alignItems: "center", 
+                  gap: 1,
+                  fontSize: { xs: '1.1rem', sm: '1.15rem', md: '1.25rem' }
+                }}
+              >
                 🔥 Sự kiện Hot
               </Typography>
 
@@ -581,8 +653,13 @@ export default function Dashboard() {
                         height: "100%",
                       }}
                     >
-                      <CardContent sx={{ p: 2 }}>
-                        <Typography variant="h6" fontWeight="bold" mb={0.5}>
+                      <CardContent sx={{ p: { xs: 1.5, sm: 2 } }}>
+                        <Typography 
+                          variant="h6" 
+                          fontWeight="bold" 
+                          mb={0.5}
+                          sx={{ fontSize: { xs: '1rem', sm: '1.1rem', md: '1.25rem' } }}
+                        >
                           {hotEvents[currentPage].name}
                         </Typography>
                         <Typography
@@ -592,6 +669,7 @@ export default function Dashboard() {
                             color: calculateEventStatus(hotEvents[currentPage]) === 'upcoming' ? "#1976d2" : "#2e7d32",
                             fontWeight: "bold",
                             mb: 1.5,
+                            fontSize: { xs: '0.7rem', sm: '0.75rem' }
                           }}
                         >
                           {calculateEventStatus(hotEvents[currentPage]) === 'upcoming' ? "Sắp diễn ra" : "Đang diễn ra"}
@@ -601,7 +679,7 @@ export default function Dashboard() {
                         <Box
                           sx={{
                             width: '100%',
-                            height: '15vh',
+                            height: { xs: '140px', sm: '160px', md: '15vh' },
                             mb: 2,
                             borderRadius: 1,
                             overflow: 'hidden',
@@ -633,19 +711,31 @@ export default function Dashboard() {
                           )}
                         </Box>
 
-                        <Typography variant="body2" color="text.secondary" mb={2} sx={{ lineHeight: 1.6 }}>
+                        <Typography 
+                          variant="body2" 
+                          color="text.secondary" 
+                          mb={2} 
+                          sx={{ 
+                            lineHeight: 1.6,
+                            fontSize: { xs: '0.8rem', sm: '0.85rem', md: '0.875rem' },
+                            display: '-webkit-box',
+                            WebkitLineClamp: { xs: 3, sm: 4 },
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden'
+                          }}
+                        >
                           {hotEvents[currentPage].description}
                         </Typography>
                         <Box sx={{ mt: 2 }}>
-                          <Typography variant="body2" mb={1} sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                          <Typography variant="body2" mb={1} sx={{ display: "flex", alignItems: "center", gap: 0.5, fontSize: { xs: '0.8rem', sm: '0.85rem', md: '0.875rem' } }}>
                             <span style={{ fontSize: "1rem" }}>📍</span>
                             <strong>Địa điểm:</strong> {hotEvents[currentPage].location || "Chưa xác định"}
                           </Typography>
-                          <Typography variant="body2" mb={1} sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                          <Typography variant="body2" mb={1} sx={{ display: "flex", alignItems: "center", gap: 0.5, fontSize: { xs: '0.8rem', sm: '0.85rem', md: '0.875rem' } }}>
                             <span style={{ fontSize: "1rem" }}>📅</span>
                             <strong>Ngày:</strong> {new Date(hotEvents[currentPage].date).toLocaleDateString()}
                           </Typography>
-                          <Typography variant="body2" fontWeight="bold" color="primary" sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                          <Typography variant="body2" fontWeight="bold" color="primary" sx={{ display: "flex", alignItems: "center", gap: 0.5, fontSize: { xs: '0.8rem', sm: '0.85rem', md: '0.875rem' } }}>
                             <span style={{ fontSize: "1.2rem" }}>👥</span>
                             {hotEvents[currentPage].volunteers?.length || 0} thành viên đã tham gia
                           </Typography>
@@ -655,15 +745,15 @@ export default function Dashboard() {
                   )}
 
                   {/* Pagination Dots */}
-                  <Box sx={{ display: "flex", justifyContent: "center", gap: 1.5, mt: 3 }}>
+                  <Box sx={{ display: "flex", justifyContent: "center", gap: { xs: 1, sm: 1.5 }, mt: { xs: 2, sm: 3 } }}>
                     {hotEvents.map((_, index) => (
                       <Box
                         key={index}
                         onClick={() => setCurrentPage(index)}
                         sx={{
-                          width: currentPage === index ? 40 : 12,
-                          height: 12,
-                          borderRadius: 6,
+                          width: currentPage === index ? { xs: 28, sm: 40 } : { xs: 10, sm: 12 },
+                          height: { xs: 10, sm: 12 },
+                          borderRadius: { xs: 5, sm: 6 },
                           bgcolor: currentPage === index ? "primary.main" : "#ccc",
                           cursor: "pointer",
                           transition: "all 0.3s ease",

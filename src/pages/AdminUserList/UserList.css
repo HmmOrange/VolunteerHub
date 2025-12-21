@@ -1,12 +1,12 @@
 /* Container chính của trang */
 .user-list-container {
-  margin-top: 32px;
-  margin-bottom: 32px;
+  margin-top: 2rem;
+  margin-bottom: 2rem;
 }
 
 .user-list-title {
   font-weight: bold !important;
-  margin-bottom: 24px !important;
+  margin-bottom: 1.5rem !important;
   text-align: center; /* Đảm bảo căn giữa */
   color: #333;
 }
@@ -26,12 +26,12 @@
 .role-cell-wrapper {
   display: flex;
   align-items: center;
-  gap: 12px; /* Khoảng cách giữa Chip và các nút */
+  gap: 0.75rem; /* Khoảng cách giữa Chip và các nút */
 }
 
 /* Style chung cho Chip Role */
 .role-chip {
-  width: 120px !important; /* Độ dài bằng nhau cho mọi role */
+  width: 7.5rem !important; /* Độ dài bằng nhau cho mọi role */
   justify-content: center !important; /* Center text */
   font-weight: bold !important;
   color: white !important;
@@ -56,12 +56,12 @@
 .action-icons {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 0.25rem;
 }
 
 /* Nút mũi tên */
 .arrow-btn {
-  padding: 4px !important;
+  padding: 0.25rem !important;
 }
 
 .arrow-btn:hover {
@@ -70,6 +70,6 @@
 
 /* Nút khóa */
 .lock-btn {
-  padding: 4px !important;
-  margin-left: 4px !important;
+  padding: 0.25rem !important;
+  margin-left: 0.25rem !important;
 }

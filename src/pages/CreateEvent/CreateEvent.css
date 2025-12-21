@@ -1,10 +1,10 @@
 .create-event-container-split {
-  padding: 24px !important;
+  padding: 1.5rem !important;
 }
 
 .create-event-paper-split {
-  padding: 32px !important; 
-  border-radius: 12px !important; 
+  padding: 2rem !important; 
+  border-radius: 0.75rem !important; 
 }
 
 .create-event-submit-btn-split {

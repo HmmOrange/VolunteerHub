@@ -22,7 +22,7 @@
   position: absolute;
   inset: 0;
   background: linear-gradient(to bottom, rgba(73, 187, 189, 0.4), rgba(0, 0, 0, 0.8));
-  padding: 40px 60px;
+  padding: 2.5rem 3.75rem;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -31,35 +31,35 @@
 .brand-header {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 0.9375rem;
 }
 
 .logo-circle {
-  width: 50px;
-  height: 50px;
+  width: 3.125rem;
+  height: 3.125rem;
   background: white;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  box-shadow: 0 0.25rem 0.625rem rgba(0,0,0,0.1);
 }
 
 .brand-name {
   color: white;
-  font-size: 28px;
+  font-size: clamp(1.25rem, 3vw, 1.75rem);
   font-weight: 700;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.03125rem;
   margin: 0;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  text-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.3);
 }
 
 .quote-container {
   color: white;
-  max-width: 500px;
+  max-width: min(31.25rem, 90%);
 }
-.quote-content { font-size: 22px; font-weight: 300; line-height: 1.5; margin-bottom: 20px; }
-.quote-deco-line { width: 60px; height: 4px; background-color: #49BBBD; border-radius: 2px; }
+.quote-content { font-size: clamp(1rem, 2vw, 1.375rem); font-weight: 300; line-height: 1.5; margin-bottom: 1.25rem; }
+.quote-deco-line { width: 3.75rem; height: 0.25rem; background-color: #49BBBD; border-radius: 0.125rem; }
 
 /* --- RIGHT SIDE: CONTENT --- */
 .register-content {
@@ -67,31 +67,31 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 40px;
+  padding: 2.5rem;
   background: white;
-  border-top-left-radius: 30px;
-  border-bottom-left-radius: 30px;
-  box-shadow: -10px 0 30px rgba(73, 187, 189, 0.05);
-  margin-left: -20px;
+  border-top-left-radius: 1.875rem;
+  border-bottom-left-radius: 1.875rem;
+  box-shadow: -0.625rem 0 1.875rem rgba(73, 187, 189, 0.05);
+  margin-left: -1.25rem;
   z-index: 10;
   position: relative;
 }
 
 .form-box {
   width: 100%;
-  max-width: 450px; /* Rộng hơn form login một chút */
+  max-width: min(28.125rem, 90vw); /* Rộng hơn form login một chút */
 }
 
-.form-header { margin-bottom: 25px; text-align: center; }
-.form-header h2 { font-size: 28px; color: #2D3436; font-weight: 800; margin-bottom: 5px; }
-.form-header p { color: #636E72; font-size: 14px; }
+.form-header { margin-bottom: 1.5625rem; text-align: center; }
+.form-header h2 { font-size: clamp(1.375rem, 3vw, 1.75rem); color: #2D3436; font-weight: 800; margin-bottom: 0.3125rem; }
+.form-header p { color: #636E72; font-size: clamp(0.8125rem, 1.5vw, 0.875rem); }
 
 /* --- STEPPER (THANH TIẾN TRÌNH) --- */
 .stepper {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 30px;
+  margin-bottom: 1.875rem;
   position: relative;
 }
 
@@ -104,8 +104,8 @@
 }
 
 .step-circle {
-  width: 35px;
-  height: 35px;
+  width: 2.1875rem;
+  height: 2.1875rem;
   border-radius: 50%;
   background-color: #E0E0E0;
   color: #636E72;
@@ -113,14 +113,14 @@
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 14px;
+  font-size: 0.875rem;
   transition: all 0.3s ease;
-  border: 3px solid white; /* Tạo viền trắng để tách khỏi line */
+  border: 0.1875rem solid white; /* Tạo viền trắng để tách khỏi line */
 }
 
 .step-label {
-  margin-top: 5px;
-  font-size: 12px;
+  margin-top: 0.3125rem;
+  font-size: clamp(0.625rem, 1.5vw, 0.75rem);
   color: #B2BEC3;
   font-weight: 600;
   transition: all 0.3s ease;
@@ -130,7 +130,7 @@
 .step-item.active .step-circle {
   background-color: #49BBBD;
   color: white;
-  box-shadow: 0 0 0 3px rgba(73, 187, 189, 0.2);
+  box-shadow: 0 0 0 0.1875rem rgba(73, 187, 189, 0.2);
 }
 
 .step-item.active .step-label {
@@ -139,10 +139,10 @@
 
 .step-line {
   flex: 1;
-  height: 2px;
+  height: 0.125rem;
   background-color: #E0E0E0;
-  margin: 0 10px;
-  margin-bottom: 15px; /* Căn chỉnh với circle */
+  margin: 0 0.625rem;
+  margin-bottom: 0.9375rem; /* Căn chỉnh với circle */
   position: relative;
   z-index: 1;
 }
@@ -155,7 +155,7 @@
 .auth-form {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 0.9375rem;
 }
 
 /* Animation trượt nhẹ khi đổi step */
@@ -163,18 +163,18 @@
   animation: slideIn 0.4s ease-out;
 }
 @keyframes slideIn {
-  from { opacity: 0; transform: translateY(10px); }
+  from { opacity: 0; transform: translateY(0.625rem); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-.form-group { display: flex; flex-direction: column; gap: 6px; }
-.form-group label { font-size: 13px; font-weight: 600; color: #2D3436; }
+.form-group { display: flex; flex-direction: column; gap: 0.375rem; }
+.form-group label { font-size: clamp(0.75rem, 1.5vw, 0.8125rem); font-weight: 600; color: #2D3436; }
 
 .form-group input {
-  padding: 12px 16px;
-  border-radius: 10px;
-  border: 1.5px solid #E0E0E0;
-  font-size: 14px;
+  padding: 0.75rem 1rem;
+  border-radius: 0.625rem;
+  border: 0.09375rem solid #E0E0E0;
+  font-size: clamp(0.8125rem, 1.5vw, 0.875rem);
   transition: all 0.3s ease;
   background-color: #FAFAFA;
 }
@@ -183,12 +183,12 @@
   outline: none;
   border-color: #49BBBD;
   background-color: white;
-  box-shadow: 0 0 0 3px rgba(73, 187, 189, 0.15);
+  box-shadow: 0 0 0 0.1875rem rgba(73, 187, 189, 0.15);
 }
 
 .form-row {
   display: flex;
-  gap: 15px;
+  gap: 0.9375rem;
 }
 .form-row .form-group { 
   flex: 1; 
@@ -201,15 +201,15 @@
 /* Captcha Styling */
 .captcha-group {
   background-color: #E0F2F1;
-  padding: 15px;
-  border-radius: 10px;
-  border: 1px dashed #49BBBD;
+  padding: 0.9375rem;
+  border-radius: 0.625rem;
+  border: 0.0625rem dashed #49BBBD;
 }
 .captcha-question {
   font-weight: 800;
   color: #2E7D32;
-  font-size: 16px;
-  letter-spacing: 1px;
+  font-size: clamp(0.875rem, 1.5vw, 1rem);
+  letter-spacing: 0.0625rem;
 }
 
 /* Avatar Upload Styling */
@@ -217,15 +217,15 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 15px;
+  margin-bottom: 0.9375rem;
 }
 
 .avatar-preview {
-  width: 100px;
-  height: 100px;
+  width: 6.25rem;
+  height: 6.25rem;
   border-radius: 50%;
   background-color: #F0FDFD;
-  border: 2px dashed #49BBBD;
+  border: 0.125rem dashed #49BBBD;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -250,46 +250,46 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 600;
   opacity: 0;
   transition: opacity 0.2s;
 }
 
 .avatar-preview:hover .avatar-overlay { opacity: 1; }
-.avatar-hint { font-size: 12px; color: #636E72; margin-top: 8px; }
+.avatar-hint { font-size: clamp(0.6875rem, 1.5vw, 0.75rem); color: #636E72; margin-top: 0.5rem; }
 
 /* --- BUTTONS & FOOTER --- */
 .btn-primary {
-  margin-top: 10px;
-  padding: 14px;
+  margin-top: 0.625rem;
+  padding: 0.875rem;
   border: none;
-  border-radius: 50px;
+  border-radius: 3.125rem;
   background-color: #49BBBD;
   color: white;
-  font-size: 15px;
+  font-size: clamp(0.875rem, 1.5vw, 0.9375rem);
   font-weight: 700;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 8px 20px rgba(73, 187, 189, 0.3);
+  box-shadow: 0 0.5rem 1.25rem rgba(73, 187, 189, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 0.5rem;
 }
 
 .btn-primary:hover {
   background-color: #359698;
-  transform: translateY(-2px);
-  box-shadow: 0 12px 25px rgba(73, 187, 189, 0.4);
+  transform: translateY(-0.125rem);
+  box-shadow: 0 0.75rem 1.5625rem rgba(73, 187, 189, 0.4);
 }
 
-.form-footer { margin-top: 25px; text-align: center; font-size: 13px; color: #636E72; }
+.form-footer { margin-top: 1.5625rem; text-align: center; font-size: clamp(0.75rem, 1.5vw, 0.8125rem); color: #636E72; }
 .link-highlight { color: #49BBBD; font-weight: 700; cursor: pointer; transition: color 0.2s; }
 .link-highlight:hover { color: #359698; text-decoration: underline; }
 
 .btn-back {
-  margin-top: 10px;
+  margin-top: 0.625rem;
   background: none;
   border: none;
   color: #B2BEC3;
@@ -297,7 +297,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 0.375rem;
   cursor: pointer;
   width: 100%;
 }
@@ -306,8 +306,8 @@
 /* Container chứa 2 nút ở bước 2 */
 .form-actions {
   display: flex;
-  gap: 15px;
-  margin-top: 10px;
+  gap: 0.9375rem;
+  margin-top: 0.625rem;
 }
 
 /* Nút Primary (Hoàn tất) - chỉnh lại width để nó flex cùng nút quay lại */
@@ -319,19 +319,19 @@
 /* Nút Secondary (Quay lại) */
 .btn-secondary {
   flex: 1; /* Chiếm 1 phần */
-  padding: 14px;
-  border: 2px solid #E0E0E0;
-  border-radius: 50px;
+  padding: 0.875rem;
+  border: 0.125rem solid #E0E0E0;
+  border-radius: 3.125rem;
   background-color: transparent;
   color: #636E72;
-  font-size: 15px;
+  font-size: clamp(0.875rem, 1.5vw, 0.9375rem);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 0.5rem;
 }
 
 .btn-secondary:hover {
@@ -346,18 +346,18 @@
 }
 
 /* Alerts */
-.alert-box { padding: 10px; border-radius: 8px; font-size: 13px; text-align: center; margin-bottom: 15px; }
-.alert-box.error { background: #FFEBEE; color: #C62828; border: 1px solid #FFCDD2; }
-.alert-box.success { background: #E0F2F1; color: #2E7D32; border: 1px solid #A5D6A7; }
+.alert-box { padding: 0.625rem; border-radius: 0.5rem; font-size: clamp(0.75rem, 1.5vw, 0.8125rem); text-align: center; margin-bottom: 0.9375rem; }
+.alert-box.error { background: #FFEBEE; color: #C62828; border: 0.0625rem solid #FFCDD2; }
+.alert-box.success { background: #E0F2F1; color: #2E7D32; border: 0.0625rem solid #A5D6A7; }
 
 /* Spinner */
-.spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: white; animation: spin 0.8s linear infinite; }
+.spinner { width: 1.125rem; height: 1.125rem; border: 0.125rem solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: white; animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* --- RESPONSIVE --- */
 @media (max-width: 900px) {
   .register-wrapper { flex-direction: column; overflow-y: auto; }
-  .register-visual { flex: none; height: 200px; }
+  .register-visual { flex: none; height: 12.5rem; }
   .quote-container { display: none; }
-  .register-content { flex: 1; margin-left: 0; margin-top: -20px; border-radius: 20px 20px 0 0; padding: 30px 20px; }
+  .register-content { flex: 1; margin-left: 0; margin-top: -1.25rem; border-radius: 1.25rem 1.25rem 0 0; padding: 1.875rem 1.25rem; }
 }

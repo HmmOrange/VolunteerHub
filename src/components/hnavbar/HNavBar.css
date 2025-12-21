@@ -40,19 +40,19 @@
 /* === 3. Giữa (Thanh Search) === */
 .hnavbar-search {
   flex-grow: 1;
-  max-width: 600px;
-  margin-left: 16px;
-  margin-right: 16px;
+  max-width: min(37.5vw, 37.5rem);
+  margin-left: 1rem;
+  margin-right: 1rem;
   display: flex;
   align-items: center;
   background-color: #f0f2f5;
-  border-radius: 20px;
-  padding: 4px 12px;
+  border-radius: 1.25rem;
+  padding: 0.25rem 0.75rem;
 }
 
 .hnavbar-search-icon {
   color: gray;
-  margin-right: 8px;
+  margin-right: 0.5rem;
   display: flex;
   align-items: center;
   flex-shrink: 0;
@@ -71,19 +71,19 @@
   background-color: rgba(73, 187, 189, 0.08) !important;
 }
 .hnavbar-avatar-btn {
-  margin-left: 8px !important;
+  margin-left: 0.5rem !important;
 }
 .hnavbar-avatar {
-  width: 32px;
-  height: 32px;
+  width: 2rem;
+  height: 2rem;
   font-size: 0.9rem;
 }
 
 /* === 5. Menu xổ xuống === */
 .hnavbar-menu-paper {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
+  box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.1);
+  border: 0.0625rem solid #e0e0e0;
+  border-radius: 0.5rem;
 }
 .hnavbar-menu-user {
   font-weight: 500;
