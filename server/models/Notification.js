@@ -1,3 +1,8 @@
+/**
+ * Model Notification
+ * - Mô tả: Lưu các thông báo hệ thống gửi tới user (đa dạng loại: event, post, join request, badge...)
+ * - Trường chính: `recipient`, `type`, `message`, `relatedId` (refPath), `relatedModel`, `isRead`.
+ */
 import mongoose from "mongoose";
 
 const notificationSchema = new mongoose.Schema(

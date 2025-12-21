@@ -3,6 +3,15 @@ import { Box, Avatar, TextField, IconButton } from "@mui/material";
 import { Send as SendIcon } from "@mui/icons-material";
 import { createComment } from "../../api/Comments";
 
+/*
+  Component: `CommentInput`
+
+  Mô tả:
+  - Form nhập nhanh để gửi bình luận cho một `postId` cụ thể.
+  - Hàm chính: `handleSubmit` gửi comment lên API `createComment` và gọi `onCommentPosted` khi thành công.
+  - Hiển thị avatar người dùng (nếu có) hoặc chữ cái đầu, màu theo `role`.
+*/
+
 export default function CommentInput({ postId, onCommentPosted }) {
   const [content, setContent] = useState("");
   const [isLoading, setIsLoading] = useState(false);

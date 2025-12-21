@@ -26,6 +26,15 @@ const mockChats = [
   { id: 3, name: "Truyền thông" },
 ];
 
+/*
+  Component: `EventGroupVNavBar`
+
+  Mô tả:
+  - Thanh điều hướng dọc chuyên dụng cho trang chi tiết một sự kiện (Event Group).
+  - Tải thông tin event theo `slug` (gọi `getEventBySlug`) và hiển thị shortcuts/quick links cho các tab (Bài đăng, Thông tin, Thành viên...).
+  - Xử lý trạng thái loading và error, và đóng drawer khi cần (temporary mode).
+*/
+
 export default function EventGroupVNavBar({ isOpen, drawerWidth, drawerVariant, onClose }) {
   const { slug } = useParams();
   const navigate = useNavigate();

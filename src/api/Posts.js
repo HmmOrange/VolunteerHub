@@ -1,3 +1,8 @@
+/**
+ * API Posts - hàm tương tác với backend cho Post
+ * - `getPostsByEvent(eventId)`, `createPost(data)`, `likePost(postId, username)`, `getLikesByPost(postId)`
+ * - `uploadImage(formData)` dùng multipart/form-data, `updatePost`, `deletePost` và pagination helper.
+ */
 const API_URL = "http://localhost:5000/api/posts";
 
 const getHeaders = () => {
@@ -45,6 +50,11 @@ export const getLikesByPost = async (postId) => {
 };
 
 // UPLOAD ẢNH (Không dùng getHeaders vì Content-Type khác)
+/**
+ * Upload ảnh cho post (uploadImage)
+ * - Input: `formData` chứa field `image` hoặc file.
+ * - Ghi chú: không set Content-Type để browser tự thiết lập boundary.
+ */
 export const uploadImage = async (formData) => {
   const token = localStorage.getItem("token");
   try {
@@ -63,6 +73,9 @@ export const uploadImage = async (formData) => {
   }
 };
 
+/**
+ * Cập nhật nội dung post (updatePost)
+ */
 export const updatePost = async (postId, username, content) => {
   const res = await fetch(`${API_URL}/${postId}`, {
     method: "PUT",
@@ -73,6 +86,9 @@ export const updatePost = async (postId, username, content) => {
   return res.json();
 };
 
+/**
+ * Xóa post (deletePost)
+ */
 export const deletePost = async (postId, username) => {
   const res = await fetch(`${API_URL}/${postId}`, {
     method: "DELETE",

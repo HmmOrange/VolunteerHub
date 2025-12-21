@@ -1,3 +1,9 @@
+/**
+ * Model JoinRequest
+ * - Mô tả: Lưu yêu cầu tham gia sự kiện của user (dành cho event private).
+ * - Trường chính: `event`, `user`, `answer`, `status`, `attendance`.
+ * - Có index unique trên { event, user } để tránh gửi nhiều request đồng thời.
+ */
 import mongoose from "mongoose";
 
 const joinRequestSchema = new mongoose.Schema({

@@ -24,6 +24,16 @@ import "./Post.css";
 import { createPost, uploadImage } from "../../api/Posts"; 
 import validators from "../../utils/validators";
 
+/*
+  Component: `CreatePost`
+
+  Mô tả:
+  - Form/trigger để tạo bài viết mới cho một sự kiện.
+  - Hỗ trợ chế độ collapsed (gợi ý) và expanded (form đầy đủ), upload ảnh, chọn ẩn danh.
+  - Hàm lớn/quan trọng: `handleSubmit` (upload ảnh nếu có, gọi `createPost`), xử lý preview ảnh và validate.
+  - Lưu ý: không thay đổi logic xử lý hiện có, chỉ thêm comment mô tả.
+*/
+
 export default function CreatePost({ eventId, onPostCreated }) {
   const navigate = useNavigate();
   

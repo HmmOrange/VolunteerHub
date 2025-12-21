@@ -11,6 +11,15 @@ import "./Register.css";
 
 const registerImage = "https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=2070&auto=format&fit=crop";
 
+/*
+  Page: `Register`
+
+  Mô tả:
+  - Quy trình đăng ký nhiều bước (account -> profile -> avatar) với captcha.
+  - Hàm lớn: validate các bước, `handleNextStep`, `handleFinalSubmit` (gọi `registerUser`), và upload avatar (`uploadAvatar`).
+  - Lưu ý: có validate client-side cho email, username, password và ngày sinh.
+*/
+
 export default function Register() {
   const navigate = useNavigate();
 

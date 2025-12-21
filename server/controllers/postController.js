@@ -10,7 +10,12 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename); 
 
-// 1. Lấy tất cả bài đăng của sự kiện
+/**
+ * Lấy danh sách bài đăng theo `eventId` (getPostsByEvent)
+ * - Input: `req.params.eventId`.
+ * - Hành động: tìm Post theo eventId, populate `createdBy` và đếm số bình luận cho mỗi post.
+ * - Output: trả về mảng posts kèm `commentCount` hoặc lỗi.
+ */
 export const getPostsByEvent = async (req, res) => {
   try {
     const { eventId } = req.params;
@@ -30,7 +35,12 @@ export const getPostsByEvent = async (req, res) => {
   }
 };
 
-// 2. Tạo bài đăng mới
+/**
+ * Tạo bài viết mới trong sự kiện (createPost)
+ * - Input: `req.body` chứa `content`, `imageUrl`, `isAnonymous`, `username`, `eventId`.
+ * - Hành động: tìm user, xử lý copy ảnh nếu từ banner, tạo Post, gửi notification tới thành viên event (ngoại trừ người tạo).
+ * - Output: trả về post vừa tạo (đã populate) hoặc lỗi.
+ */
 export const createPost = async (req, res) => {
   try {
     const { content, imageUrl, isAnonymous, username, eventId } = req.body;
@@ -106,7 +116,12 @@ export const createPost = async (req, res) => {
   }
 };
 
-// 3. Like / Unlike
+/**
+ * Thích/huỷ thích bài viết (likePost)
+ * - Input: `req.params.postId`, `req.body.username`.
+ * - Hành động: toggle userId trong mảng `likes` của Post, tạo notification nếu like và người like khác với owner.
+ * - Output: trả về mảng likes hiện tại hoặc lỗi.
+ */
 export const likePost = async (req, res) => {
   try {
     const { postId } = req.params;
@@ -145,7 +160,12 @@ export const likePost = async (req, res) => {
   }
 };
 
-// 4. Lấy danh sách like
+/**
+ * Lấy danh sách người đã like một post (getLikesByPost)
+ * - Input: `req.params.postId`.
+ * - Hành động: populate trường `likes` của Post để trả về thông tin user.
+ * - Output: trả về mảng users đã like hoặc lỗi.
+ */
 export const getLikesByPost = async (req, res) => {
   try {
     const { postId } = req.params;
@@ -157,7 +177,12 @@ export const getLikesByPost = async (req, res) => {
   }
 };
 
-// 5. Upload ảnh
+/**
+ * Upload ảnh cho bài viết (uploadImage)
+ * - Input: file từ multipart form (`req.file`).
+ * - Hành động: trả về URL tạm thời của file upload.
+ * - Output: object `{ imageUrl }` hoặc lỗi.
+ */
 export const uploadImage = async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: "Chưa chọn file" });
@@ -168,7 +193,12 @@ export const uploadImage = async (req, res) => {
   }
 };
 
-// 6. Cập nhật bài đăng
+/**
+ * Cập nhật nội dung bài đăng (updatePost)
+ * - Input: `req.params.postId`, `req.body.username`, `req.body.content`.
+ * - Hành động: kiểm tra quyền (chỉ owner được sửa), cập nhật content và trả về post đã cập nhật cùng commentCount.
+ * - Output: updated post hoặc lỗi.
+ */
 export const updatePost = async (req, res) => {
   try {
     const { postId } = req.params;
@@ -199,7 +229,12 @@ export const updatePost = async (req, res) => {
   }
 };
 
-// 7. Xóa bài đăng
+/**
+ * Xóa bài đăng (deletePost)
+ * - Input: `req.params.postId`, `req.body.username`.
+ * - Hành động: kiểm tra quyền (owner/event owner/admin), xóa comment liên quan, xóa post và gửi notification nếu cần.
+ * - Output: message xác nhận hoặc lỗi.
+ */
 export const deletePost = async (req, res) => {
   try {
     const { postId } = req.params;
@@ -250,7 +285,12 @@ export const deletePost = async (req, res) => {
   }
 };
 
-// [GIỮ LẠI ĐỂ DÙNG NẾU CẦN] Lấy chi tiết 1 bài Post
+/**
+ * Lấy chi tiết một Post theo id (getPostById)
+ * - Input: `req.params.postId`.
+ * - Hành động: tìm Post và populate event, trả về hoặc lỗi 404.
+ * - Output: object post hoặc lỗi.
+ */
 export const getPostById = async (req, res) => {
   try {
     const { postId } = req.params;
@@ -266,7 +306,12 @@ export const getPostById = async (req, res) => {
   }
 };
 
-// 8. Lấy posts từ nhiều events với pagination
+/**
+ * Lấy posts từ nhiều events (getPostsByEvents) với pagination
+ * - Input: query params `eventIds`, `page`, `limit`.
+ * - Hành động: phân trang, lấy posts, populate thông tin và trả về commentCount / tổng trang.
+ * - Output: object chứa posts, pagination info hoặc lỗi.
+ */
 export const getPostsByEvents = async (req, res) => {
   try {
     const { eventIds, page = 1, limit = 10 } = req.query;
@@ -311,7 +356,12 @@ export const getPostsByEvents = async (req, res) => {
   }
 };
 
-// 9. Lấy tất cả bài đăng công khai (cho Dashboard) - bao gồm cả bài từ events chưa join
+/**
+ * Lấy tất cả bài đăng công khai cho Dashboard (getAllPublicPosts)
+ * - Input: query params `page`, `limit`, optional `userId`.
+ * - Hành động: tìm posts announcement từ events đã approved và (nếu userId) cả bài từ events user đã join; pagination.
+ * - Output: danh sách posts với commentCount, pagination info hoặc lỗi.
+ */
 export const getAllPublicPosts = async (req, res) => {
   try {
     const { page = 1, limit = 10, userId } = req.query;

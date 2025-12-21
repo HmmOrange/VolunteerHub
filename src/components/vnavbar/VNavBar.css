@@ -1,3 +1,10 @@
+./*
+  Styles cho `VNavBar` (vertical navbar)
+
+  Mô tả:
+  - Chứa các lớp CSS dùng để hiển thị tiêu đề lối tắt, avatar thu nhỏ và các tinh chỉnh giao diện cho thanh điều hướng dọc.
+  - Chỉ là styles; không chứa logic JavaScript.
+*/
 .vnavbar-shortcut-title {
   padding: 0.75rem 1rem 0.25rem 1rem;
   display: block;

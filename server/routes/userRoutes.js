@@ -17,6 +17,10 @@ import { uploadAvatar } from "../middleware/uploadAvatar.js";
 import { protect, adminOnly } from "../middleware/authMiddleware.js";
 import multer from "multer";
 
+/**
+ * Routes cho User
+ * - Quản lý người dùng (admin), profile, avatar, import users, đổi mật khẩu, cập nhật credentials.
+ */
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 

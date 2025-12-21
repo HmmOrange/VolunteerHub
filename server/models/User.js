@@ -1,3 +1,8 @@
+/**
+ * Model User
+ * - Mô tả: Thông tin tài khoản người dùng, profile, role, badges và trạng thái tài khoản.
+ * - Trường quan trọng: `email`, `username`, `password` (hashed), `fullName`, `role`, `badges`, `isLocked`.
+ */
 import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema({

@@ -24,6 +24,15 @@ import validators from "../../utils/validators";
 
 const PRIMARY_COLOR = "#49BBBD";
 
+/*
+  Page: `CreateEvent`
+
+  Mô tả:
+  - Form để tạo sự kiện mới, kèm cấu hình lặp lại (recurrence), upload banner và validate client-side.
+  - Hàm chính: `handleSubmit` (gọi `createEvent`, upload banner qua `uploadBanner` nếu có).
+  - Chỉ người dùng với role `manager` hoặc `admin` được phép tạo sự kiện.
+*/
+
 export default function CreateEvent() {
   const navigate = useNavigate();
   const username = localStorage.getItem("username");

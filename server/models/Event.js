@@ -1,7 +1,12 @@
+/**
+ * Model Event
+ * - Mô tả: Lưu thông tin sự kiện, bao gồm thời gian, địa điểm, creator, trạng thái phê duyệt, volunteers,
+ *   badge, contributions, attendance và cấu hình lặp lại (recurrence).
+ * - Sử dụng middleware pre-validate để tự động tạo `slug` dựa trên `name` nếu cần.
+ */
 import mongoose from "mongoose";
 import slugify from "slugify";
 
-// Schema con cho tính năng lặp lại (Recurrence)
 const recurrenceSchema = new mongoose.Schema(
   {
     enabled: { type: Boolean, default: false },
@@ -18,7 +23,7 @@ const recurrenceSchema = new mongoose.Schema(
       {
         type: Number,
         min: 0,
-        max: 6, // 0 = Sunday, 6 = Saturday
+        max: 6,
       },
     ],
     endDate: {
@@ -38,10 +43,10 @@ const eventSchema = new mongoose.Schema(
     slug: { type: String, required: true, unique: true },
 
     // --- THỜI GIAN ---
-    date: { type: Date, required: true },        // Ngày bắt đầu
-    endDate: { type: Date, required: true },      // ✅ NEW: Ngày kết thúc (có thể null)
-    startTime: { type: String, required: true }, // HH:mm
-    endTime: { type: String },                   // HH:mm
+    date: { type: Date, required: true },     
+    endDate: { type: Date, required: true },     
+    startTime: { type: String, required: true }, 
+    endTime: { type: String },                 
 
     location: String,
     description: String,
@@ -68,7 +73,7 @@ const eventSchema = new mongoose.Schema(
       required: true,
     },
 
-    // 🔴 REPLACEMENT FOR `approved`
+    // --- PHÊ DUYỆT SỰ KIỆN ---
     status: {
       type: String,
       enum: ["pending", "approved", "rejected"],

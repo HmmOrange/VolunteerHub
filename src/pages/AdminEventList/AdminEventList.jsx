@@ -67,6 +67,15 @@ const eventsToCSV = (events) => {
   return [headers.join(","), ...rows].join("\n");
 };
 
+/*
+  Page: `AdminEventList`
+
+  Mô tả:
+  - Trang quản trị danh sách sự kiện: xem tất cả sự kiện (admin), duyệt/từ chối, và xuất dữ liệu.
+  - Hàm lớn: `fetchData` để lấy events admin, `handleApprove`, `handleReject`, `handleExport`.
+  - Yêu cầu: chỉ admin mới truy cập được trang này.
+*/
+
 export default function AdminEventList() {
   const role = localStorage.getItem("role");
   const token = localStorage.getItem("token");

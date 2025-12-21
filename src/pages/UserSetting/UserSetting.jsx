@@ -64,6 +64,15 @@ const logout = () => {
   window.location.href = "/login";
 };
 
+/*
+  Page: `UserSetting`
+
+  Mô tả:
+  - Trang quản lý thông tin người dùng cá nhân gồm các tab: Profile, Username/Email, Password.
+  - Chức năng chính: tải profile (`getProfile`), cập nhật profile (`updateProfile`), cập nhật thông tin đăng nhập (`updateCredentials`), đổi mật khẩu (`changePassword`), upload avatar (`uploadAvatar`).
+  - Có validate phía client và hiển thị dialog/alert khi cần.
+*/
+
 export default function UserSetting() {
   const [tab, setTab] = useState(0);
 

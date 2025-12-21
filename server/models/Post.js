@@ -1,3 +1,9 @@
+/**
+ * Model Post
+ * - Mô tả: Bài viết trong sự kiện (có thể là announcement tự động hoặc bài do user tạo).
+ * - Trường chính: `content`, `imageUrl`, `isAnonymous`, `isEventAnnouncement`, `createdBy`, `eventId`, `likes`.
+ * - Sử dụng timestamps để theo dõi createdAt/updatedAt.
+ */
 import mongoose from "mongoose";
 const Schema = mongoose.Schema;
 

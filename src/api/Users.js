@@ -1,3 +1,8 @@
+/**
+ * API Users - các hàm liên quan tới người dùng và profile
+ * - Helpers: lấy token, tạo header cho JSON và FormData
+ * - Exports: getAllUsers, updateUserRole, toggleUserLock, createManager, getProfile, updateProfile, uploadAvatar, updateCredentials, changePassword, setBadgeVisibility
+ */
 const API_URL = "http://localhost:5000/api/users";
 
 /* ================= HELPERS ================= */

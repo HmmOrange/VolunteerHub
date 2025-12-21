@@ -2,7 +2,12 @@ import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
-// ---------------------- REGISTER ----------------------
+/**
+ * Hàm xử lý đăng ký người dùng (register)
+ * - Input: `req.body` chứa `email`, `username`, `password`, `captchaAnswer`, `captchaToken`.
+ * - Hành động: validate dữ liệu và captcha, kiểm tra trùng email/username, hash mật khẩu, tạo người dùng, cấp JWT.
+ * - Output: trả về `201` và object `{ token, user }` khi thành công; trả lỗi tương ứng khi sai dữ liệu.
+ */
 export const register = async (req, res) => {
   try {
     let {
@@ -86,7 +91,12 @@ export const register = async (req, res) => {
   }
 };
 
-// ---------------------- LOGIN ----------------------
+/**
+ * Hàm xử lý đăng nhập người dùng (login)
+ * - Input: `req.body` chứa `identifier` (email hoặc username) và `password`.
+ * - Hành động: tìm user theo email/username, kiểm tra trạng thái khoá, so khớp mật khẩu, cấp JWT.
+ * - Output: trả về object `{ token, user }` khi thành công; trả lỗi phù hợp khi thông tin không hợp lệ.
+ */
 export const login = async (req, res) => {
   try {
     const { identifier, password } = req.body;

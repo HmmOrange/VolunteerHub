@@ -1,3 +1,7 @@
+/**
+ * API Events - các hàm gọi tới backend liên quan tới Event
+ * Bao gồm: tạo/cập nhật/xóa event, join/leave, upload banner/badge, quản lý requests, tìm kiếm và lấy events của user.
+ */
 const API_URL = "http://localhost:5000/api/events";
 
 // --- HÀM LẤY HEADER KÈM TOKEN ---
@@ -21,6 +25,11 @@ const getAuthOnlyHeader = () => {
   };
 };
 
+/**
+ * Tạo Event mới (createEvent)
+ * - Input: `data` là object chứa fields của event.
+ * - Output: trả về object kết quả từ backend hoặc ném Error khi thất bại.
+ */
 export const createEvent = async (data) => {
   const res = await fetch(`${API_URL}/create`, {
     method: "POST",
@@ -32,6 +41,10 @@ export const createEvent = async (data) => {
   return result;
 };
 
+/**
+ * Lấy danh sách events (getAllEvents)
+ * - Param: `approvedOnly` - nếu true thì chỉ lấy events đã approved.
+ */
 export const getAllEvents = async ({ approvedOnly = true } = {}) => {
   const url = approvedOnly
     ? `${API_URL}/all?approved=true`
@@ -44,6 +57,11 @@ export const getAllEvents = async ({ approvedOnly = true } = {}) => {
   return res.json();
 };
 
+/**
+ * Tìm kiếm events (searchEvents)
+ * - Input: `query` (string)
+ * - Output: mảng events hoặc ném Error.
+ */
 // Search events
 export const searchEvents = async (query = "") => {
   try {
@@ -67,6 +85,11 @@ export const searchEvents = async (query = "") => {
 };
 
 
+/**
+ * Lấy chi tiết Event theo slug hoặc id (getEventBySlug)
+ * - Input: `{ slug, userId }` (userId optional để tính isJoined/isManager ở backend)
+ * - Output: object event hoặc ném Error (kèm status).
+ */
 export const getEventBySlug = async ({ slug, userId }) => {
   const url = userId 
     ? `${API_URL}/${slug}?userId=${userId}` 
@@ -103,6 +126,10 @@ export const getEventBySlug = async ({ slug, userId }) => {
   throw error;
 };
 
+/**
+ * Cập nhật Event (updateEvent)
+ * - Input: object `updateData` chứa slug và các trường cần cập nhật hoặc action.
+ */
 export const updateEvent = async (updateData) => {
   const res = await fetch(`${API_URL}/update`, {
     method: "PUT",
@@ -114,6 +141,10 @@ export const updateEvent = async (updateData) => {
   return json;
 };
 
+/**
+ * Xóa Event (deleteEvent)
+ * - Input: `data` chứa slug và username của người thao tác.
+ */
 export const deleteEvent = async (data) => {
   const res = await fetch(`${API_URL}/delete`, {
     method: "DELETE",
@@ -125,6 +156,10 @@ export const deleteEvent = async (data) => {
 
 // --- CÁC HÀM TƯƠNG TÁC ---
 
+/**
+ * Gửi yêu cầu tham gia / join Event (joinEvent)
+ * - Input: `{ slug, userId, answer }`. Trả về trạng thái hoặc ném Error.
+ */
 export const joinEvent = async ({ slug, userId, answer }) => {
   const res = await fetch(`${API_URL}/join`, {
     method: "POST",
@@ -136,6 +171,9 @@ export const joinEvent = async ({ slug, userId, answer }) => {
   return json; 
 };
 
+/**
+ * Lấy danh sách pending join requests cho event (getPendingRequests)
+ */
 export const getPendingRequests = async (slug) => {
   const res = await fetch(`${API_URL}/${slug}/requests`, {
     method: "GET",
@@ -146,6 +184,10 @@ export const getPendingRequests = async (slug) => {
   return json;
 };
 
+/**
+ * Manager xử lý join request (respondToJoinRequest)
+ * - Input: `{ requestId, action, managerId }`.
+ */
 export const respondToJoinRequest = async ({ requestId, action, managerId }) => {
   const res = await fetch(`${API_URL}/request/respond`, {
     method: "POST",
@@ -157,6 +199,9 @@ export const respondToJoinRequest = async ({ requestId, action, managerId }) => 
   return json;
 };
 
+/**
+ * Rời event (leaveEvent)
+ */
 export const leaveEvent = async ({ slug, userId }) => {
   const res = await fetch(`${API_URL}/leave`, {
     method: "POST",
@@ -168,6 +213,9 @@ export const leaveEvent = async ({ slug, userId }) => {
   return json;
 };
 
+/**
+ * Xóa thành viên khỏi event (removeMember)
+ */
 export const removeMember = async ({ slug, memberId, managerId }) => {
   const res = await fetch(`${API_URL}/remove-member`, {
     method: "POST",
@@ -179,6 +227,9 @@ export const removeMember = async ({ slug, memberId, managerId }) => {
   return json;
 };
 
+/**
+ * Cập nhật attendance cho một member (updateMemberAttendance)
+ */
 export const updateMemberAttendance = async ({ slug, userId, attendance, requesterId }) => {
   const res = await fetch(`${API_URL}/${slug}/attendance`, {
     method: "PUT",
