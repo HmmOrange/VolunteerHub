@@ -171,41 +171,17 @@ export default function Register() {
       return;
     }
 
-    // Nếu ổn thì gọi server để đăng ký (validate + tạo tài khoản), sau đó chuyển sang bước 2
-    (async () => {
-      setIsLoading(true);
-      try {
-        const res = await registerUser({
-          email: accountForm.email,
-          username: accountForm.username,
-          password: accountForm.password,
-          captchaAnswer,
-          captchaToken: captcha?.token,
-        });
-
-        // Lưu token tạm thời và thông tin user để dùng cho bước 2
-        const token = res.token;
-        localStorage.setItem("token", token);
-        localStorage.setItem("userId", res.user.id);
-        localStorage.setItem("username", res.user.username);
-        localStorage.setItem("role", res.user.role);
-
-        setMsg("Tài khoản đã được tạo tạm thời. Vui lòng hoàn thành thông tin cá nhân.");
-        setStep(2);
-      } catch (err) {
-        console.error(err);
-        setError(err.message || "Đăng ký thất bại");
-      } finally {
-        setIsLoading(false);
-      }
-    })();
+    // Chuyển sang bước 2 mà không tạo tài khoản
+    setMsg("");
+    setStep(2);
   };
 
-  // ================= BƯỚC 2: GỌI API ĐĂNG KÝ + CẬP NHẬT PROFILE =================
+  // ================= BƯỚC 2: TẠO TÀI KHOẢN HOÀN CHỈNH =================
   const handleFinalSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setMsg("");
+    
     // Validate profile fields client-side first
     const pErrors = {
       fullName: validateProfileField("fullName", profileForm.fullName),
@@ -220,42 +196,36 @@ export default function Register() {
 
     setIsLoading(true);
     try {
-      // Use token saved at step 1
-      const token = localStorage.getItem("token");
-      if (!token) throw new Error("Không tìm thấy token. Vui lòng thực hiện lại bước 1.");
-
-      // Update profile
-      const profileRes = await fetch("http://localhost:5000/api/users/profile", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          fullName: profileForm.fullName,
-          dateOfBirth: profileForm.dob ? new Date(profileForm.dob).toISOString() : null,
-          address: profileForm.address,
-        }),
+      // Tạo tài khoản với đầy đủ thông tin
+      const res = await registerUser({
+        email: accountForm.email,
+        username: accountForm.username,
+        password: accountForm.password,
+        captchaAnswer,
+        captchaToken: captcha?.token,
+        fullName: profileForm.fullName,
+        dateOfBirth: profileForm.dob ? new Date(profileForm.dob).toISOString() : null,
+        address: profileForm.address,
       });
 
-      if (!profileRes.ok) {
-        const errData = await profileRes.json();
-        throw new Error(errData.message || "Cập nhật thông tin thất bại");
-      }
+      // Lưu token và thông tin user
+      const token = res.token;
+      localStorage.setItem("token", token);
+      localStorage.setItem("userId", res.user.id);
+      localStorage.setItem("username", res.user.username);
+      localStorage.setItem("role", res.user.role);
 
-      // Upload avatar if provided (uploadAvatar should use stored token or accept one)
-      let finalAvatar = "";
+      // Upload avatar nếu có
       if (avatarFile) {
         const uploadRes = await uploadAvatar(avatarFile);
-        finalAvatar = uploadRes.avatar;
-        localStorage.setItem("avatar", finalAvatar);
+        localStorage.setItem("avatar", uploadRes.avatar);
       }
 
-      setMsg("Đăng ký thành công! Đang vào hệ thống...");
+      setMsg("Đăng ký thành công! Đang chuyển đến trang đăng nhập...");
       setTimeout(() => navigate("/login"), 1500);
     } catch (err) {
       console.error(err);
-      setError(err.message || "Cập nhật thông tin thất bại");
+      setError(err.message || "Đăng ký thất bại");
     } finally {
       setIsLoading(false);
     }
@@ -274,7 +244,7 @@ export default function Register() {
       <div className="register-visual" style={{ backgroundImage: `url(${registerImage})` }}>
         <div className="visual-overlay">
           <div className="brand-header">
-            <div className="logo-circle"><UserPlus size={28} color="#49BBBD" /></div>
+            <div className="logo-circle"><UserPlus size={32} color="#49BBBD" /></div>
             <h1 className="brand-name" style={{ backgroundColor: 'rgba(255, 255, 255, 0.95)', padding: '0.2rem 0.5rem', borderRadius: '0.25rem' }}>
               <span style={{ color: '#000000' }}>Volunteer</span><span style={{ color: '#49BBBD' }}>Hub</span>
             </h1>
@@ -283,7 +253,7 @@ export default function Register() {
       </div>
 
       <div className="register-content">
-        <div className="form-box" style={{ border: '2px solid #49BBBD', borderRadius: '1rem', padding: '2rem' }}>
+        <div className="form-box">
           <div className="form-header">
             <h2>Tạo tài khoản mới</h2>
             <p>Hoàn thành các bước để trở thành thành viên.</p>
@@ -395,7 +365,7 @@ export default function Register() {
                   onClick={() => fileInputRef.current.click()}
                   style={avatarPreview ? { backgroundImage: `url(${avatarPreview})` } : {}}
                 >
-                  {!avatarPreview && <Camera size={32} color="#49BBBD" />}
+                  {!avatarPreview && <Camera size={26} color="#49BBBD" />}
                 </div>
                 <input ref={fileInputRef} type="file" accept="image/*" hidden onChange={handleAvatarChange} />
                 <span className="avatar-hint">Nhấn để tải ảnh đại diện</span>

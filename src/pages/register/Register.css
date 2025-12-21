@@ -6,12 +6,12 @@
   width: 100%;
   background-color: #f1f4f7; /* Màu thứ cấp (30%) */
   font-family: 'Poppins', 'Segoe UI', sans-serif;
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 /* --- LEFT SIDE: VISUAL (Giống Login) --- */
 .register-visual {
-  flex: 5; /* Thu nhỏ phần ảnh 1 chút so với Login để form rộng hơn */
+  flex: 4; /* 40% */
   background-size: cover;
   background-position: center;
   position: relative;
@@ -23,7 +23,7 @@
   position: absolute;
   inset: 0;
   background: linear-gradient(to bottom, rgba(73, 187, 189, 0.4), rgba(0, 0, 0, 0.8));
-  padding: 2.5rem 3.75rem;
+  padding: 2.5rem 3rem;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -32,12 +32,12 @@
 .brand-header {
   display: flex;
   align-items: center;
-  gap: 0.9375rem;
+  gap: 0.875rem;
 }
 
 .logo-circle {
-  width: 3.125rem;
-  height: 3.125rem;
+  width: 3.5rem;
+  height: 3.5rem;
   background: white;
   border-radius: 50%;
   display: flex;
@@ -48,7 +48,7 @@
 
 .brand-name {
   color: white;
-  font-size: clamp(1.25rem, 3vw, 1.75rem);
+  font-size: clamp(1.375rem, 3vw, 1.875rem);
   font-weight: 700;
   letter-spacing: 0.03125rem;
   margin: 0;
@@ -59,16 +59,17 @@
   color: white;
   max-width: min(31.25rem, 90%);
 }
-.quote-content { font-size: clamp(1rem, 2vw, 1.375rem); font-weight: 300; line-height: 1.5; margin-bottom: 1.25rem; }
-.quote-deco-line { width: 3.75rem; height: 0.25rem; background-color: #49BBBD; border-radius: 0.125rem; }
+.quote-content { font-size: clamp(1.125rem, 2vw, 1.5rem); font-weight: 300; line-height: 1.6; margin-bottom: 1.25rem; }
+.quote-deco-line { width: 4rem; height: 0.25rem; background-color: #49BBBD; border-radius: 0.125rem; }
 
 /* --- RIGHT SIDE: CONTENT --- */
 .register-content {
-  flex: 5;
+  width: 50vw;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 2.5rem;
+  padding: 1rem;
   background: white;
   border-top-left-radius: 1.875rem;
   border-bottom-left-radius: 1.875rem;
@@ -76,23 +77,29 @@
   margin-left: -1.25rem;
   z-index: 10;
   position: relative;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .form-box {
   width: 100%;
-  max-width: min(28.125rem, 90vw); /* Rộng hơn form login một chút */
+  max-width: 100%;
+  min-width: 75%;
+  border: 2px solid #49BBBD;
+  border-radius: 1rem;
+  padding: 0.75rem 1.75rem;
 }
 
-.form-header { margin-bottom: 1.5625rem; text-align: center; }
-.form-header h2 { font-size: clamp(1.375rem, 3vw, 1.75rem); color: #2D3436; font-weight: 800; margin-bottom: 0.3125rem; }
-.form-header p { color: #636E72; font-size: clamp(0.8125rem, 1.5vw, 0.875rem); }
+.form-header { margin-bottom: 0.5rem; text-align: center; }
+.form-header h2 { font-size: clamp(1.0625rem, 2.5vw, 1.25rem); color: #2D3436; font-weight: 800; margin-bottom: 0.1875rem; }
+.form-header p { color: #636E72; font-size: clamp(0.625rem, 1.5vw, 0.6875rem); }
 
 /* --- STEPPER (THANH TIẾN TRÌNH) --- */
 .stepper {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 1.875rem;
+  margin-bottom: 0.5rem;
   position: relative;
 }
 
@@ -105,8 +112,8 @@
 }
 
 .step-circle {
-  width: 2.1875rem;
-  height: 2.1875rem;
+  width: 2rem;
+  height: 2rem;
   border-radius: 50%;
   background-color: #E0E0E0;
   color: #636E72;
@@ -114,14 +121,14 @@
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   transition: all 0.3s ease;
   border: 0.1875rem solid white; /* Tạo viền trắng để tách khỏi line */
 }
 
 .step-label {
   margin-top: 0.3125rem;
-  font-size: clamp(0.625rem, 1.5vw, 0.75rem);
+  font-size: clamp(0.625rem, 1.5vw, 0.6875rem);
   color: #B2BEC3;
   font-weight: 600;
   transition: all 0.3s ease;
@@ -142,8 +149,8 @@
   flex: 1;
   height: 0.125rem;
   background-color: #E0E0E0;
-  margin: 0 0.625rem;
-  margin-bottom: 0.9375rem; /* Căn chỉnh với circle */
+  margin: 0 0.5rem;
+  margin-bottom: 0.75rem; /* Căn chỉnh với circle */
   position: relative;
   z-index: 1;
 }
@@ -156,7 +163,7 @@
 .auth-form {
   display: flex;
   flex-direction: column;
-  gap: 0.9375rem;
+  gap: 0.375rem;
 }
 
 /* Animation trượt nhẹ khi đổi step */
@@ -168,14 +175,14 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-.form-group { display: flex; flex-direction: column; gap: 0.375rem; }
-.form-group label { font-size: clamp(0.75rem, 1.5vw, 0.8125rem); font-weight: 600; color: #2D3436; }
+.form-group { display: flex; flex-direction: column; gap: 0.125rem; }
+.form-group label { font-size: clamp(0.625rem, 1.5vw, 0.6875rem); font-weight: 600; color: #2D3436; }
 
 .form-group input {
-  padding: 0.75rem 1rem;
-  border-radius: 0.625rem;
+  padding: 0.5rem 0.875rem;
+  border-radius: 0.5rem;
   border: 0.09375rem solid #E0E0E0;
-  font-size: clamp(0.8125rem, 1.5vw, 0.875rem);
+  font-size: clamp(0.6875rem, 1.5vw, 0.75rem);
   transition: all 0.3s ease;
   background-color: #f1f4f7; /* Màu thứ cấp */
 }
@@ -189,7 +196,7 @@
 
 .form-row {
   display: flex;
-  gap: 0.9375rem;
+  gap: 0.75rem;
 }
 .form-row .form-group { 
   flex: 1; 
@@ -202,14 +209,14 @@
 /* Captcha Styling */
 .captcha-group {
   background-color: #E0F2F1;
-  padding: 0.9375rem;
-  border-radius: 0.625rem;
+  padding: 0.4375rem;
+  border-radius: 0.5rem;
   border: 0.0625rem dashed #49BBBD;
 }
 .captcha-question {
   font-weight: 800;
   color: #2E7D32;
-  font-size: clamp(0.875rem, 1.5vw, 1rem);
+  font-size: clamp(0.75rem, 1.5vw, 0.8125rem);
   letter-spacing: 0.0625rem;
 }
 
@@ -218,12 +225,12 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 0.9375rem;
+  margin-bottom: 0.375rem;
 }
 
 .avatar-preview {
-  width: 6.25rem;
-  height: 6.25rem;
+  width: 5rem;
+  height: 5rem;
   border-radius: 50%;
   background-color: #F0FDFD;
   border: 0.125rem dashed #49BBBD;
@@ -262,13 +269,13 @@
 
 /* --- BUTTONS & FOOTER --- */
 .btn-primary {
-  margin-top: 0.625rem;
-  padding: 0.875rem;
+  margin-top: 0.3125rem;
+  padding: 0.5625rem 1rem;
   border: none;
   border-radius: 3.125rem;
   background-color: #49BBBD;
   color: white;
-  font-size: clamp(0.875rem, 1.5vw, 0.9375rem);
+  font-size: clamp(0.75rem, 1.5vw, 0.8125rem);
   font-weight: 700;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -285,7 +292,7 @@
   box-shadow: 0 0.75rem 1.5625rem rgba(73, 187, 189, 0.4);
 }
 
-.form-footer { margin-top: 1.5625rem; text-align: center; font-size: clamp(0.75rem, 1.5vw, 0.8125rem); color: #636E72; }
+.form-footer { margin-top: 0.5rem; text-align: center; font-size: clamp(0.625rem, 1.5vw, 0.6875rem); color: #636E72; }
 .link-highlight { color: #49BBBD; font-weight: 700; cursor: pointer; transition: color 0.2s; }
 .link-highlight:hover { color: #359698; text-decoration: underline; }
 
@@ -307,8 +314,8 @@
 /* Container chứa 2 nút ở bước 2 */
 .form-actions {
   display: flex;
-  gap: 0.9375rem;
-  margin-top: 0.625rem;
+  gap: 0.5rem;
+  margin-top: 0.3125rem;
 }
 
 /* Nút Primary (Hoàn tất) - chỉnh lại width để nó flex cùng nút quay lại */
@@ -320,12 +327,12 @@
 /* Nút Secondary (Quay lại) */
 .btn-secondary {
   flex: 1; /* Chiếm 1 phần */
-  padding: 0.875rem;
+  padding: 0.5625rem 1rem;
   border: 0.125rem solid #E0E0E0;
   border-radius: 3.125rem;
   background-color: transparent;
   color: #636E72;
-  font-size: clamp(0.875rem, 1.5vw, 0.9375rem);
+  font-size: clamp(0.75rem, 1.5vw, 0.8125rem);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -347,7 +354,7 @@
 }
 
 /* Alerts */
-.alert-box { padding: 0.625rem; border-radius: 0.5rem; font-size: clamp(0.75rem, 1.5vw, 0.8125rem); text-align: center; margin-bottom: 0.9375rem; }
+.alert-box { padding: 0.4375rem; border-radius: 0.5rem; font-size: clamp(0.625rem, 1.5vw, 0.6875rem); text-align: center; margin-bottom: 0.625rem; }
 .alert-box.error { background: #FFEBEE; color: #C62828; border: 0.0625rem solid #FFCDD2; }
 .alert-box.success { background: #E0F2F1; color: #2E7D32; border: 0.0625rem solid #A5D6A7; }
 
@@ -374,11 +381,54 @@
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* --- RESPONSIVE --- */
+/* Media query cho màn hình nhỏ hoặc zoom cao */
+@media (max-width: 1200px) {
+  .form-box {
+    min-width: 65%;
+    padding: 1rem 1.5rem;
+  }
+  
+  .register-content {
+    padding: 0.875rem;
+  }
+}
+
 @media (max-width: 900px) {
-  .register-wrapper { flex-direction: column; overflow-y: auto; }
-  .register-visual { flex: none; height: 12.5rem; }
-  .quote-container { display: none; }
-  .register-content { flex: 1; margin-left: 0; margin-top: -20px; border-radius: 20px 20px 0 0; padding: 30px 20px; }
+  .register-wrapper { 
+    flex-direction: column; 
+    overflow-y: auto; 
+  }
+  
+  /* Ẩn hoàn toàn ảnh bên trái trên mobile */
+  .register-visual { 
+    display: none; 
+  }
+  
+  /* Form đăng ký chiếm full width */
+  .register-content { 
+    width: 100vw;
+    flex: 1; 
+    margin-left: 0; 
+    margin-top: 0;
+    border-radius: 0;
+    padding: 1.5rem 1rem;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+  }
+  
+  /* Điều chỉnh form box cho mobile */
+  .form-box {
+    min-width: 100%;
+    padding: 1rem 1.5rem;
+    border: none;
+    box-shadow: none;
+  }
+  
+  /* Điều chỉnh form row thành column trên mobile */
+  .form-row {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
 }
 
 /* Hide scrollbar visuals for register layout to prevent layout shift,
