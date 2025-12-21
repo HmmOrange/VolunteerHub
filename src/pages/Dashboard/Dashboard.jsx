@@ -345,12 +345,14 @@ export default function Dashboard() {
         }}
       >
         {/* Sự kiện sắp diễn ra - Carousel */}
-        <Paper elevation={2} sx={{ p: { xs: 2, sm: 2.5, md: 3 }, mb: { xs: 3, md: 4 }, mt: { xs: 2, md: 3 }, borderRadius: { xs: 2, md: 3 } }}>
+        <Paper elevation={2} sx={{ p: { xs: 2, sm: 2.5, md: 3 }, mb: { xs: 3, md: 4 }, mt: { xs: 2, md: 3 }, borderRadius: { xs: 2, md: 3 }, border: '2px solid #49BBBD' }}>
           <Typography 
             variant="h6" 
             fontWeight="bold" 
             mb={2}
-            sx={{ fontSize: { xs: '1.1rem', sm: '1.15rem', md: '1.25rem' } }}
+            sx={{ 
+              fontSize: { xs: '1.1rem', sm: '1.15rem', md: '1.25rem' }
+            }}
           >
             Sự kiện sắp diễn ra bạn đã tham gia
           </Typography>
@@ -375,7 +377,10 @@ export default function Dashboard() {
                   boxShadow: 2,
                   width: { xs: '2rem', md: '2.5rem' },
                   height: { xs: '2rem', md: '2.5rem' },
-                  '&:hover': { bgcolor: '#f5f5f5' }
+                  '&:hover': { 
+                    bgcolor: '#49BBBD', /* Màu nhấn */
+                    color: 'white'
+                  }
                 }}
               >
                 <ChevronLeft sx={{ fontSize: { xs: '1.2rem', md: '1.5rem' } }} />
@@ -396,7 +401,10 @@ export default function Dashboard() {
                   boxShadow: 2,
                   width: { xs: '2rem', md: '2.5rem' },
                   height: { xs: '2rem', md: '2.5rem' },
-                  '&:hover': { bgcolor: '#f5f5f5' }
+                  '&:hover': { 
+                    bgcolor: '#49BBBD', /* Màu nhấn */
+                    color: 'white'
+                  }
                 }}
               >
                 <ChevronRight sx={{ fontSize: { xs: '1.2rem', md: '1.5rem' } }} />
@@ -410,6 +418,10 @@ export default function Dashboard() {
                 gap: { xs: 0, md: 2 },
                 overflow: 'hidden',
                 transition: 'all 0.3s ease',
+                pt: { xs: 1, md: 2 },
+                pb: { xs: 1, md: 2 },
+                mt: { xs: -1, md: -2 },
+                mb: { xs: -1, md: -2 }
               }}
             >
               {upcomingJoinedEvents.map((event, index) => {
@@ -436,6 +448,7 @@ export default function Dashboard() {
                       minWidth: { xs: '100%', md: 'calc(33.33% - 11px)' },
                       maxWidth: { xs: '100%', md: 'calc(33.33% - 11px)' },
                       flexShrink: 0,
+                      border: '2px solid #49BBBD',
                       transform: { 
                         xs: `translateX(-${upcomingScrollIndex * 100}%)`,
                         md: `translateX(-${upcomingScrollIndex * (100 / 3 + 0.67)}%)` 
@@ -547,12 +560,14 @@ export default function Dashboard() {
       <Box sx={{ mb: 4, display: 'flex', gap: { xs: 2, md: '2%' }, alignItems: 'flex-start', flexDirection: { xs: 'column', md: 'row' }, overflow: 'visible' }}>
         {/* Cột trái: Danh sách bài viết - 100% trên mobile, 65% trên desktop */}
         <Box sx={{ flex: { xs: '1 1 100%', md: '0 0 65%' }, width: '100%', minWidth: 0 }}>
-          <Paper elevation={2} sx={{ p: { xs: 2, sm: 2.5, md: 3 }, borderRadius: { xs: 2, md: 3 } }}>
+          <Paper elevation={2} sx={{ p: { xs: 2, sm: 2.5, md: 3 }, borderRadius: { xs: 2, md: 3 }, border: '2px solid #49BBBD' }}>
             <Typography 
               variant="h6" 
               fontWeight="bold" 
               mb={2}
-              sx={{ fontSize: { xs: '1.1rem', sm: '1.15rem', md: '1.25rem' } }}
+              sx={{ 
+                fontSize: { xs: '1.1rem', sm: '1.15rem', md: '1.25rem' }
+              }}
             >
               Bài viết từ các sự kiện bạn đã tham gia
             </Typography>
@@ -564,17 +579,16 @@ export default function Dashboard() {
             ) : (
               <Stack spacing={2} alignItems="center">
                 {feedPosts.map((post) => (
-                  <Box key={post._id} sx={{ width: "100%" }}>
-                    <PostCard
-                      post={post}
-                      onPostDeleted={handlePostDeleted}
-                      onPostUpdated={handlePostUpdated}
-                      onPostClick={(post) => {
-                        setSelectedPost(post);
-                        setPostModalOpen(true);
-                      }}
-                    />
-                  </Box>
+                  <PostCard
+                    key={post._id}
+                    post={post}
+                    onPostDeleted={handlePostDeleted}
+                    onPostUpdated={handlePostUpdated}
+                    onPostClick={(post) => {
+                      setSelectedPost(post);
+                      setPostModalOpen(true);
+                    }}
+                  />
                 ))}
                 
                 {/* Observer target cho infinite scroll */}
@@ -583,7 +597,7 @@ export default function Dashboard() {
                 {/* Loading indicator */}
                 {loadingPosts && (
                   <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
-                    <CircularProgress />
+                    <CircularProgress sx={{ color: '#49BBBD' }} />
                   </Box>
                 )}
                 
@@ -615,7 +629,8 @@ export default function Dashboard() {
               p: { xs: 2, sm: 2.5 }, 
               bgcolor: "#f5f5f5", 
               minHeight: { xs: 'auto', md: '400px' },
-              borderRadius: { xs: 2, md: 3 }
+              borderRadius: { xs: 2, md: 3 },
+              border: '2px solid #49BBBD'
             }}
           >
               <Typography 
@@ -735,7 +750,7 @@ export default function Dashboard() {
                             <span style={{ fontSize: "1rem" }}>📅</span>
                             <strong>Ngày:</strong> {new Date(hotEvents[currentPage].date).toLocaleDateString()}
                           </Typography>
-                          <Typography variant="body2" fontWeight="bold" color="primary" sx={{ display: "flex", alignItems: "center", gap: 0.5, fontSize: { xs: '0.8rem', sm: '0.85rem', md: '0.875rem' } }}>
+                          <Typography variant="body2" fontWeight="bold" color="primary" sx={{ display: "flex", alignItems: "center", gap: 0.5, fontSize: { xs: '0.8rem', sm: '0.85rem', md: '0.875rem' }, color: '#49BBBD' /* Màu nhấn */ }}>
                             <span style={{ fontSize: "1.2rem" }}>👥</span>
                             {hotEvents[currentPage].volunteers?.length || 0} thành viên đã tham gia
                           </Typography>

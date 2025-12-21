@@ -3,7 +3,7 @@
   display: flex;
   min-height: 100vh;
   width: 100%;
-  background-color: #F3FAFA; /* Nền xanh ngọc cực nhạt */
+  background-color: #f1f4f7; /* Màu thứ cấp (30%) */
   font-family: 'Poppins', 'Segoe UI', sans-serif;
   overflow: hidden;
 }
@@ -137,7 +137,7 @@
   border: 0.09375rem solid #E0E0E0;
   font-size: clamp(0.875rem, 1.5vw, 0.9375rem);
   transition: all 0.3s ease;
-  background-color: #FAFAFA;
+  background-color: #f1f4f7; /* Màu thứ cấp */
 }
 
 /* Hiệu ứng Focus với màu chủ đạo #49BBBD */

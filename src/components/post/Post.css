@@ -8,7 +8,7 @@
   flex-grow: 1;
   border-radius: 1.25rem !important;
   border: 0.0625rem solid #ddd !important;
-  background-color: #f0f2f5 !important;
+  background-color: #f1f4f7 !important; /* Màu thứ cấp */
   color: #65676b !important;
   text-align: left !important;
   justify-content: flex-start !important;

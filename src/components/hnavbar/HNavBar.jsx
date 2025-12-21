@@ -62,6 +62,7 @@ export default function HNavbar({ onToggleVNavBar }) {
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const [allEvents, setAllEvents] = useState([]);
   const [searchHistory, setSearchHistory] = useState([]);
+  const [searchFocused, setSearchFocused] = useState(false);
   const searchInputRef = useRef(null);
 
   // Helper function để render banner URL
@@ -316,7 +317,14 @@ export default function HNavbar({ onToggleVNavBar }) {
         </Stack>
 
         {/* ===== CENTER ===== */}
-        <Box className="hnavbar-search" style={{ position: 'relative' }}>
+        <Box 
+          className="hnavbar-search" 
+          style={{ 
+            position: 'relative',
+            border: searchFocused ? '2px solid #49BBBD' : '2px solid transparent',
+            transition: 'border 0.2s ease'
+          }}
+        >
           <ClickAwayListener onClickAway={handleClickAway}>
             <form onSubmit={handleSearchSubmit} style={{ width: '100%', display: 'flex', alignItems: 'center' }}>
               <SearchIcon className="hnavbar-search-icon" />
@@ -328,16 +336,18 @@ export default function HNavbar({ onToggleVNavBar }) {
                 value={searchQuery}
                 onChange={handleSearchChange}
                 onFocus={() => {
+                  setSearchFocused(true);
                   if (searchQuery.trim() !== "") {
                     setShowSearchDropdown(true);
                   }
                 }}
+                onBlur={() => setSearchFocused(false)}
               />
               
               {/* Dropdown autocomplete */}
               {showSearchDropdown && (
                 <Paper
-                  elevation={3}
+                  elevation={8}
                   sx={{
                     position: 'absolute',
                     top: '100%',
@@ -345,14 +355,28 @@ export default function HNavbar({ onToggleVNavBar }) {
                     right: 0,
                     mt: 1,
                     maxHeight: 400,
-                    overflow: 'auto',
+                    overflowY: 'auto',
+                    overflowX: 'hidden',
                     zIndex: 1300,
+                    animation: 'slideDown 0.3s ease-out',
+                    '@keyframes slideDown': {
+                      '0%': {
+                        opacity: 0,
+                        transform: 'translateY(-10px)',
+                      },
+                      '100%': {
+                        opacity: 1,
+                        transform: 'translateY(0)',
+                      },
+                    },
+                    borderRadius: 2,
+                    boxShadow: '0 8px 24px rgba(73, 187, 189, 0.15)',
                   }}
                 >
                   <List>
                     {searchResults.length > 0 ? (
                       <>
-                        <ListItem sx={{ bgcolor: '#f5f5f5', fontWeight: 'bold' }}>
+                        <ListItem sx={{ bgcolor: '#f1f4f7', fontWeight: 'bold' }}>
                           <ListItemText primary="Kết quả tìm kiếm" primaryTypographyProps={{ variant: 'subtitle2' }} />
                         </ListItem>
                         {searchResults.map((event) => (
@@ -361,8 +385,11 @@ export default function HNavbar({ onToggleVNavBar }) {
                             button
                             onClick={() => handleSearchResultClick(event.slug)}
                             sx={{
+                              transition: 'all 0.2s ease',
                               '&:hover': {
-                                bgcolor: '#e3f2fd',
+                                bgcolor: 'rgba(73, 187, 189, 0.1)',
+                                transform: 'translateX(8px)',
+                                borderLeft: '3px solid #49BBBD',
                               },
                             }}
                           >
@@ -374,7 +401,11 @@ export default function HNavbar({ onToggleVNavBar }) {
                                 sx={{ 
                                   width: 56, 
                                   height: 56, 
-                                  mr: 1
+                                  mr: 1,
+                                  transition: 'transform 0.2s ease',
+                                  '&:hover': {
+                                    transform: 'scale(1.1)',
+                                  },
                                 }}
                               />
                             </ListItemAvatar>
@@ -390,8 +421,11 @@ export default function HNavbar({ onToggleVNavBar }) {
                           onClick={handleSearchSubmit}
                           sx={{
                             bgcolor: '#fafafa',
+                            transition: 'all 0.2s ease',
                             '&:hover': {
-                              bgcolor: '#e3f2fd',
+                              bgcolor: 'rgba(73, 187, 189, 0.1)',
+                              color: '#49BBBD',
+                              transform: 'translateX(4px)',
                             },
                           }}
                         >
@@ -403,7 +437,7 @@ export default function HNavbar({ onToggleVNavBar }) {
                       </>
                     ) : searchHistory.length > 0 ? (
                       <>
-                        <ListItem sx={{ bgcolor: '#f5f5f5', fontWeight: 'bold' }}>
+                        <ListItem sx={{ bgcolor: '#f1f4f7', fontWeight: 'bold' }}>
                           <ListItemText primary="Tìm kiếm gần đây" primaryTypographyProps={{ variant: 'subtitle2' }} />
                         </ListItem>
                         {searchHistory.slice(0, 5).map((historyItem, index) => (
@@ -415,8 +449,11 @@ export default function HNavbar({ onToggleVNavBar }) {
                               handleSearchChange({ target: { value: historyItem } });
                             }}
                             sx={{
+                              transition: 'all 0.2s ease',
                               '&:hover': {
-                                bgcolor: '#e3f2fd',
+                                bgcolor: 'rgba(73, 187, 189, 0.1)',
+                                transform: 'translateX(8px)',
+                                borderLeft: '3px solid #49BBBD',
                               },
                             }}
                           >
@@ -492,9 +529,17 @@ export default function HNavbar({ onToggleVNavBar }) {
               maxHeight: 400,
               width: 350,
             },
+            sx: {
+              boxShadow: '0 8px 24px rgba(73, 187, 189, 0.15)',
+              borderRadius: 2,
+              mt: 1.5,
+            },
           }}
           transformOrigin={{ horizontal: "right", vertical: "top" }}
           anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
+          TransitionProps={{
+            timeout: 300,
+          }}
         >
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 2, pt: 1, pb: 1 }}>
               <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>Thông báo</Typography>
@@ -521,8 +566,14 @@ export default function HNavbar({ onToggleVNavBar }) {
                   onClick={() => handleNotificationClick(noti)}
                   sx={{
                     whiteSpace: 'normal', 
-                    backgroundColor: noti.isRead ? 'inherit' : '#e3f2fd', 
-                    borderBottom: '1px solid #f0f0f0'
+                    backgroundColor: noti.isRead ? 'inherit' : 'rgba(73, 187, 189, 0.08)', 
+                    borderBottom: '1px solid #f0f0f0',
+                    transition: 'all 0.2s ease',
+                    '&:hover': {
+                      backgroundColor: 'rgba(73, 187, 189, 0.15)',
+                      transform: 'translateX(4px)',
+                      borderLeft: '3px solid #49BBBD',
+                    },
                   }}
                 >
                   <Box>
@@ -543,9 +594,19 @@ export default function HNavbar({ onToggleVNavBar }) {
           anchorEl={anchorElProfile}
           open={isProfileMenuOpen}
           onClose={handleProfileMenuClose}
-          PaperProps={{ className: "hnavbar-menu-paper" }}
+          PaperProps={{ 
+            className: "hnavbar-menu-paper",
+            sx: {
+              boxShadow: '0 8px 24px rgba(73, 187, 189, 0.15)',
+              borderRadius: 2,
+              mt: 1.5,
+            },
+          }}
           transformOrigin={{ horizontal: "right", vertical: "top" }}
           anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
+          TransitionProps={{
+            timeout: 300,
+          }}
         >
           <MenuItem disabled className="hnavbar-menu-user">
             Xin chào, {username}

@@ -245,13 +245,27 @@ export default function Discovery() {
         }}
       >
         <Card
-          sx={{ height: "100%", minWidth: '20vw', position: 'relative', display: 'flex', flexDirection: 'column', transition: 'transform .18s ease, box-shadow .18s ease', '&:hover': { transform: 'translateY(-6px)', boxShadow: '0 12px 30px rgba(0,0,0,0.12)' }, cursor: editing !== event.slug ? 'pointer' : 'default' }}
+          sx={{ 
+            height: "100%", 
+            minWidth: '20vw', 
+            position: 'relative', 
+            display: 'flex', 
+            flexDirection: 'column', 
+            transition: 'transform .18s ease, box-shadow .18s ease, border .18s ease', 
+            border: '2px solid transparent',
+            '&:hover': { 
+              transform: 'translateY(-6px)', 
+              boxShadow: '0 12px 30px rgba(73, 187, 189, 0.2)',
+              border: '2px solid #49BBBD'
+            }, 
+            cursor: editing !== event.slug ? 'pointer' : 'default' 
+          }}
           onClick={() => editing !== event.slug && navigate(`/event/${event.slug}`)}
         >
           <CardContent sx={{ flex: '1 1 auto' }}>
             <Typography variant="h6" fontWeight="bold" gutterBottom>{event.name}</Typography>
 
-            <Box sx={{ width: '100%', height: 160, mb: 2, borderRadius: 1, overflow: 'hidden', bgcolor: '#f5f5f5', position: 'relative' }}>
+            <Box sx={{ width: '100%', height: 160, mb: 2, borderRadius: 1, overflow: 'hidden', bgcolor: '#f1f4f7', position: 'relative' }}>
               <img src={getBannerUrl(event.banner)} alt={event.name} loading="lazy" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { e.target.onerror = null; e.target.src = placeholderImage; }} />
             </Box>
 
@@ -281,7 +295,7 @@ export default function Discovery() {
   return (
     <Container maxWidth="xl" sx={{ px: { xs: 2, sm: 3, md: 4 }, py: 2 }}>
       {/* FILTERS */}
-      <Paper sx={{ p: { xs: 2, sm: 2.5, md: 3 }, mb: { xs: 3, md: 4 }, mt: { xs: 6, sm: 7, md: 8 } }}>
+      <Paper sx={{ p: { xs: 2, sm: 2.5, md: 3 }, mb: { xs: 3, md: 4 }, mt: { xs: 6, sm: 7, md: 8 }, border: '2px solid #49BBBD' }}>
         <Stack 
           direction={{ xs: 'column', sm: 'row' }} 
           spacing={2}
@@ -337,7 +351,7 @@ export default function Discovery() {
           Không có sự kiện nào
         </Typography>
       ) : (
-        <Box sx={{ bgcolor: 'white', p: { xs: 2, sm: 3, md: 4 }, borderRadius: 2 }}>
+        <Box sx={{ bgcolor: 'white', p: { xs: 2, sm: 3, md: 4 }, borderRadius: 2, border: '2px solid #49BBBD' }}>
           <Box sx={{ 
             display: 'flex',
             flexWrap: 'wrap',

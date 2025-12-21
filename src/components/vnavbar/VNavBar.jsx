@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   Drawer, Box, List, ListItem, ListItemButton, ListItemIcon,
   ListItemText, Divider, Typography, Avatar, Toolbar,
@@ -18,6 +18,7 @@ import "./VNavBar.css";
 
 export default function VNavBar({ isOpen, drawerWidth, drawerVariant, onClose }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const role = localStorage.getItem("role"); // ✅ READ ROLE ONCE
 
   const [shortcuts, setShortcuts] = useState([]);
@@ -69,36 +70,68 @@ export default function VNavBar({ isOpen, drawerWidth, drawerVariant, onClose })
   };
 
   const drawerContent = (
-    <div>
+    <div style={{ borderRight: '2px solid #49BBBD', height: '100%' }}>
       <Toolbar />
       <Divider />
 
       {/* ===== MAIN NAV ===== */}
       <List>
         <ListItem disablePadding>
-          <ListItemButton onClick={() => handleNavigate("/dashboard")}>
-            <ListItemIcon><HomeOutlined /></ListItemIcon>
+          <ListItemButton 
+            onClick={() => handleNavigate("/dashboard")}
+            sx={{
+              borderBottom: location.pathname === "/dashboard" ? "3px solid #49BBBD" : "none",
+              color: location.pathname === "/dashboard" ? "#49BBBD" : "inherit"
+            }}
+          >
+            <ListItemIcon sx={{ color: location.pathname === "/dashboard" ? "#49BBBD" : "inherit" }}>
+              <HomeOutlined />
+            </ListItemIcon>
             <ListItemText primary="Trang chủ" sx={{ mt: 0.9 }} />
           </ListItemButton>
         </ListItem>
 
         <ListItem disablePadding>
-          <ListItemButton onClick={() => handleNavigate("/events")}>
-            <ListItemIcon><EventOutlined /></ListItemIcon>
+          <ListItemButton 
+            onClick={() => handleNavigate("/events")}
+            sx={{
+              borderBottom: location.pathname === "/events" ? "3px solid #49BBBD" : "none",
+              color: location.pathname === "/events" ? "#49BBBD" : "inherit"
+            }}
+          >
+            <ListItemIcon sx={{ color: location.pathname === "/events" ? "#49BBBD" : "inherit" }}>
+              <EventOutlined />
+            </ListItemIcon>
             <ListItemText primary="Sự kiện của bạn" sx={{ mt: 0.95 }} />
           </ListItemButton>
         </ListItem>
 
         <ListItem disablePadding>
-          <ListItemButton onClick={() => handleNavigate("/discover")}>
-            <ListItemIcon><ExploreOutlined /></ListItemIcon>
+          <ListItemButton 
+            onClick={() => handleNavigate("/discover")}
+            sx={{
+              borderBottom: location.pathname === "/discover" ? "3px solid #49BBBD" : "none",
+              color: location.pathname === "/discover" ? "#49BBBD" : "inherit"
+            }}
+          >
+            <ListItemIcon sx={{ color: location.pathname === "/discover" ? "#49BBBD" : "inherit" }}>
+              <ExploreOutlined />
+            </ListItemIcon>
             <ListItemText primary="Khám phá" sx={{ mt: 0.75 }} />
           </ListItemButton>
         </ListItem>
 
         <ListItem disablePadding>
-          <ListItemButton onClick={() => handleNavigate("/calendar")}>
-            <ListItemIcon><CalendarMonthOutlined /></ListItemIcon>
+          <ListItemButton 
+            onClick={() => handleNavigate("/calendar")}
+            sx={{
+              borderBottom: location.pathname === "/calendar" ? "3px solid #49BBBD" : "none",
+              color: location.pathname === "/calendar" ? "#49BBBD" : "inherit"
+            }}
+          >
+            <ListItemIcon sx={{ color: location.pathname === "/calendar" ? "#49BBBD" : "inherit" }}>
+              <CalendarMonthOutlined />
+            </ListItemIcon>
             <ListItemText primary="Lịch" sx={{ mt: 0.85 }} />
           </ListItemButton>
         </ListItem>
@@ -115,8 +148,14 @@ export default function VNavBar({ isOpen, drawerWidth, drawerVariant, onClose })
 
           <List>
             <ListItem disablePadding>
-              <ListItemButton onClick={() => handleNavigate("/admin/users")}>
-                <ListItemIcon>
+              <ListItemButton 
+                onClick={() => handleNavigate("/admin/users")}
+                sx={{
+                  borderBottom: location.pathname === "/admin/users" ? "3px solid #49BBBD" : "none",
+                  color: location.pathname === "/admin/users" ? "#49BBBD" : "inherit"
+                }}
+              >
+                <ListItemIcon sx={{ color: location.pathname === "/admin/users" ? "#49BBBD" : "inherit" }}>
                   <PeopleOutline />
                 </ListItemIcon>
                 <ListItemText primary="Người dùng" />
@@ -124,8 +163,14 @@ export default function VNavBar({ isOpen, drawerWidth, drawerVariant, onClose })
             </ListItem>
 
             <ListItem disablePadding>
-              <ListItemButton onClick={() => handleNavigate("/admin/events")}>
-                <ListItemIcon>
+              <ListItemButton 
+                onClick={() => handleNavigate("/admin/events")}
+                sx={{
+                  borderBottom: location.pathname === "/admin/events" ? "3px solid #49BBBD" : "none",
+                  color: location.pathname === "/admin/events" ? "#49BBBD" : "inherit"
+                }}
+              >
+                <ListItemIcon sx={{ color: location.pathname === "/admin/events" ? "#49BBBD" : "inherit" }}>
                   <AdminPanelSettingsOutlined />
                 </ListItemIcon>
                 <ListItemText primary="Sự kiện" />

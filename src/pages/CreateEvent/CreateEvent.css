@@ -8,9 +8,9 @@
 }
 
 .create-event-submit-btn-split {
-  background-color: #1976d2 !important;
+  background-color: #49BBBD !important; /* Màu nhấn */
 }
 
 .create-event-submit-btn-split:hover {
-  background-color: #115293 !important;
+  background-color: #359698 !important; /* Màu nhấn tối */
 }

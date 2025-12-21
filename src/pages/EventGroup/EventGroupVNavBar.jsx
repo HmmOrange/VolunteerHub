@@ -121,7 +121,7 @@ export default function EventGroupVNavBar({ isOpen, drawerWidth, drawerVariant, 
           onClick={drawerVariant === 'temporary' ? onClose : undefined}
         >
           <Box sx={{ px: 2, pb: 2, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <Box sx={{ width: 279, height: 140, mb: 1.5, overflow: 'hidden', bgcolor: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Box sx={{ width: 279, height: 140, mb: 1.5, overflow: 'hidden', bgcolor: '#f1f4f7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <img src={getBannerUrl(eventData.banner) || eventData.avatarUrl || eventGroupAvatar} alt={eventData.name} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             </Box>
 
@@ -134,24 +134,50 @@ export default function EventGroupVNavBar({ isOpen, drawerWidth, drawerVariant, 
 
           <Divider />
 
-          <Typography variant="overline" className="chat-title">Lối tắt</Typography>
-          <List spacing={1}>
+          <Typography variant="overline" className="chat-title" sx={{ px: 2, py: 1, fontWeight: 'bold', color: 'text.secondary' }}>Lối tắt</Typography>
+          <List sx={{ px: 1 }}>
             {items.map(item => {
               const locked = item.id === 0 && item.requiresJoin && !isJoined;
               return (
-                <ListItemButton key={item.id} onClick={() => {
-                  // Navigate to event page with tab query param
-                  const base = `/event/${slug}`;
-                  const url = `${base}?tab=${item.id}`;
-                  navigate(url);
-                  if (drawerVariant === 'temporary') onClose();
-                }} sx={{ opacity: locked ? 0.6 : 1 }}>
+                <ListItemButton 
+                  key={item.id} 
+                  onClick={() => {
+                    // Navigate to event page with tab query param
+                    const base = `/event/${slug}`;
+                    const url = `${base}?tab=${item.id}`;
+                    navigate(url);
+                    if (drawerVariant === 'temporary') onClose();
+                  }} 
+                  sx={{ 
+                    opacity: locked ? 0.6 : 1,
+                    borderRadius: 2,
+                    mb: 0.5,
+                    mx: 0.5,
+                    transition: 'all 0.2s',
+                    '&:hover': {
+                      bgcolor: locked ? 'rgba(0,0,0,0.04)' : 'rgba(73, 187, 189, 0.08)',
+                      transform: locked ? 'none' : 'translateX(4px)'
+                    }
+                  }}
+                >
                   <ListItemIcon sx={{ minWidth: '40px' }}>
-                    {locked ? <Avatar sx={{ width: 28, height: 28, bgcolor: '#bdbdbd' }}><Lock sx={{ fontSize: '1rem' }} /></Avatar> : (
-                      <Avatar sx={{ width: 28, height: 28, bgcolor: '#49BBBD' }}>{item.icon}</Avatar>
+                    {locked ? (
+                      <Avatar sx={{ width: 32, height: 32, bgcolor: '#bdbdbd' }}>
+                        <Lock sx={{ fontSize: '1.1rem' }} />
+                      </Avatar>
+                    ) : (
+                      <Avatar sx={{ width: 32, height: 32, bgcolor: '#49BBBD', boxShadow: 1 }}>
+                        {item.icon}
+                      </Avatar>
                     )}
                   </ListItemIcon>
-                  <ListItemText primary={item.label} />
+                  <ListItemText 
+                    primary={item.label} 
+                    primaryTypographyProps={{ 
+                      fontWeight: locked ? 400 : 500,
+                      fontSize: '0.95rem'
+                    }} 
+                  />
                 </ListItemButton>
               );
             })}
@@ -176,7 +202,7 @@ export default function EventGroupVNavBar({ isOpen, drawerWidth, drawerVariant, 
         "& .MuiDrawer-paper": {
           width: drawerWidth,
           boxSizing: "border-box",
-          borderRight: "1px solid #e0e0e0",
+          borderRight: "2px solid #49BBBD",
           backgroundColor: "#fff", 
         },
       }}

@@ -286,6 +286,12 @@ export default function SearchResults() {
                         height: '100%',
                         display: 'flex',
                         flexDirection: 'column',
+                        border: '2px solid #49BBBD',
+                        transition: 'all 0.3s ease',
+                        '&:hover': {
+                          boxShadow: '0 12px 30px rgba(73, 187, 189, 0.2)',
+                          transform: 'translateY(-4px)'
+                        }
                       }}
                     >
                       <CardActionArea 
@@ -434,7 +440,7 @@ export default function SearchResults() {
                 ))}
               </Box>
             ) : (
-              <Paper sx={{ p: 4, textAlign: 'center' }}>
+              <Paper sx={{ p: 4, textAlign: 'center', border: '2px solid #49BBBD' }}>
                 <Typography variant="h6" color="text.secondary">
                   Không tìm thấy sự kiện nào phù hợp với từ khóa "{query}"
                 </Typography>
@@ -457,7 +463,7 @@ export default function SearchResults() {
             display: { xs: 'none', lg: 'block' }
           }}>
             {/* Lịch sử tìm kiếm */}
-            <Paper sx={{ p: 2, mb: 2 }}>
+            <Paper sx={{ p: 2, mb: 2, border: '2px solid #49BBBD' }}>
               <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
                 <Typography variant="h6">Lịch sử tìm kiếm</Typography>
                 {searchHistory.length > 0 && (
@@ -483,7 +489,7 @@ export default function SearchResults() {
                         borderRadius: 1,
                         mb: 0.5,
                         '&:hover': {
-                          bgcolor: '#e3f2fd',
+                          bgcolor: 'rgba(73, 187, 189, 0.08)',
                         },
                       }}
                     >
@@ -506,7 +512,7 @@ export default function SearchResults() {
 
             {/* Gợi ý liên quan */}
             {query && filteredEvents.length > 0 && (
-              <Paper sx={{ p: 2 }}>
+              <Paper sx={{ p: 2, border: '2px solid #49BBBD' }}>
                 <Typography variant="h6" sx={{ mb: 2 }}>
                   Gợi ý liên quan
                 </Typography>
@@ -517,7 +523,14 @@ export default function SearchResults() {
                       key={event._id}
                       label={event.name}
                       onClick={() => handleEventClick(event.slug)}
-                      sx={{ justifyContent: 'flex-start' }}
+                      sx={{ 
+                        justifyContent: 'flex-start',
+                        transition: 'all 0.2s',
+                        '&:hover': {
+                          bgcolor: '#49BBBD',
+                          color: 'white'
+                        }
+                      }}
                     />
                   ))}
                 </Stack>

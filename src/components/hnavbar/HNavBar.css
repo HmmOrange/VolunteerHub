@@ -3,7 +3,7 @@
   /* Ghi đè style của MUI */
   background-color: white !important;
   color: #000000 !important;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 2px solid #49BBBD;
   box-shadow: none !important;
 
   /* THÊM MỚI (Rất quan trọng) */
@@ -30,7 +30,7 @@
 }
 
 .hnavbar-logo-main {
-  color: #000000;
+  color: #49BBBD;
 }
 
 .hnavbar-logo-hub {
@@ -45,7 +45,7 @@
   margin-right: 1rem;
   display: flex;
   align-items: center;
-  background-color: #f0f2f5;
+  background-color: #f1f4f7; /* Màu thứ cấp */
   border-radius: 1.25rem;
   padding: 0.25rem 0.75rem;
 }
@@ -85,6 +85,17 @@
   border: 0.0625rem solid #e0e0e0;
   border-radius: 0.5rem;
 }
+
+.hnavbar-menu-paper .MuiMenuItem-root {
+  transition: all 0.2s ease;
+}
+
+.hnavbar-menu-paper .MuiMenuItem-root:hover {
+  background-color: rgba(73, 187, 189, 0.1) !important;
+  transform: translateX(4px);
+  border-left: 3px solid #49BBBD;
+}
+
 .hnavbar-menu-user {
   font-weight: 500;
   opacity: 1 !important;

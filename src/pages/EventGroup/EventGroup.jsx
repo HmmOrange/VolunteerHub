@@ -772,7 +772,7 @@ export default function EventGroup() {
       <Container maxWidth="xl" sx={{ px: { xs: 2, sm: 3, md: 4 }, py: 3 }}>
       
         {/* HEADER TABS */}
-        <Paper className="event-group-tabs-paper" elevation={0} variant="outlined" sx={{ mb: { xs: 1.5, md: 2 } }}>
+        <Paper className="event-group-tabs-paper" elevation={0} variant="outlined" sx={{ mb: { xs: 1.5, md: 2 }, border: '2px solid #49BBBD' }}>
           <Box sx={{ 
             display: 'flex', 
             flexDirection: { xs: 'column', sm: 'row' },
@@ -915,7 +915,8 @@ export default function EventGroup() {
               py: { xs: 6, md: 8 }, 
               px: { xs: 2, md: 0 },
               mt: { xs: 1.5, md: 2 }, 
-              textAlign: 'center' 
+              textAlign: 'center',
+              border: '2px solid #49BBBD'
             }} variant="outlined">
               <LockOutlined sx={{ fontSize: { xs: '3rem', md: '3.75rem' }, color: '#ccc', mb: { xs: 1.5, md: 2 } }} />
               <Typography variant="h6" color="text.secondary" sx={{ fontSize: { xs: '1rem', md: '1.25rem' } }}>Nhóm riêng tư</Typography>
@@ -1266,7 +1267,7 @@ export default function EventGroup() {
 
         {/* TAB 1: THÔNG TIN */}
         {currentTab === 1 && (
-          <Paper sx={{ mt: { xs: 1.5, md: 2 }, p: { xs: 2, md: 3 } }} variant="outlined">
+          <Paper sx={{ mt: { xs: 1.5, md: 2 }, p: { xs: 2, md: 3 }, border: '2px solid #49BBBD' }} variant="outlined">
             {/* Header & Edit Button */}
             <Box sx={{ 
               display: 'flex', 
@@ -1373,7 +1374,7 @@ export default function EventGroup() {
 
         {/* TAB 2: THÀNH VIÊN */}
         {currentTab === 2 && (
-          <Paper sx={{ mt: { xs: 1.5, md: 2 }, p: { xs: 2, md: 3 } }} variant="outlined">
+          <Paper sx={{ mt: { xs: 1.5, md: 2 }, p: { xs: 2, md: 3 }, border: '2px solid #49BBBD' }} variant="outlined">
             <Typography variant="h6" sx={{ fontSize: { xs: '1.125rem', md: '1.25rem' } }}>Thành viên ({eventData?.volunteers?.length || 0})</Typography>
             <Divider sx={{ mb: { xs: 1.5, md: 2 } }} />
             <List>
@@ -1474,7 +1475,7 @@ export default function EventGroup() {
 
         {/* TAB 3: YÊU CẦU THAM GIA */}
         {currentTab === 3 && isOwner && (
-          <Paper sx={{ mt: { xs: 1.5, md: 2 }, p: { xs: 2, md: 3 } }} variant="outlined">
+          <Paper sx={{ mt: { xs: 1.5, md: 2 }, p: { xs: 2, md: 3 }, border: '2px solid #49BBBD' }} variant="outlined">
             <Typography variant="h6" sx={{ fontSize: { xs: '1.125rem', md: '1.25rem' } }}>Yêu cầu ({pendingRequests.length})</Typography>
             <Divider sx={{ mb: { xs: 1.5, md: 2 } }} />
             <List>

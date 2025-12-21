@@ -146,7 +146,7 @@ export default function CalendarPage() {
   // Custom event styling
   const eventStyleGetter = (event) => {
     const style = {
-      backgroundColor: '#1976d2',
+      backgroundColor: '#49BBBD', /* Màu nhấn */
       borderRadius: '0.3125rem',
       opacity: 0.8,
       color: 'white',

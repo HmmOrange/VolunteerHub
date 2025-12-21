@@ -212,6 +212,8 @@ export default function PostCard({ post, onPostDeleted, onPostUpdated, eventOwne
         sx={{
           cursor: onPostClick ? 'pointer' : 'default',
           transition: 'all 0.2s',
+          border: '2px solid #49BBBD',
+          borderRadius: 2,
           '&:hover': onPostClick ? {
             boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
             transform: 'translateY(-2px)'
@@ -320,7 +322,7 @@ export default function PostCard({ post, onPostDeleted, onPostUpdated, eventOwne
                         <ListItemAvatar sx={{ minWidth: 40, mt: 0.5 }}>
                           <Avatar {...avatarProps} sx={{ ...avatarProps.sx, width: 32, height: 32 }} />
                         </ListItemAvatar>
-                        <Box sx={{ bgcolor: '#f0f2f5', borderRadius: '16px', p: '8px 12px', width: '100%', ml: 0.5}}>
+                        <Box sx={{ bgcolor: '#f1f4f7', borderRadius: '16px', p: '8px 12px', width: '100%', ml: 0.5}}>
                           <ListItemText 
                             primary={
                               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

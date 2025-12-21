@@ -168,7 +168,7 @@ export default function CreatePost({ eventId, onPostCreated }) {
     const avatarProps = renderAvatarProps(); 
 
     return (
-      <Paper className="create-post-trigger-paper" elevation={0} variant="outlined">
+      <Paper className="create-post-trigger-paper" elevation={0} variant="outlined" sx={{ border: '2px solid #49BBBD' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', p: 1.5 }}>
           
           <Avatar 
@@ -201,7 +201,7 @@ export default function CreatePost({ eventId, onPostCreated }) {
 
   // === RENDER TRẠNG THÁI ĐẦY ĐỦ (FORM EXPANDED) ===
   return (
-    <Paper className="create-post-paper" elevation={0} variant="outlined">
+    <Paper className="create-post-paper" elevation={0} variant="outlined" sx={{ border: '2px solid #49BBBD' }}>
       {/* Header */}
       <Box className="create-post-header">
         <Typography variant="h6" fontWeight="bold">Tạo bài viết</Typography>

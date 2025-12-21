@@ -13,7 +13,7 @@
 
 /* Header bảng */
 .table-header {
-  background-color: #f5f5f5;
+  background-color: #f1f4f7; /* Màu thứ cấp */
 }
 
 .table-header th {

@@ -11,13 +11,13 @@
   font-weight: 600;
   font-size: clamp(0.75rem, 1.5vw, 0.875rem);
   color: #333;
-  border-bottom: 0.125rem solid #1976d2;
-  background-color: #f5f5f5;
+  border-bottom: 0.125rem solid #49BBBD; /* Màu nhấn */
+  background-color: #f1f4f7; /* Màu thứ cấp */
 }
 
 /* Today highlighting */
 .rbc-today {
-  background-color: #e3f2fd;
+  background-color: rgba(73, 187, 189, 0.1); /* Màu nhấn nhạt */
 }
 
 /* Event styling */
@@ -41,7 +41,7 @@
 
 /* Selected event */
 .rbc-event.rbc-selected {
-  background-color: #0d47a1 !important;
+  background-color: #359698 !important; /* Màu nhấn đậm */
 }
 
 /* Month view */
@@ -104,8 +104,8 @@
 
 .rbc-toolbar button:hover:not(:disabled) {
   background-color: #f5f5f5;
-  border-color: #1976d2;
-  color: #1976d2;
+  border-color: #49BBBD; /* Màu nhấn */
+  color: #49BBBD; /* Màu nhấn */
 }
 
 .rbc-toolbar button:active:not(:disabled) {
@@ -118,14 +118,14 @@
 }
 
 .rbc-toolbar button.rbc-active {
-  background-color: #1976d2;
+  background-color: #49BBBD; /* Màu nhấn */
   color: white;
-  border-color: #1976d2;
+  border-color: #49BBBD; /* Màu nhấn */
   font-weight: 600;
 }
 
 .rbc-toolbar button.rbc-active:hover {
-  background-color: #1565c0;
+  background-color: #359698; /* Màu nhấn đậm */
 }
 
 .rbc-toolbar-label {
