@@ -19,6 +19,7 @@ import { createPost } from "../../api/Posts";
 
 import CreatePost from "../../components/post/CreatePost";
 import PostCard from "../../components/post/PostCard";
+import PostModal from "../../components/post/PostModal";
 import eventGroupAvatar from "../../assets/img/event_group.jpg";
 
 import "./EventGroup.css";
@@ -66,6 +67,10 @@ export default function EventGroup() {
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [countdownLabel, setCountdownLabel] = useState("");
   const [autoEventStatus, setAutoEventStatus] = useState("");
+
+  // State cho post modal
+  const [selectedPost, setSelectedPost] = useState(null);
+  const [postModalOpen, setPostModalOpen] = useState(false);
 
   // 2. THÊM STATE ĐỂ LƯU LỖI (NẾU BỊ CHẶN)
   const [errorState, setErrorState] = useState(null); 
@@ -711,7 +716,19 @@ export default function EventGroup() {
                 {isJoined && <CreatePost eventId={eventData._id} onPostCreated={(p) => setPosts([p, ...posts])} />}
                 {isLoadingPosts ? <Box sx={{ p: 5, textAlign: 'center' }}><CircularProgress sx={{ color: '#49BBBD' }}/></Box> : 
                  posts.length === 0 ? <Typography textAlign="center" sx={{ mt: 2 }}>Chưa có bài đăng nào.</Typography> :
-                 posts.map(post => <PostCard key={post._id} post={post} eventOwnerId={eventData.createdBy?._id || eventData.createdBy} onPostDeleted={(id) => setPosts(posts.filter(p => p._id !== id))} onPostUpdated={(updated) => setPosts(posts.map(p => p._id === updated._id ? updated : p))} />)
+                 posts.map(post => (
+                   <PostCard 
+                     key={post._id} 
+                     post={post} 
+                     eventOwnerId={eventData.createdBy?._id || eventData.createdBy} 
+                     onPostDeleted={(id) => setPosts(posts.filter(p => p._id !== id))} 
+                     onPostUpdated={(updated) => setPosts(posts.map(p => p._id === updated._id ? updated : p))}
+                     onPostClick={(post) => {
+                       setSelectedPost(post);
+                       setPostModalOpen(true);
+                     }}
+                   />
+                 ))
                 }
               </Box>
 
@@ -1385,6 +1402,28 @@ export default function EventGroup() {
           <Button onClick={handleExtendEvent} variant="contained" sx={{ bgcolor: '#49BBBD' }}>Xác nhận</Button>
         </DialogActions>
       </Dialog>
+
+      {/* POST MODAL */}
+      {selectedPost && (
+        <PostModal
+          open={postModalOpen}
+          onClose={() => {
+            setPostModalOpen(false);
+            setSelectedPost(null);
+          }}
+          post={selectedPost}
+          onPostDeleted={(id) => {
+            setPosts(posts.filter(p => p._id !== id));
+            setPostModalOpen(false);
+            setSelectedPost(null);
+          }}
+          onPostUpdated={(updated) => {
+            setPosts(posts.map(p => p._id === updated._id ? updated : p));
+            setSelectedPost(updated);
+          }}
+          eventOwnerId={eventData?.createdBy?._id || eventData?.createdBy}
+        />
+      )}
     </Container>
   );
 }

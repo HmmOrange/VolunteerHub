@@ -18,6 +18,7 @@ import { ChevronLeft, ChevronRight } from "@mui/icons-material";
 
 import "./Dashboard.css";
 import PostCard from "../../components/post/PostCard";
+import PostModal from "../../components/post/PostModal";
 
 export default function Dashboard() {
   const navigate = useNavigate(); 
@@ -35,6 +36,10 @@ export default function Dashboard() {
   const [hasMorePosts, setHasMorePosts] = useState(true);
   const [loadingPosts, setLoadingPosts] = useState(false);
   const [joinedEventIds, setJoinedEventIds] = useState([]);
+  
+  // States cho post modal
+  const [selectedPost, setSelectedPost] = useState(null);
+  const [postModalOpen, setPostModalOpen] = useState(false);
   
   const observerTarget = useRef(null);
 
@@ -503,6 +508,10 @@ export default function Dashboard() {
                       post={post}
                       onPostDeleted={handlePostDeleted}
                       onPostUpdated={handlePostUpdated}
+                      onPostClick={(post) => {
+                        setSelectedPost(post);
+                        setPostModalOpen(true);
+                      }}
                     />
                   </Box>
                 ))}
@@ -662,6 +671,27 @@ export default function Dashboard() {
           </Box>
         </Box>
       </Box>
+
+      {/* POST MODAL */}
+      {selectedPost && (
+        <PostModal
+          open={postModalOpen}
+          onClose={() => {
+            setPostModalOpen(false);
+            setSelectedPost(null);
+          }}
+          post={selectedPost}
+          onPostDeleted={(id) => {
+            setFeedPosts(feedPosts.filter(p => p._id !== id));
+            setPostModalOpen(false);
+            setSelectedPost(null);
+          }}
+          onPostUpdated={(updated) => {
+            setFeedPosts(feedPosts.map(p => p._id === updated._id ? updated : p));
+            setSelectedPost(updated);
+          }}
+        />
+      )}
     </Box>
   );
 }

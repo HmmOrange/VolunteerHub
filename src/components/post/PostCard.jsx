@@ -17,7 +17,7 @@ import { likePost, getLikesByPost, deletePost, updatePost } from "../../api/Post
 import CommentInput from "./CommentInput"; 
 import "./Post.css";
 
-export default function PostCard({ post, onPostDeleted, onPostUpdated, eventOwnerId }) {
+export default function PostCard({ post, onPostDeleted, onPostUpdated, eventOwnerId, onPostClick }) {
   const navigate = useNavigate();
 
   const currentUserId = localStorage.getItem("userId"); 
@@ -111,7 +111,8 @@ export default function PostCard({ post, onPostDeleted, onPostUpdated, eventOwne
     setIsLoadingComments(false);
   };
 
-  const handleToggleComments = () => {
+  const handleToggleComments = (e) => {
+    e.stopPropagation();
     const newShow = !showComments; setShowComments(newShow);
     if (newShow && comments.length === 0) fetchComments();
   };
@@ -120,7 +121,8 @@ export default function PostCard({ post, onPostDeleted, onPostUpdated, eventOwne
     setComments([...comments, newComment]); setCommentCount(prev => prev + 1); 
   };
 
-  const handleLike = async () => {
+  const handleLike = async (e) => {
+    e.stopPropagation();
     if (!currentUserId) return alert("Cần đăng nhập");
     const newLikes = isLiked ? likes.filter(id => id !== currentUserId) : [...likes, currentUserId]; 
     setLikes(newLikes);
@@ -128,10 +130,14 @@ export default function PostCard({ post, onPostDeleted, onPostUpdated, eventOwne
     catch (error) { console.error("Lỗi like:", error); setLikes(post.likes); }
   };
 
-  const handleImageClick = () => setLightboxOpen(true);
+  const handleImageClick = (e) => {
+    e.stopPropagation();
+    setLightboxOpen(true);
+  };
   const handleCloseLightbox = () => setLightboxOpen(false);
   
-  const handleOpenLikeList = async () => {
+  const handleOpenLikeList = async (e) => {
+    e.stopPropagation();
     setLikeListOpen(true); setIsLoadingLikes(true);
     try { const data = await getLikesByPost(post._id); setLikeList(data); } 
     catch (error) { console.error("Lỗi like list:", error); }
@@ -139,7 +145,11 @@ export default function PostCard({ post, onPostDeleted, onPostUpdated, eventOwne
   };
   const handleCloseLikeList = () => setLikeListOpen(false);
   
-  const handleOpenCommentList = () => { setCommentListOpen(true); fetchComments(); };
+  const handleOpenCommentList = (e) => { 
+    e.stopPropagation();
+    setCommentListOpen(true); 
+    fetchComments(); 
+  };
   const handleCloseCommentList = () => setCommentListOpen(false);
   
   const handleMenuOpen = (e) => { e.stopPropagation(); setAnchorEl(e.currentTarget); };
@@ -170,9 +180,42 @@ export default function PostCard({ post, onPostDeleted, onPostUpdated, eventOwne
 
   const displayName = post.isAnonymous ? "Người dùng ẩn danh" : post.createdBy?.username;
 
+  // === HANDLE POST CLICK ===
+  const handlePostClick = (e) => {
+    // Không mở modal nếu đang click vào các element có thể tương tác
+    if (
+      e.target.closest('button') || 
+      e.target.closest('a') || 
+      e.target.closest('input') ||
+      e.target.closest('textarea') ||
+      e.target.closest('img') || // Click vào ảnh
+      e.target.closest('.post-stats') || // Click vào stats (lượt thích/bình luận)
+      e.target.closest('.MuiIconButton-root') || // Click vào icon buttons
+      isEditing
+    ) {
+      return;
+    }
+    if (onPostClick) {
+      onPostClick(post);
+    }
+  };
+
   return (
     <> 
-      <Paper className="post-card-paper" elevation={0} variant="outlined">
+      <Paper 
+        className="post-card-paper" 
+        elevation={0} 
+        variant="outlined"
+        onClick={handlePostClick}
+        sx={{
+          cursor: onPostClick ? 'pointer' : 'default',
+          transition: 'all 0.2s',
+          '&:hover': onPostClick ? {
+            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+            transform: 'translateY(-2px)'
+          } : {}
+        }}
+      >
         
         <Box className="post-header">
           <Avatar {...renderAvatarProps(post.createdBy, post.isAnonymous)} />
