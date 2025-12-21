@@ -26,6 +26,7 @@ import eventGroupAvatar from "../../assets/img/event_group.jpg";
 
 import EventGroupVNavBar from "./EventGroupVNavBar";
 import "./EventGroup.css";
+import ConfirmDialog from "../../components/common/ConfirmDialog";
 
 export default function EventGroup() {
   const { slug } = useParams();
@@ -89,6 +90,8 @@ export default function EventGroup() {
   // 2. THÊM STATE ĐỂ LƯU LỖI (NẾU BỊ CHẶN)
   const [errorState, setErrorState] = useState(null); 
   // ==========================================
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmOptions, setConfirmOptions] = useState({ title: '', description: '', onConfirm: null });
 
   // === LOGIC PHÂN QUYỀN ===
   const currentUserInEvent = eventData?.volunteers?.find(v => (v._id || v) === currentUserId);
@@ -479,23 +482,34 @@ export default function EventGroup() {
 
   const handleLeaveEvent = async () => {
     if (isOwner && eventData.privacy === 'Private') {
-      if (!window.confirm(
-        "CẢNH BÁO: Bạn đang là Quản trị viên của nhóm Riêng tư.\n" +
-        "Nếu bạn rời đi, nhóm sẽ tự động chuyển thành Công khai.\n" +
-        "Bạn có chắc chắn muốn thực hiện?"
-      )) return;
-      try {
-        await updateEvent({ slug: eventData.slug, privacy: 'Public', username: currentUserUsername });
-      } catch (err) { showToast("Lỗi chuyển đổi trạng thái nhóm.", 'error'); return; }
-    } else {
-      if (!window.confirm("Bạn chắc chắn muốn rời sự kiện này?")) return;
+      setConfirmOptions({
+        title: 'Cảnh báo rời nhóm',
+        description: "CẢNH BÁO: Bạn đang là Quản trị viên của nhóm Riêng tư.\nNếu bạn rời đi, nhóm sẽ tự động chuyển thành Công khai.\nBạn có chắc chắn muốn thực hiện?",
+        onConfirm: async () => {
+          try {
+            await updateEvent({ slug: eventData.slug, privacy: 'Public', username: currentUserUsername });
+            await leaveEvent({ slug: eventData.slug, userId: currentUserId });
+            showToast("Đã rời sự kiện.", 'success');
+            window.location.reload();
+          } catch (err) { showToast("Lỗi chuyển đổi trạng thái nhóm.", 'error'); }
+        }
+      });
+      setConfirmOpen(true);
+      return;
     }
 
-    try { 
-      await leaveEvent({ slug: eventData.slug, userId: currentUserId }); 
-      showToast("Đã rời sự kiện.", 'success');
-      window.location.reload();
-    } catch(e) { showToast(e.message, 'error'); }
+    setConfirmOptions({
+      title: 'Rời sự kiện',
+      description: 'Bạn chắc chắn muốn rời sự kiện này?',
+      onConfirm: async () => {
+        try {
+          await leaveEvent({ slug: eventData.slug, userId: currentUserId });
+          showToast("Đã rời sự kiện.", 'success');
+          window.location.reload();
+        } catch(e) { showToast(e.message, 'error'); }
+      }
+    });
+    setConfirmOpen(true);
   };
 
   const handleRespondToRequest = async (requestId, action) => {
@@ -573,12 +587,17 @@ export default function EventGroup() {
   };
 
   const handleKickMember = async (memberId) => {
-    if(window.confirm("Mời thành viên này ra khỏi nhóm?")) {
-        try { 
-            await removeMember({ slug: eventData.slug, memberId, managerId: currentUserId }); 
-            setEventData(p => ({...p, volunteers: p.volunteers.filter(v => (v._id || v) !== memberId)})); 
-        } catch(e){ showToast(e.message, 'error') }
-    }
+    setConfirmOptions({
+      title: 'Mời thành viên',
+      description: 'Mời thành viên này ra khỏi nhóm?',
+      onConfirm: async () => {
+        try {
+          await removeMember({ slug: eventData.slug, memberId, managerId: currentUserId });
+          setEventData(p => ({...p, volunteers: p.volunteers.filter(v => (v._id || v) !== memberId)}));
+        } catch(e) { showToast(e.message, 'error'); }
+      }
+    });
+    setConfirmOpen(true);
   };
 
   const handleOpenAttendanceMenu = (event, member) => {
@@ -625,46 +644,52 @@ export default function EventGroup() {
   };
 
   const handleCancelEvent = async () => {
-    if (!window.confirm('Bạn có chắc chắn muốn HỦY sự kiện này? Hành động này không thể hoàn tác!')) {
-      return;
-    }
-    
-    try {
-      const updated = await updateEvent({ 
-        slug: eventData.slug,
-        action: 'cancel',
-        username: currentUserUsername 
-      });
-      setEventData(prev => ({ ...prev, eventStatus: updated.eventStatus }));
-      handleCloseActionsMenu();
-      showToast('Đã hủy sự kiện!', 'success');
-    } catch (error) {
-      showToast('Lỗi: ' + error.message, 'error');
-    }
+    setConfirmOptions({
+      title: 'Hủy sự kiện',
+      description: 'Bạn có chắc chắn muốn HỦY sự kiện này? Hành động này không thể hoàn tác!',
+      onConfirm: async () => {
+        try {
+          const updated = await updateEvent({ 
+            slug: eventData.slug,
+            action: 'cancel',
+            username: currentUserUsername 
+          });
+          setEventData(prev => ({ ...prev, eventStatus: updated.eventStatus }));
+          handleCloseActionsMenu();
+          showToast('Đã hủy sự kiện!', 'success');
+        } catch (error) {
+          showToast('Lỗi: ' + error.message, 'error');
+        }
+      }
+    });
+    setConfirmOpen(true);
   };
 
   const handleEndEarly = async () => {
-    if (!window.confirm('Bạn có chắc chắn muốn KẾT THÚC SỚM sự kiện này?')) {
-      return;
-    }
-    
-    try {
-      const updated = await updateEvent({ 
-        slug: eventData.slug,
-        action: 'end_early',
-        username: currentUserUsername 
-      });
-      setEventData(prev => ({ 
-        ...prev, 
-        eventStatus: updated.eventStatus,
-        endDate: updated.endDate,
-        endTime: updated.endTime
-      }));
-      handleCloseActionsMenu();
-      showToast('Đã kết thúc sự kiện!', 'success');
-    } catch (error) {
-      showToast('Lỗi: ' + error.message, 'error');
-    }
+    setConfirmOptions({
+      title: 'Kết thúc sớm',
+      description: 'Bạn có chắc chắn muốn KẾT THÚC SỚM sự kiện này?',
+      onConfirm: async () => {
+        try {
+          const updated = await updateEvent({ 
+            slug: eventData.slug,
+            action: 'end_early',
+            username: currentUserUsername 
+          });
+          setEventData(prev => ({ 
+            ...prev, 
+            eventStatus: updated.eventStatus,
+            endDate: updated.endDate,
+            endTime: updated.endTime
+          }));
+          handleCloseActionsMenu();
+          showToast('Đã kết thúc sự kiện!', 'success');
+        } catch (error) {
+          showToast('Lỗi: ' + error.message, 'error');
+        }
+      }
+    });
+    setConfirmOpen(true);
   };
 
   const handleExtendEvent = async () => {
@@ -1785,6 +1810,15 @@ export default function EventGroup() {
           eventOwnerId={eventData?.createdBy?._id || eventData?.createdBy}
         />
       )}
+      <ConfirmDialog
+        open={confirmOpen}
+        title={confirmOptions.title}
+        description={confirmOptions.description}
+        onConfirm={() => { if (confirmOptions.onConfirm) confirmOptions.onConfirm(); }}
+        onClose={() => setConfirmOpen(false)}
+        confirmText="Xác nhận"
+        cancelText="Hủy"
+      />
       </Container>
     </Box>
   );
