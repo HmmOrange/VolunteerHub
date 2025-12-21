@@ -68,6 +68,38 @@ export const createPost = async (req, res) => {
     
     const populatedPost = await newPost.populate("createdBy", "username avatar role");
     
+    // --- THÔNG BÁO: Gửi thông báo cho các thành viên của event (ngoại trừ người tạo bài) ---
+    try {
+      const event = await Event.findById(eventId).select("volunteers name createdBy");
+      if (event) {
+        // Tập hợp recipient: tất cả volunteers và cả event creator
+        const recipientSet = new Set();
+        if (Array.isArray(event.volunteers)) {
+          event.volunteers.forEach(v => recipientSet.add(v.toString()));
+        }
+        if (event.createdBy) recipientSet.add(event.createdBy.toString());
+
+        // Loại bỏ người tạo bài
+        recipientSet.delete(user._id.toString());
+
+        const message = `${user.username} đã đăng bài mới trong sự kiện "${event.name || 'Sự kiện'}"`;
+
+        await Promise.all(
+          Array.from(recipientSet).map((recipientId) =>
+            createNotificationInternal({
+              recipientId,
+              type: "NEW_POST",
+              message,
+              relatedId: eventId,
+              relatedModel: "Event",
+            })
+          )
+        );
+      }
+    } catch (notiErr) {
+      console.error("Error creating notifications for new post:", notiErr);
+    }
+
     res.status(201).json({ ...populatedPost.toObject(), commentCount: 0 });
   } catch (err) {
     res.status(500).json({ message: err.message });

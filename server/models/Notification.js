@@ -11,17 +11,18 @@ const notificationSchema = new mongoose.Schema(
     type: { 
       type: String, 
       enum: [
-        "EVENT_APPROVED", "EVENT_REJECTED", 
-        "VOLUNTEER_ACCEPTED", "VOLUNTEER_REJECTED", 
-        "POST_LIKED", 
-        "POST_COMMENTED", // <-- Đã có cái này
-        "POST_DELETED_BY_OWNER",
-        "EVENT_PENDING_APPROVAL",
-        "NEW_MEMBER_JOINED",
-        "JOIN_REQUEST",
-        "EVENT_DELETED",
-        "MEMBER_REMOVED",
-        'AWARDED_BADGE'
+          "EVENT_APPROVED", "EVENT_REJECTED", 
+          "VOLUNTEER_ACCEPTED", "VOLUNTEER_REJECTED", 
+          "POST_LIKED", 
+          "POST_COMMENTED",
+          "POST_DELETED_BY_OWNER",
+          "NEW_POST",
+          "EVENT_PENDING_APPROVAL",
+          "NEW_MEMBER_JOINED",
+          "JOIN_REQUEST",
+          "EVENT_DELETED",
+          "MEMBER_REMOVED",
+          'AWARDED_BADGE'
       ], 
       required: true 
     },
