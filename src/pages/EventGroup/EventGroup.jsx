@@ -377,6 +377,7 @@ export default function EventGroup() {
       
       setOpenEditModal(false);
       alert("Cập nhật thành công!");
+      window.location.reload();
     } catch (error) { alert("Lỗi: " + error.message); }
   };
 

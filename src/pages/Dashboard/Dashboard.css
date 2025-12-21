@@ -1,6 +1,6 @@
 /* Style cho Container (từ sx={{ p: 3 }}) */
 .dashboard-container-split {
-  padding: 24px !important;
+  padding: 8px 24px 24px 24px !important;
 }
 
 /* Style cho Grid container (từ justifyContent="center") */
