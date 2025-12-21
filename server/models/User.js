@@ -41,6 +41,19 @@ const userSchema = new mongoose.Schema({
     type: String,      // URL for now
   },
 
+  // Badges earned from events
+  badges: [
+    {
+      eventId: { type: mongoose.Schema.Types.ObjectId, ref: "Event" },
+      eventName: String,
+      level: Number,
+      image: String, // path to badge image
+      visible: { type: Boolean, default: true }
+    }
+  ],
+  // users can choose which badges are visible on their profile
+  // stored as part of each badge object via `visible` flag (default true)
+
   // ===== ACCOUNT STATE =====
   role: {
     type: String,

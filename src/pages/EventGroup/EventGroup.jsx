@@ -5,14 +5,16 @@ import {
   CircularProgress, List, ListItem, ListItemAvatar, Avatar, ListItemText,
   IconButton, Chip, Stack, Dialog, DialogTitle, DialogContent, DialogActions,
   TextField, Badge, FormControl, FormLabel, RadioGroup, FormControlLabel, Radio,
-  Menu, MenuItem
+  Menu, MenuItem,
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow
 } from "@mui/material";
 import { Close as CloseIcon, LockOutlined, Edit as EditIcon, ErrorOutline, MoreVert as MoreVertIcon, Cancel, Stop, AccessTime, CheckCircle, PersonOff } from "@mui/icons-material";
 
 // Import API
 import {
   getEventBySlug, joinEvent, leaveEvent, removeMember,
-  getPendingRequests, respondToJoinRequest, updateEvent, updateMemberAttendance, uploadBanner
+  getPendingRequests, respondToJoinRequest, updateEvent, updateMemberAttendance, uploadBanner,
+  uploadBadge, saveContributions
 } from "../../api/Events";
 import { getPostsByEvent } from "../../api/Posts";
 import { createPost } from "../../api/Posts";
@@ -44,6 +46,15 @@ export default function EventGroup() {
   const [openJoinModal, setOpenJoinModal] = useState(false);
   const [joinAnswer, setJoinAnswer] = useState("");
   const [pendingRequests, setPendingRequests] = useState([]);
+
+  // Contribution tab state
+  const [contributions, setContributions] = useState({}); // { userId: number }
+  const [badgeFile, setBadgeFile] = useState(null);
+  const [badgePreview, setBadgePreview] = useState(null);
+  const [isEditingContributions, setIsEditingContributions] = useState(false);
+  const [badgeConfirmOpen, setBadgeConfirmOpen] = useState(false);
+  const [pendingBadgeFile, setPendingBadgeFile] = useState(null);
+  const [pendingBadgePreview, setPendingBadgePreview] = useState(null);
 
   const [openEditModal, setOpenEditModal] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -227,6 +238,29 @@ export default function EventGroup() {
       })();
     }
   }, [eventData, currentTab, isOwner]);
+
+  // Initialize contributions and badge preview when event data changes
+  useEffect(() => {
+    if (eventData) {
+      const map = {};
+      // Prefer eventData.contributions if present
+      if (Array.isArray(eventData.contributions) && eventData.contributions.length > 0) {
+        eventData.contributions.forEach(c => {
+          const uid = c.user?._id ? c.user._id : c.user;
+          map[uid] = c.value || 0;
+        });
+      } else if (eventData.volunteers) {
+        eventData.volunteers.forEach(m => {
+          const memberId = m._id || m;
+          map[memberId] = (m.contribution != null ? m.contribution : 0);
+        });
+      }
+      setContributions(map);
+    }
+    if (eventData?.badge) {
+      setBadgePreview(getBannerUrl(eventData.badge));
+    }
+  }, [eventData]);
 
   // === COUNTDOWN TIMER ===
   useEffect(() => {
@@ -436,6 +470,69 @@ export default function EventGroup() {
     } catch (error) { alert(error.message); }
   };
 
+  const handleSetContribution = (memberId, value) => {
+    if (!isOwner) return;
+    if (!isEditingContributions) return;
+    setContributions(prev => ({ ...prev, [memberId]: value }));
+  };
+
+  // When owner selects a badge file, open confirm dialog before uploading
+  const handleBadgeFileChange = (file) => {
+    if (!file) return;
+    const maxSize = 2 * 1024 * 1024;
+    if (file.size > maxSize) { alert('Ảnh quá lớn! Vui lòng chọn ảnh nhỏ hơn 2MB.'); return; }
+    setPendingBadgeFile(file);
+    setPendingBadgePreview(URL.createObjectURL(file));
+    setBadgeConfirmOpen(true);
+  };
+
+  const handleConfirmBadgeUpload = async () => {
+    if (!pendingBadgeFile) return;
+    try {
+      const res = await uploadBadge(eventData.slug, pendingBadgeFile);
+      // Update eventData badge and preview
+      setEventData(prev => ({ ...prev, badge: res.badge }));
+      setBadgePreview(getBannerUrl(res.badge));
+      setPendingBadgeFile(null);
+      setPendingBadgePreview(null);
+      setBadgeConfirmOpen(false);
+      alert('Badge đã được cập nhật.');
+    } catch (err) {
+      alert(err.message || 'Upload thất bại');
+    }
+  };
+
+  const handleCancelBadgeUpload = () => {
+    setPendingBadgeFile(null);
+    setPendingBadgePreview(null);
+    setBadgeConfirmOpen(false);
+  };
+
+  const handleStartEditContributions = () => { setIsEditingContributions(true); };
+  const handleCancelContributions = () => {
+    // reset to eventData values
+    const map = {};
+    if (Array.isArray(eventData.contributions) && eventData.contributions.length > 0) {
+      eventData.contributions.forEach(c => {
+        const uid = c.user?._id ? c.user._id : c.user;
+        map[uid] = c.value || 0;
+      });
+    }
+    setContributions(map);
+    setIsEditingContributions(false);
+  };
+
+  const handleConfirmContributions = async () => {
+    try {
+      const res = await saveContributions(eventData.slug, contributions);
+      setEventData(res.event || res);
+      setIsEditingContributions(false);
+      alert('Đã lưu mức độ đóng góp.');
+    } catch (err) {
+      alert(err.message || 'Lỗi khi lưu đóng góp');
+    }
+  };
+
   const handleKickMember = async (memberId) => {
     if(window.confirm("Mời thành viên này ra khỏi nhóm?")) {
         try { 
@@ -642,8 +739,11 @@ export default function EventGroup() {
             <Tab label="Thông tin" />
             <Tab label="Thành viên" />
             {isOwner && (
-              <Tab label={<Badge badgeContent={pendingRequests.length} color="error">Yêu cầu tham gia</Badge>} />
+                <Tab label={<Badge badgeContent={pendingRequests.length} color="error">Yêu cầu tham gia</Badge>} />
             )}
+              {isOwner && (
+                <Tab label="Đóng góp" />
+              )}
           </Tabs>
 
           {!isJoined ? (
@@ -1240,6 +1340,107 @@ export default function EventGroup() {
             </List>
           </Paper>
         )}
+
+        {/* TAB 4: ĐÓNG GÓP - Owner only */}
+        {currentTab === 4 && isOwner && (
+          <Paper sx={{ mt: 2 }} variant="outlined">
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2 }}>
+              <Typography variant="h6">Đóng góp</Typography>
+              {isOwner && (
+                isEditingContributions ? (
+                  <Stack direction="row" spacing={1}>
+                    <Button size="small" onClick={handleCancelContributions}>Hủy</Button>
+                    <Button size="small" variant="contained" onClick={handleConfirmContributions} sx={{ bgcolor: '#49BBBD' }}>Xác nhận</Button>
+                  </Stack>
+                ) : (
+                  <Button size="small" variant="contained" onClick={handleStartEditContributions} sx={{ bgcolor: '#49BBBD' }}>Chỉnh sửa</Button>
+                )
+              )}
+            </Box>
+              <Divider />
+            <Box sx={{ display: 'flex', gap: 3, p: 2 }}>
+              {/* Left: contributions table (width like posts area) */}
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <TableContainer component={Paper} variant="outlined">
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Thành viên</TableCell>
+                        <TableCell align="center">Mức độ hoàn thành</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {eventData.volunteers?.map(member => {
+                        const memberId = member._id || member;
+                        const val = contributions[memberId] ?? 0;
+                        return (
+                          <TableRow key={memberId}>
+                            <TableCell>
+                              <Stack direction="row" spacing={1} alignItems="center">
+                                <Avatar {...renderAvatarProps(member)} sx={{ width: 36, height: 36 }} />
+                                <Typography>{member.username}</Typography>
+                              </Stack>
+                            </TableCell>
+                            <TableCell align="center">
+                              <Stack direction="row" spacing={1} justifyContent="center">
+                                {[0,1,2,3,4,5].map(n => (
+                                  <Button
+                                    key={n}
+                                    size="small"
+                                    variant={val === n ? 'contained' : 'outlined'}
+                                    onClick={() => handleSetContribution(memberId, n)}
+                                    disabled={!isEditingContributions}
+                                    sx={val === n ? { bgcolor: '#49BBBD', '&:hover': { bgcolor: '#3daeb0' } } : {}}
+                                  >
+                                    {n}
+                                  </Button>
+                                ))}
+                              </Stack>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </Box>
+
+              {/* Right: badge panel (width like countdown) */}
+              <Paper
+                elevation={3}
+                sx={{
+                  width: '320px',
+                  flexShrink: 0,
+                  p: 2,
+                  borderRadius: 3,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'stretch'
+                }}
+              >
+                <Typography variant="subtitle1" fontWeight="bold">Badge sự kiện</Typography>
+                <Box sx={{ mt: 2, mb: 2, width: '100%', height: 220, bgcolor: '#f5f5f5', borderRadius: 1, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {badgePreview ? (
+                    <img src={badgePreview} alt="Badge" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <Typography color="text.secondary">Chưa có badge</Typography>
+                  )}
+                </Box>
+                {isOwner && (
+                  <Button variant="outlined" component="label" fullWidth>
+                    Thay đổi ảnh
+                    <input
+                      type="file"
+                      hidden
+                      accept="image/*"
+                      onChange={(e) => { const file = e.target.files[0]; handleBadgeFileChange(file); e.target.value = ''; }}
+                    />
+                  </Button>
+                )}
+              </Paper>
+            </Box>
+          </Paper>
+        )}
       </Box>
 
       {/* MODAL JOIN */}
@@ -1252,6 +1453,24 @@ export default function EventGroup() {
         <DialogActions>
           <Button onClick={() => setOpenJoinModal(false)}>Hủy</Button>
           <Button onClick={() => callJoinAPI(joinAnswer)} variant="contained" sx={{ bgcolor: '#49BBBD' }}>Gửi</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* DIALOG XÁC NHẬN THAY ĐỔI BADGE */}
+      <Dialog open={badgeConfirmOpen} onClose={handleCancelBadgeUpload} maxWidth="sm" fullWidth>
+        <DialogTitle>Bạn có chắc chắn muốn thay đổi Badge sự kiện?</DialogTitle>
+        <DialogContent>
+          <Box sx={{ textAlign: 'center', py: 2 }}>
+            {pendingBadgePreview ? (
+              <img src={pendingBadgePreview} alt="Preview" style={{ maxWidth: '100%', maxHeight: 300 }} />
+            ) : (
+              <Typography>Không có ảnh để xem trước</Typography>
+            )}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancelBadgeUpload}>Hủy</Button>
+          <Button variant="contained" onClick={handleConfirmBadgeUpload} sx={{ bgcolor: '#49BBBD' }}>Xác nhận</Button>
         </DialogActions>
       </Dialog>
 

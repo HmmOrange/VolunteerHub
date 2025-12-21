@@ -213,6 +213,37 @@ export const uploadBanner = async (slug, file) => {
   return res.json();
 };
 
+// --- UPLOAD BADGE ---
+export const uploadBadge = async (slug, file) => {
+  const formData = new FormData();
+  formData.append('badge', file);
+  const token = localStorage.getItem('token');
+  const res = await fetch(`${API_URL}/${slug}/badge`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    },
+    body: formData
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.message || 'Lỗi tải ảnh badge');
+  }
+  return res.json();
+};
+
+// --- SAVE CONTRIBUTIONS ---
+export const saveContributions = async (slug, contributions) => {
+  const res = await fetch(`${API_URL}/${slug}/contributions`, {
+    method: 'PUT',
+    headers: getHeaders(),
+    body: JSON.stringify({ contributions })
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.message || 'Lỗi lưu đóng góp');
+  return json;
+};
+
 // --- GET USER'S JOINED EVENTS ---
 export const getUserEvents = async (userId) => {
   const res = await fetch(`${API_URL}/user/${userId}`, {
