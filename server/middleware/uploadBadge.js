@@ -27,6 +27,11 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
+/**
+ * Middleware multer để xử lý upload badge cho event (uploadBadge)
+ * - Lưu file vào `uploads/badges` với tên gồm timestamp.
+ * - Chỉ cho phép image/* và giới hạn kích thước 2MB.
+ */
 export const uploadBadge = multer({
   storage,
   fileFilter,

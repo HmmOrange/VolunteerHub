@@ -23,6 +23,10 @@ import { protect, adminOnly, optionalAuth } from "../middleware/authMiddleware.j
 import { uploadBanner } from "../middleware/uploadBanner.js";
 import { uploadBadge } from "../middleware/uploadBadge.js";
 
+/**
+ * Routes cho Event
+ * - Định nghĩa các endpoint tạo, cập nhật, xóa, tìm kiếm, join/leave, upload banner/badge, và các thao tác quản lý (admin/manager).
+ */
 const router = express.Router();
 
 // ... (Các route cũ giữ nguyên) ...

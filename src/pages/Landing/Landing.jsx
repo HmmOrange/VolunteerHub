@@ -81,6 +81,15 @@ const features = [
   }
 ];
 
+/*
+  Page: `Landing`
+
+  Mô tả:
+  - Trang landing marketing trình bày tính năng chính của ứng dụng và kêu gọi đăng ký/đăng nhập.
+  - Sử dụng `ThemeProvider` cục bộ để tùy chỉnh theme cho phần landing.
+  - Không chứa logic API nặng, chủ yếu render UI tĩnh và điều hướng.
+*/
+
 export default function Landing() {
   const navigate = useNavigate();
 

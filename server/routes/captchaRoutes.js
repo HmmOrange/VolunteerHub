@@ -1,7 +1,11 @@
-// routes/captcha.js
 import express from "express";
 import jwt from "jsonwebtoken";
 
+/**
+ * Route: /api/captcha
+ * - Định nghĩa endpoint liên quan tới việc tạo CAPTCHA
+ * - GET /: Tạo câu hỏi toán học ngẫu nhiên và token chứa đáp án (đã mã hóa)
+ */
 const router = express.Router();
 
 router.get("/", (req, res) => {
@@ -9,7 +13,6 @@ router.get("/", (req, res) => {
   const b = Math.floor(Math.random() * 9) + 1;
   const answer = a + b;
 
-  // Sign answer so client cannot change it
   const token = jwt.sign(
     { answer },
     process.env.CAPTCHA_SECRET,

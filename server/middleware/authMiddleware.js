@@ -1,7 +1,12 @@
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 
-// ================= AUTH =================
+/**
+ * Middleware bảo vệ route bắt buộc xác thực (protect)
+ * - Input: header `Authorization: Bearer <token>`.
+ * - Hành động: verify JWT, load user (không trả về password) và gán vào `req.user`.
+ * - Output: gọi `next()` nếu hợp lệ, trả 401 nếu không có hoặc token không hợp lệ.
+ */
 export const protect = async (req, res, next) => {
   const token = req.headers.authorization?.split(" ")[1];
 
@@ -24,7 +29,11 @@ export const protect = async (req, res, next) => {
   }
 };
 
-// ================= ADMIN ONLY =================
+/**
+ * Middleware chỉ cho phép Admin truy cập (adminOnly)
+ * - Input: `req.user` phải được set bởi middleware trước đó (protect/optionalAuth).
+ * - Hành động: kiểm tra role, nếu không phải admin trả 403.
+ */
 export const adminOnly = (req, res, next) => {
   if (!req.user) {
     return res.status(401).json({ message: "Unauthenticated" });
@@ -36,8 +45,12 @@ export const adminOnly = (req, res, next) => {
 
   next();
 };
-// ================= OPTIONAL AUTH =================
-// Middleware cho phép cả authenticated và unauthenticated requests
+/**
+ * Middleware xác thực tuỳ chọn (optionalAuth)
+ * - Input: header Authorization optional.
+ * - Hành động: nếu có token thì verify và set `req.user`, nếu không hoặc invalid thì set `req.user = null`.
+ * - Output: luôn gọi `next()` để cho phép cả requests có và không có xác thực.
+ */
 export const optionalAuth = async (req, res, next) => {
   const token = req.headers.authorization?.split(" ")[1];
 

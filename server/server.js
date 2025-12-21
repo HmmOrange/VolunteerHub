@@ -14,6 +14,10 @@ import userRoutes from "./routes/userRoutes.js";
 import captchaRoutes from "./routes/captchaRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js"; 
 
+/**
+ * Entry point cho server Express
+ * - Thiết lập middleware, kết nối DB, đăng ký các route và khởi động server.
+ */
 dotenv.config();
 const app = express();
 

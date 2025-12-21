@@ -35,6 +35,15 @@ import {
 
 import { getProfile, uploadAvatar, setBadgeVisibility } from "../../api/Users";
 
+/*
+  Page: `Profile`
+
+  Mô tả:
+  - Hiển thị trang hồ sơ người dùng, bao gồm avatar, thông tin cơ bản và danh sách badge.
+  - Hỗ trợ upload avatar (preview -> confirm -> upload), quản lý hiển thị badge (`setBadgeVisibility`).
+  - Các hành vi chính: `getProfile`, `handleFileSelect`, `handleConfirmUpload`, `handleToggleBadge`.
+*/
+
 export default function Profile() {
 	const navigate = useNavigate();
   // Label và màu sắc cho các Role

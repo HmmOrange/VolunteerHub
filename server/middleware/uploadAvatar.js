@@ -19,6 +19,11 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
+/**
+ * Middleware multer để xử lý upload ảnh đại diện (uploadAvatar)
+ * - Lưu file vào `uploads/avatars`, đặt tên theo `req.user._id`.
+ * - Chỉ cho phép mime type image/* và giới hạn kích thước 2MB.
+ */
 export const uploadAvatar = multer({
   storage,
   fileFilter,

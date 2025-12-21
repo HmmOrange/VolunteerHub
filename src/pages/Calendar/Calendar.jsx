@@ -59,6 +59,15 @@ moment.locale('vi', {
   }
 });
 
+/*
+  Page: `Calendar`
+
+  Mô tả:
+  - Hiển thị lịch các sự kiện người dùng tham gia dưới dạng calendar (month/week/day) sử dụng `react-big-calendar` và `moment`.
+  - Tải dữ liệu qua `getUserEvents` và chuyển đổi sang định dạng phù hợp cho calendar.
+  - Hỗ trợ click vào event để điều hướng đến chi tiết sự kiện.
+*/
+
 export default function CalendarPage() {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);

@@ -28,6 +28,16 @@ import EventGroupVNavBar from "./EventGroupVNavBar";
 import "./EventGroup.css";
 import ConfirmDialog from "../../components/common/ConfirmDialog";
 
+/*
+  Page: `EventGroup` (Chi tiết sự kiện)
+
+  Mô tả:
+  - Trang chi tiết cho một sự kiện, bao gồm các tab: Bài đăng, Thông tin, Thành viên, Đóng góp, v.v.
+  - Tải dữ liệu event qua `getEventBySlug`, quản lý trạng thái join/leave, xử lý yêu cầu tham gia, quản lý badge/banner, và CRUD bài đăng liên quan.
+  - Hàm lớn/quan trọng: nhiều useEffect để tải event/posts, `joinEvent`, `leaveEvent`, `respondToJoinRequest`, `updateEvent`, `saveContributions`, `uploadBadge`, `uploadBanner`.
+  - File này có logic phức tạp liên quan đến phân quyền (creator/manager/volunteer) và tính trạng thái tự động của event.
+*/
+
 export default function EventGroup() {
   const { slug } = useParams();
   const navigate = useNavigate();

@@ -16,6 +16,15 @@ import { getUserEvents } from "../../api/Events";
 
 import "./VNavBar.css";
 
+/**
+ * Component `VNavBar` - Thanh điều hướng dọc (vertical navbar)
+ * Props:
+ * - `isOpen`: boolean để mở/đóng Drawer
+ * - `drawerWidth`: độ rộng của Drawer
+ * - `drawerVariant`: kiểu Drawer ('permanent' | 'temporary')
+ * - `onClose`: callback khi đóng Drawer (dùng cho temporary)
+ * Hành vi: hiển thị menu chính, các mục quản lý cho admin và lối tắt đến các sự kiện mà user đã tham gia.
+ */
 export default function VNavBar({ isOpen, drawerWidth, drawerVariant, onClose }) {
   const navigate = useNavigate();
   const location = useLocation();

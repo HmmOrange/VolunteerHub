@@ -39,6 +39,15 @@ import { searchEvents } from "../../api/Events";
 import placeholderImage from "../../assets/img/event_group.jpg";
 import "./SearchResults.css";
 
+/*
+  Page: `SearchResults`
+
+  Mô tả:
+  - Trang hiển thị kết quả tìm kiếm sự kiện theo query URL (`q`).
+  - Sử dụng Fuse.js để fuzzy-search trên dữ liệu tải về từ `searchEvents`.
+  - Hỗ trợ lọc trạng thái (upcoming/ongoing/completed/cancelled) và sắp xếp.
+*/
+
 export default function SearchResults() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();

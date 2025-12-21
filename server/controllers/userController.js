@@ -2,10 +2,11 @@ import User from "../models/User.js";
 import Event from "../models/Event.js";
 import bcrypt from "bcryptjs";
 
-/* ======================================================
-   INTERNAL HELPER — ADMIN ONLY CHECK
-   (minimal, reused, no magic)
-====================================================== */
+/**
+ * Helper nội bộ: kiểm tra quyền Admin (ensureAdmin)
+ * - Input: `req` chứa `req.user`.
+ * - Hành động: nếu không phải admin sẽ trả 403 và trả về false, ngược lại trả true.
+ */
 const ensureAdmin = (req, res) => {
   if (!req.user || req.user.role !== "admin") {
     res.status(403).json({ message: "Chỉ Admin mới được phép thực hiện thao tác này" });
@@ -14,9 +15,12 @@ const ensureAdmin = (req, res) => {
   return true;
 };
 
-/* ======================================================
-   GET ALL USERS (ADMIN ONLY)
-====================================================== */
+/**
+ * Lấy tất cả user (ADMIN only) (getAllUsers)
+ * - Input: none (sử dụng req.user để check quyền).
+ * - Hành động: nếu là admin thì trả về danh sách users (không bao gồm password).
+ * - Output: mảng users hoặc lỗi.
+ */
 export const getAllUsers = async (req, res) => {
   try {
     if (!ensureAdmin(req, res)) return;
@@ -28,9 +32,12 @@ export const getAllUsers = async (req, res) => {
   }
 };
 
-/* ======================================================
-   CREATE MANAGER (ADMIN ONLY)  ✅ NEW
-====================================================== */
+/**
+ * Tạo tài khoản Manager (ADMIN only) (createManager)
+ * - Input: `req.body` chứa username, email, password, optional fields.
+ * - Hành động: validate input, kiểm tra tồn tại, hash password, tạo user với role = manager.
+ * - Output: trả về user mới hoặc lỗi.
+ */
 export const createManager = async (req, res) => {
   try {
     if (!ensureAdmin(req, res)) return;
@@ -89,9 +96,12 @@ export const createManager = async (req, res) => {
   }
 };
 
-/* ======================================================
-   UPDATE USER ROLE (ADMIN ONLY)
-====================================================== */
+/**
+ * Cập nhật role của user (ADMIN only) (updateUserRole)
+ * - Input: `req.params.userId`, `req.body.newRole`.
+ * - Hành động: validate quyền admin, không cho thay đổi role của admin, cập nhật role.
+ * - Output: user đã cập nhật hoặc lỗi.
+ */
 export const updateUserRole = async (req, res) => {
   try {
     if (!ensureAdmin(req, res)) return;
@@ -119,9 +129,12 @@ export const updateUserRole = async (req, res) => {
   }
 };
 
-/* ======================================================
-   TOGGLE USER LOCK (ADMIN ONLY)
-====================================================== */
+/**
+ * Toggle trạng thái khoá tài khoản user (ADMIN only) (toggleUserLock)
+ * - Input: `req.params.userId`.
+ * - Hành động: kiểm tra quyền admin, không cho khoá admin, đổi trạng thái `isLocked`.
+ * - Output: user đã cập nhật hoặc lỗi.
+ */
 export const toggleUserLock = async (req, res) => {
   try {
     if (!ensureAdmin(req, res)) return;
@@ -147,9 +160,12 @@ export const toggleUserLock = async (req, res) => {
   }
 };
 
-/* ======================================================
-   GET PROFILE (AUTHENTICATED)
-====================================================== */
+/**
+ * Lấy profile người dùng hiện tại (getProfile)
+ * - Input: sử dụng `req.user.id` (được set bởi middleware xác thực).
+ * - Hành động: lấy user, bổ sung thông tin `eventEndDate` cho badges nếu có.
+ * - Output: object user hoặc lỗi.
+ */
 export const getProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("-password -__v").lean();
@@ -186,9 +202,12 @@ export const getProfile = async (req, res) => {
   }
 };
 
-/* ======================================================
-   UPDATE PROFILE (AUTHENTICATED)
-====================================================== */
+/**
+ * Cập nhật profile người dùng (updateProfile)
+ * - Input: `req.body` chứa `fullName`, `dateOfBirth`, `address`, `avatar`.
+ * - Hành động: cập nhật các trường trong document User hiện tại.
+ * - Output: trả về message và thông tin user cập nhật hoặc lỗi.
+ */
 export const updateProfile = async (req, res) => {
   try {
     const { fullName, dateOfBirth, address, avatar } = req.body;
@@ -216,9 +235,12 @@ export const updateProfile = async (req, res) => {
   }
 };
 
-/* ======================================================
-   UPDATE AVATAR (AUTHENTICATED)
-====================================================== */
+/**
+ * Cập nhật avatar (updateAvatar)
+ * - Input: file upload trong `req.file`.
+ * - Hành động: lưu path avatar vào trường `avatar` của user (dùng findByIdAndUpdate để tránh validate toàn bộ schema).
+ * - Output: message và path avatar hoặc lỗi.
+ */
 export const updateAvatar = async (req, res) => {
   try {
     if (!req.file) {
@@ -248,6 +270,12 @@ export const updateAvatar = async (req, res) => {
   }
 };
 
+/**
+ * Import danh sách users từ file JSON hoặc CSV (importUsers)
+ * - Input: file upload (`req.file`) và quyền admin.
+ * - Hành động: parse file, validate mỗi bản ghi, hash password và tạo user mới nếu chưa tồn tại.
+ * - Output: thống kê số created và skipped.
+ */
 export const importUsers = async (req, res) => {
   try {
     if (req.user.role !== "admin") {
@@ -348,9 +376,12 @@ export const importUsers = async (req, res) => {
   }
 };
 
-/* ======================================================
-   UPDATE CREDENTIALS (USERNAME / EMAIL)
-====================================================== */
+/**
+ * Cập nhật username hoặc email (cần confirmPassword) (updateCredentials)
+ * - Input: `req.body` chứa `username`, `email`, `confirmPassword`.
+ * - Hành động: xác thực mật khẩu hiện tại, cập nhật username/email.
+ * - Output: thông tin cập nhật hoặc lỗi.
+ */
 export const updateCredentials = async (req, res) => {
   try {
     const { username, email, confirmPassword } = req.body;
@@ -388,9 +419,12 @@ export const updateCredentials = async (req, res) => {
   }
 };
 
-/* ======================================================
-   CHANGE PASSWORD
-====================================================== */
+/**
+ * Đổi mật khẩu (changePassword)
+ * - Input: `req.body` chứa `oldPassword` và `newPassword`.
+ * - Hành động: xác thực mật khẩu cũ, hash mật khẩu mới và lưu.
+ * - Output: message success hoặc lỗi.
+ */
 export const changePassword = async (req, res) => {
   try {
     const { oldPassword, newPassword } = req.body;
@@ -418,10 +452,12 @@ export const changePassword = async (req, res) => {
   }
 };
 
-/* =====================================================
-   SET BADGE VISIBILITY (AUTHENTICATED USER)
-   Body: { eventId: string, visible: boolean }
-====================================================== */
+/**
+ * Cập nhật hiển thị badge của user (setBadgeVisibility)
+ * - Input: `req.body` chứa `eventId` và `visible`.
+ * - Hành động: tìm badge tương ứng trong user.badges và set thuộc tính `visible`.
+ * - Output: message và badge đã cập nhật hoặc lỗi.
+ */
 export const setBadgeVisibility = async (req, res) => {
   try {
     const { eventId, visible } = req.body;

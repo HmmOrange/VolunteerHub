@@ -20,6 +20,15 @@ import "./Dashboard.css";
 import PostCard from "../../components/post/PostCard";
 import PostModal from "../../components/post/PostModal";
 
+/*
+  Page: `Dashboard`
+
+  Mô tả:
+  - Trang chính hiển thị feed bài viết công khai, sự kiện sắp tới mà user đã tham gia và các sự kiện nổi bật.
+  - Hỗ trợ infinite scroll để tải thêm bài viết công khai (`loadMorePosts`), và carousel nhỏ cho sự kiện sắp diễn ra.
+  - Chứa hàm lớn: `calculateEventStatus`, `loadMorePosts`, và nhiều useEffect để tải dữ liệu ban đầu (events, posts).
+*/
+
 export default function Dashboard() {
   const navigate = useNavigate(); 
   const username = localStorage.getItem("username");

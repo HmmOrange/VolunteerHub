@@ -15,6 +15,10 @@ import {
   getAllPublicPosts // 4. Import hàm lấy tất cả posts công khai
 } from "../controllers/postController.js";
 
+/**
+ * Routes cho Post
+ * - Upload ảnh, tạo/cập nhật/xóa post, like, lấy posts theo event hoặc public feed với pagination.
+ */
 const router = express.Router();
 
 // ... (Cấu hình Multer 'storage' và 'upload' của bạn) ...

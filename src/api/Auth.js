@@ -1,3 +1,9 @@
+/**
+ * API Auth - các hàm gọi tới backend để đăng ký và đăng nhập
+ * - `registerUser(data)`: gửi request POST /api/auth/register với body JSON `data`.
+ *   Trả về JSON chứa token và user khi thành công, ném Error khi thất bại.
+ * - `loginUser(data)`: gửi request POST /api/auth/login với body JSON `data`.
+ */
 const API_URL = "http://localhost:5000/api/auth";
 
 export const registerUser = async (data) => {

@@ -65,6 +65,15 @@ const modalStyle = {
   p: 4,
 };
 
+/*
+  Page: `AdminUserList`
+
+  Mô tả:
+  - Giao diện quản trị danh sách người dùng: tìm kiếm, phân trang, thay đổi vai trò, khóa/mở khóa, xuất dữ liệu và import (qua component `ImportExport`).
+  - Hàm lớn/quan trọng: `fetchUsers`, `handleRoleChange`, `handleToggleBan`, `handleCreateManager`, `handleExportUsers`.
+  - Chú ý: các thao tác gọi API nằm trong `src/api/Users`.
+*/
+
 export default function AdminUserList() {
   const { showToast } = useToast();
   const [users, setUsers] = useState([]);

@@ -19,6 +19,17 @@ import { getAllEvents, deleteEvent, updateEvent } from "../../api/Events";
 import placeholderImage from "../../assets/img/event_group.jpg";
 import ConfirmDialog from "../../components/common/ConfirmDialog";
 
+/*
+  Component: Trang quản lý và hiển thị các sự kiện
+
+  Mô tả:
+  - Hiển thị danh sách các sự kiện mà người dùng đã tham gia.
+  - Hỗ trợ lọc theo thời gian/trạng thái, sắp xếp và thao tác quản lý (chỉnh sửa, xóa) cho người tạo/sự kiện.
+  - Tải dữ liệu sự kiện từ API khi component mount, tính toán trạng thái sự kiện (sắp diễn ra, đang diễn ra, đã hoàn thành).
+  - Chứa các hàm lớn: lấy dữ liệu (`useEffect` tải `getAllEvents`), tính trạng thái (`calculateEventStatus`), lọc/sắp xếp (`filteredAndSortedJoinedEvents`), và các hành động (xóa, chỉnh sửa, cập nhật).
+  - Lưu ý: chỉ thêm comment, không thay đổi logic hoặc side-effect hiện tại.
+*/
+
 export default function Events() {
   const navigate = useNavigate();
   const username = localStorage.getItem("username");

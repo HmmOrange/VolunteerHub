@@ -62,6 +62,15 @@ const usersToCSV = (users) => {
 
 /* ================= COMPONENT ================= */
 
+/*
+  Page Component: `ImportExport`
+
+  Mô tả:
+  - Cho phép quản trị viên xuất danh sách người dùng (CSV/JSON) và import file chứa người dùng.
+  - Hàm lớn: `handleExport`, `handleImport`, `downloadTemplate`, và helper `usersToCSV`.
+  - Gọi API `/api/users/import` để import; yêu cầu token trong `localStorage`.
+*/
+
 export default function ImportExport({ users, onImported, showExport = true }) {
   const [file, setFile] = useState(null);
   const [exportType, setExportType] = useState("csv");

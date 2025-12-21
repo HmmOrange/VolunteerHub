@@ -10,6 +10,11 @@ import EventGroupVNavBar from "../../pages/EventGroup/EventGroupVNavBar";
 
 const DRAWER_WIDTH = 280; 
 
+/**
+ * Component `Layout` - Layout chính của ứng dụng
+ * - Chứa `HNavbar` và `VNavBar` (hoặc `EventGroupVNavBar` khi vào trang sự kiện)
+ * - Quản lý trạng thái mở/đóng sidebar, responsive giữa mobile/desktop và vùng nội dung chính (`Outlet`).
+ */
 export default function Layout() {
   // Setup hook để phát hiện màn hình mobile
   const theme = useTheme();
