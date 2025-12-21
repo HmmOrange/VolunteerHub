@@ -20,6 +20,15 @@ import {
   Box,
   TextField,
   Stack,
+  TablePagination,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  InputAdornment,
+  FormControl,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import {
   ArrowUpward as UpIcon,
@@ -27,7 +36,9 @@ import {
   Lock as LockIcon,
   LockOpen as UnlockIcon,
   Add as AddIcon,
+  Search as SearchIcon,
 } from "@mui/icons-material";
+import CloseIcon from '@mui/icons-material/Close';
 
 import {
   getAllUsers,
@@ -55,6 +66,12 @@ const modalStyle = {
 export default function AdminUserList() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [exportType, setExportType] = useState('csv');
 
   /* ===== MODAL STATE ===== */
   const [open, setOpen] = useState(false);
@@ -79,6 +96,50 @@ export default function AdminUserList() {
       console.error("Lỗi tải danh sách:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  /* ================= EXPORT HELPERS (for right-side quick export) ================= */
+  const downloadFile = (content, filename, type) => {
+    const blob = new Blob([content], { type });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const usersToCSV = (usersList) => {
+    const headers = [
+      'username','email','fullName','dateOfBirth','address','avatar','role','isLocked','isEmailVerified'
+    ];
+
+    const rows = usersList.map(u => [
+      u.username || '',
+      u.email || '',
+      u.fullName || '',
+      u.dateOfBirth || '',
+      u.address || '',
+      u.avatar || '',
+      u.role || 'volunteer',
+      u.isLocked ?? false,
+      u.isEmailVerified ?? false,
+    ].join(','));
+
+    return [headers.join(','), ...rows].join('\n');
+  };
+
+  const handleExportUsers = () => {
+    if (!users || users.length === 0) {
+      alert('Không có user để export.');
+      return;
+    }
+
+    if (exportType === 'json') {
+      downloadFile(JSON.stringify(users, null, 2), 'users.json', 'application/json');
+    } else {
+      downloadFile(usersToCSV(users), 'users.csv', 'text/csv');
     }
   };
 
@@ -172,6 +233,20 @@ export default function AdminUserList() {
       ? "Quản lý"
       : "Thành viên";
 
+  const handleChangePage = (event, newPage) => setPage(newPage);
+  const handleChangeRowsPerPage = (e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); };
+
+  const openUserDetails = (user) => { setSelectedUser(user); setDetailOpen(true); };
+  const closeUserDetails = () => { setSelectedUser(null); setDetailOpen(false); };
+
+  const filteredUsers = users.filter(u => {
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return u.username.toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q) || (u.fullName || '').toLowerCase().includes(q);
+  });
+
+  const paginatedUsers = filteredUsers.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+
   return (
     <Container maxWidth="md" className="user-list-container">
       <Divider sx={{ mb: 3 }} />
@@ -195,8 +270,45 @@ export default function AdminUserList() {
           Tạo Manager
         </Button>
       </Stack>
+      {/* First row: Import (left) + Export (right) */}
+      <Box sx={{ display: 'flex', gap: 2, alignItems: 'stretch', mb: 2 }}>
+        <Box sx={{ flex: '0 0 50%', maxWidth: '50%', height: 260 }}>
+          <ImportExport users={users} onImported={fetchUsers} showExport={false} />
+        </Box>
 
-      <ImportExport users={users} onImported={fetchUsers} />
+        <Box sx={{ flex: '0 0 50%', maxWidth: '50%', p: 3, border: '1px dashed #ccc', borderRadius: 2, bgcolor: 'background.paper', height: 260 }}>
+          <Typography variant="h6" mb={1}>Xuất người dùng</Typography>
+
+          <Stack direction="row" spacing={2} alignItems="center" mb={1}>
+            <FormControl size="small" sx={{ minWidth: 120 }}>
+              <Select value={exportType} onChange={(e) => setExportType(e.target.value)}>
+                <MenuItem value="csv">CSV</MenuItem>
+                <MenuItem value="json">JSON</MenuItem>
+              </Select>
+            </FormControl>
+
+            <Button variant="contained" onClick={() => handleExportUsers()}>
+              Xuất
+            </Button>
+          </Stack>
+
+          <Divider sx={{ my: 1 }} />
+
+          <Typography variant="body2" color="text.secondary">Xuất nhanh danh sách người dùng hiện tại.</Typography>
+        </Box>
+      </Box>
+
+      {/* Second row: Search (full width, aligns with table) */}
+      <Box sx={{ width: '100%', mb: 2 }}>
+        <TextField
+          size="small"
+          placeholder="Tìm kiếm theo tên đăng nhập / email / tên"
+          value={search}
+          onChange={(e) => { setSearch(e.target.value); setPage(0); }}
+          InputProps={{ startAdornment: (<InputAdornment position="start"><SearchIcon /></InputAdornment>) }}
+          fullWidth
+        />
+      </Box>
 
       {loading ? (
         <CircularProgress />
@@ -205,22 +317,22 @@ export default function AdminUserList() {
           <Table>
             <TableHead>
               <TableRow className="table-header">
-                <TableCell width="10%">Avatar</TableCell>
-                <TableCell width="25%">Username</TableCell>
-                <TableCell width="35%">Email</TableCell>
-                <TableCell width="30%" sx={{ pl: "54px" }}>
-                  Vai trò
-                </TableCell>
-              </TableRow>
+                  <TableCell width="10%">Ảnh</TableCell>
+                  <TableCell width="25%">Tên đăng nhập</TableCell>
+                  <TableCell width="35%">Email</TableCell>
+                  <TableCell width="30%" sx={{ pl: "54px" }}>
+                    Vai trò
+                  </TableCell>
+                </TableRow>
             </TableHead>
 
             <TableBody>
-              {users.map((user) => {
+              {paginatedUsers.map((user) => {
                 const isSelf = user.username === currentUsername;
                 const isAdmin = user.role === "admin";
 
                 return (
-                  <TableRow key={user._id} hover>
+                  <TableRow key={user._id} hover sx={{ cursor: 'pointer' }} onClick={() => openUserDetails(user)}>
                     <TableCell>
                       <Avatar
                         src={
@@ -246,27 +358,10 @@ export default function AdminUserList() {
 
                         {!isAdmin && !isSelf && (
                           <div className="action-icons">
-                            <Tooltip title="Đổi vai trò">
+                            <Tooltip title={user.isLocked ? "Mở khóa" : "Khóa"}>
                               <IconButton
                                 size="small"
-                                onClick={() =>
-                                  handleRoleChange(user._id, user.role)
-                                }
-                              >
-                                {user.role === "volunteer" ? (
-                                  <UpIcon color="success" />
-                                ) : (
-                                  <DownIcon color="warning" />
-                                )}
-                              </IconButton>
-                            </Tooltip>
-
-                            <Tooltip
-                              title={user.isLocked ? "Mở khóa" : "Khóa"}
-                            >
-                              <IconButton
-                                size="small"
-                                onClick={() => handleToggleBan(user._id)}
+                                onClick={(ev) => { ev.stopPropagation(); handleToggleBan(user._id); }}
                               >
                                 {user.isLocked ? (
                                   <LockIcon color="error" />
@@ -284,8 +379,52 @@ export default function AdminUserList() {
               })}
             </TableBody>
           </Table>
+
+          <TablePagination
+            component="div"
+            count={filteredUsers.length}
+            page={page}
+            onPageChange={handleChangePage}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+            rowsPerPageOptions={[5, 10, 25, 50]}
+          />
         </TableContainer>
       )}
+
+      {/* User details dialog */}
+      <Dialog open={detailOpen} onClose={closeUserDetails} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          {selectedUser?.username}
+          <IconButton aria-label="close" onClick={closeUserDetails} sx={{ position: 'absolute', right: 8, top: 8 }}>
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent dividers>
+          {selectedUser && (
+            <Box>
+              <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
+                <Avatar src={selectedUser.avatar ? `http://localhost:5000${selectedUser.avatar}` : ''} sx={{ width: 64, height: 64 }}>
+                  {selectedUser.username.charAt(0).toUpperCase()}
+                </Avatar>
+                <div>
+                  <Typography variant="h6">{selectedUser.fullName || '-'}</Typography>
+                  <Typography variant="body2" color="text.secondary">{selectedUser.email}</Typography>
+                  <Typography variant="body2">Vai trò: {roleLabel(selectedUser.role)}</Typography>
+                </div>
+              </Stack>
+
+              <Divider sx={{ mb: 2 }} />
+
+              <Typography variant="subtitle2">Thông tin bổ sung</Typography>
+              <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>{selectedUser.bio || '-'}</Typography>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeUserDetails}>Đóng</Button>
+        </DialogActions>
+      </Dialog>
 
       {/* ================= CREATE MANAGER MODAL ================= */}
       <Modal open={open} onClose={() => setOpen(false)}>

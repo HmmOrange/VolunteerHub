@@ -7,6 +7,7 @@ import {
   Box,
   Stack,
   IconButton,
+  Tooltip,
   InputBase,
   Avatar,
   Menu,
@@ -289,14 +290,16 @@ export default function HNavbar({ onToggleVNavBar }) {
       <Toolbar className="hnavbar-toolbar">
         {/* ===== LEFT ===== */}
         <Stack direction="row" spacing={1} alignItems="center">
-          <IconButton
-            edge="start"
-            aria-label="open drawer"
-            onClick={onToggleVNavBar}
-            className="hnavbar-icon-btn"
-          >
-            <MenuIcon />
-          </IconButton>
+          <Tooltip title="Mở thanh bên" placement="bottom">
+            <IconButton
+              edge="start"
+              aria-label="open drawer"
+              onClick={onToggleVNavBar}
+              className="hnavbar-icon-btn"
+            >
+              <MenuIcon />
+            </IconButton>
+          </Tooltip>
 
           <Typography
             variant="h6"
@@ -434,40 +437,46 @@ export default function HNavbar({ onToggleVNavBar }) {
         <Stack direction="row" spacing={0.5} alignItems="center">
           
           {role === "manager" && (
-            <IconButton
-              className="hnavbar-icon-btn hnavbar-add-btn"
-              onClick={handleAddEvent}
-            >
-              <AddIcon />
-            </IconButton>
+            <Tooltip title="Tạo sự kiện" placement="bottom">
+              <IconButton
+                className="hnavbar-icon-btn hnavbar-add-btn"
+                onClick={handleAddEvent}
+              >
+                <AddIcon />
+              </IconButton>
+            </Tooltip>
           )}
 
           {/* --- NÚT CHUÔNG THÔNG BÁO --- */}
-          <IconButton
-            className="hnavbar-icon-btn"
-            onClick={handleNotiIconClick}
-          >
-            <Badge badgeContent={unreadCount} color="error">
-              <BellIcon />
-            </Badge>
-          </IconButton>
+          <Tooltip title="Thông báo" placement="bottom">
+            <IconButton
+              className="hnavbar-icon-btn"
+              onClick={handleNotiIconClick}
+            >
+              <Badge badgeContent={unreadCount} color="error">
+                <BellIcon />
+              </Badge>
+            </IconButton>
+          </Tooltip>
 
           {/* --- AVATAR --- */}
-          <IconButton
-            onClick={handleProfileMenuOpen}
-            size="small"
-            className="hnavbar-avatar-btn"
-          >
-            <Avatar
-              className="hnavbar-avatar"
-              src={avatar ? `http://localhost:5000${avatar}` : undefined}
-              sx={{
-                bgcolor: avatar ? "transparent" : getRoleColor(),
-              }}
+          <Tooltip title="Tài khoản" placement="bottom">
+            <IconButton
+              onClick={handleProfileMenuOpen}
+              size="small"
+              className="hnavbar-avatar-btn"
             >
-              {!avatar && username.charAt(0).toUpperCase()}
-            </Avatar>
-          </IconButton>
+              <Avatar
+                className="hnavbar-avatar"
+                src={avatar ? `http://localhost:5000${avatar}` : undefined}
+                sx={{
+                  bgcolor: avatar ? "transparent" : getRoleColor(),
+                }}
+              >
+                {!avatar && username.charAt(0).toUpperCase()}
+              </Avatar>
+            </IconButton>
+          </Tooltip>
         </Stack>
 
         {/* ===== MENU THÔNG BÁO (DROPDOWN) ===== */}

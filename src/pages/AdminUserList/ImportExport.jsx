@@ -61,7 +61,7 @@ const usersToCSV = (users) => {
 
 /* ================= COMPONENT ================= */
 
-export default function ImportExport({ users, onImported }) {
+export default function ImportExport({ users, onImported, showExport = true }) {
   const [file, setFile] = useState(null);
   const [exportType, setExportType] = useState("csv");
 
@@ -161,35 +161,39 @@ export default function ImportExport({ users, onImported }) {
   /* ================= UI ================= */
 
   return (
-    <Box sx={{ p: 3, border: "1px dashed #ccc", borderRadius: 2 }}>
+    <Box sx={{ p: 3, border: "1px dashed #ccc", borderRadius: 2, bgcolor: 'background.paper', height: '100%' }}>
       {/* ================= EXPORT SECTION ================= */}
-      <Typography variant="h6" mb={2}>
-        Export Users
-      </Typography>
+      {showExport && (
+        <>
+          <Typography variant="h6" mb={2}>
+            Xuất người dùng
+          </Typography>
 
-      <Stack direction="row" spacing={2} alignItems="center">
-        <FormControl size="small" sx={{ minWidth: 120 }}>
-          <InputLabel>Định dạng</InputLabel>
-          <Select
-            value={exportType}
-            label="Định dạng"
-            onChange={(e) => setExportType(e.target.value)}
-          >
-            <MenuItem value="csv">CSV</MenuItem>
-            <MenuItem value="json">JSON</MenuItem>
-          </Select>
-        </FormControl>
+          <Stack direction="row" spacing={2} alignItems="center">
+            <FormControl size="small" sx={{ minWidth: 120 }}>
+              <InputLabel>Định dạng</InputLabel>
+              <Select
+                value={exportType}
+                label="Định dạng"
+                onChange={(e) => setExportType(e.target.value)}
+              >
+                <MenuItem value="csv">CSV</MenuItem>
+                <MenuItem value="json">JSON</MenuItem>
+              </Select>
+            </FormControl>
 
-        <Button variant="contained" onClick={handleExport}>
-          Export
-        </Button>
-      </Stack>
+            <Button variant="contained" onClick={handleExport}>
+              Xuất
+            </Button>
+          </Stack>
 
-      <Divider sx={{ my: 3 }} />
+          <Divider sx={{ my: 3 }} />
+        </>
+      )}
 
       {/* ================= IMPORT SECTION ================= */}
       <Typography variant="h6" mb={2}>
-        Import Users
+        Nhập người dùng
       </Typography>
 
       <Stack spacing={2}>
