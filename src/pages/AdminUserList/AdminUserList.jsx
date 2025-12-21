@@ -289,11 +289,11 @@ export default function AdminUserList() {
       </Stack>
       {/* First row: Import (left) + Export (right) */}
       <Box sx={{ display: 'flex', gap: 2, alignItems: 'stretch', mb: 2 }}>
-        <Box sx={{ flex: '0 0 50%', maxWidth: '50%', height: 260 }}>
+        <Box sx={{ flex: '0 0 50%', maxWidth: '49%', height: 180 }}>
           <ImportExport users={users} onImported={fetchUsers} showExport={false} />
         </Box>
 
-        <Box sx={{ flex: '0 0 50%', maxWidth: '50%', p: 3, border: '1px dashed #ccc', borderRadius: 2, bgcolor: 'background.paper', height: 260 }}>
+        <Box sx={{ flex: '0 0 50%', maxWidth: '49%', p: 3, border: '1px dashed #ccc', borderRadius: 2, bgcolor: 'background.paper', height: 180 }}>
           <Typography variant="h6" mb={1}>Xuất người dùng</Typography>
 
           <Stack direction="row" spacing={2} alignItems="center" mb={1}>
@@ -308,8 +308,14 @@ export default function AdminUserList() {
               </Select>
             </FormControl>
 
-            <Button variant="contained" onClick={() => handleExportUsers()}>
-              Xuất
+            <Button variant="contained" onClick={() => handleExportUsers()} sx={{
+              backgroundColor: "#49BBBD",
+              color: "white",
+              "&:hover": {
+                backgroundColor: "#3fa6a8",
+              },
+            }}> 
+            Xuất
             </Button>
           </Stack>
 
