@@ -14,6 +14,7 @@ import {
   Snackbar,
   Alert,
 } from "@mui/material";
+import validators from '../../utils/validators';
 
 import {
   getProfile,
@@ -58,6 +59,9 @@ export default function UserSetting() {
   // toast
   const [toastOpen, setToastOpen] = useState(false);
   const [logoutAfterSave, setLogoutAfterSave] = useState(false);
+  const [profileErrors, setProfileErrors] = useState({ fullName: '', dateOfBirth: '' });
+  const [credErrors, setCredErrors] = useState({ username: '', email: '' });
+  const [pwdErrors, setPwdErrors] = useState({ oldPassword: '', newPassword: '', retypePassword: '' });
 
   /* ================= LOAD PROFILE ================= */
 
@@ -111,6 +115,14 @@ export default function UserSetting() {
 
       // ===== TAB 0: PROFILE INFO =====
       if (tab === 0) {
+        // client-side validation
+        const fullNameErr = validators.isRequired(form.fullName) || (form.fullName && validators.minLength(form.fullName, 2));
+        const dobErr = validators.isRequired(form.dateOfBirth) || validators.isNotFutureDate(form.dateOfBirth);
+        if (fullNameErr || dobErr) {
+          alert((fullNameErr ? fullNameErr + '\n' : '') + (dobErr ? dobErr : ''));
+          return;
+        }
+
         await updateProfile({
           fullName: form.fullName,
           dateOfBirth: form.dateOfBirth || null,
@@ -197,9 +209,13 @@ export default function UserSetting() {
               <TextField
                 label="Họ và tên"
                 value={form.fullName}
-                onChange={(e) =>
-                  setForm({ ...form, fullName: e.target.value })
-                }
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setForm({ ...form, fullName: v });
+                  setProfileErrors((s) => ({ ...s, fullName: validators.isRequired(v) || validators.minLength(v, 2) }));
+                }}
+                error={!!profileErrors.fullName}
+                helperText={profileErrors.fullName || ''}
                 fullWidth
               />
 
@@ -208,9 +224,13 @@ export default function UserSetting() {
                 type="date"
                 InputLabelProps={{ shrink: true }}
                 value={form.dateOfBirth}
-                onChange={(e) =>
-                  setForm({ ...form, dateOfBirth: e.target.value })
-                }
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setForm({ ...form, dateOfBirth: v });
+                  setProfileErrors((s) => ({ ...s, dateOfBirth: validators.isRequired(v) || validators.isNotFutureDate(v) }));
+                }}
+                error={!!profileErrors.dateOfBirth}
+                helperText={profileErrors.dateOfBirth || ''}
                 fullWidth
               />
 
@@ -243,18 +263,26 @@ export default function UserSetting() {
               <TextField
                 label="Username"
                 value={form.username}
-                onChange={(e) =>
-                  setForm({ ...form, username: e.target.value })
-                }
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setForm({ ...form, username: v });
+                  setCredErrors((s) => ({ ...s, username: validators.isRequired(v) || validators.isUsername(v) }));
+                }}
+                error={!!credErrors.username}
+                helperText={credErrors.username || ''}
                 fullWidth
               />
 
               <TextField
                 label="Email"
                 value={form.email}
-                onChange={(e) =>
-                  setForm({ ...form, email: e.target.value })
-                }
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setForm({ ...form, email: v });
+                  setCredErrors((s) => ({ ...s, email: validators.isRequired(v) || validators.isEmail(v) }));
+                }}
+                error={!!credErrors.email}
+                helperText={credErrors.email || ''}
                 fullWidth
               />
 
@@ -278,7 +306,9 @@ export default function UserSetting() {
                 label="Mật khẩu cũ"
                 type="password"
                 value={oldPassword}
-                onChange={(e) => setOldPassword(e.target.value)}
+                onChange={(e) => { setOldPassword(e.target.value); setPwdErrors((s) => ({ ...s, oldPassword: validators.isRequired(e.target.value) })); }}
+                error={!!pwdErrors.oldPassword}
+                helperText={pwdErrors.oldPassword || ''}
                 fullWidth
               />
 
@@ -286,7 +316,9 @@ export default function UserSetting() {
                 label="Mật khẩu mới"
                 type="password"
                 value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
+                onChange={(e) => { setNewPassword(e.target.value); setPwdErrors((s) => ({ ...s, newPassword: validators.isRequired(e.target.value) || validators.isStrongPassword(e.target.value) })); }}
+                error={!!pwdErrors.newPassword}
+                helperText={pwdErrors.newPassword || ''}
                 fullWidth
               />
 
@@ -294,9 +326,9 @@ export default function UserSetting() {
                 label="Nhập lại mật khẩu mới"
                 type="password"
                 value={retypePassword}
-                onChange={(e) =>
-                  setRetypePassword(e.target.value)
-                }
+                onChange={(e) => { setRetypePassword(e.target.value); setPwdErrors((s) => ({ ...s, retypePassword: e.target.value !== newPassword ? 'Mật khẩu không khớp' : '' })); }}
+                error={!!pwdErrors.retypePassword}
+                helperText={pwdErrors.retypePassword || ''}
                 fullWidth
               />
             </Stack>
