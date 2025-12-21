@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   Drawer,
   Box,
@@ -14,7 +14,7 @@ import {
   CircularProgress,
   Button // Thêm Button nếu muốn nút quay lại hoặc thử lại
 } from "@mui/material";
-import { ChatOutlined, Public, Lock, ErrorOutline } from "@mui/icons-material"; // Thêm ErrorOutline
+import { ChatOutlined, Public, Lock, ErrorOutline, PeopleOutline } from "@mui/icons-material"; // Thêm ErrorOutline, PeopleOutline
 
 import { getEventBySlug } from "../../api/Events";
 import "./EventGroupVNavBar.css"; // Giữ nguyên CSS cũ
@@ -28,6 +28,7 @@ const mockChats = [
 
 export default function EventGroupVNavBar({ isOpen, drawerWidth, drawerVariant, onClose }) {
   const { slug } = useParams();
+  const navigate = useNavigate();
   
   // Thêm state loading và error để kiểm soát UI
   const [eventData, setEventData] = useState(null);
@@ -97,70 +98,63 @@ export default function EventGroupVNavBar({ isOpen, drawerWidth, drawerVariant, 
       );
     }
 
-    // 3. TRƯỜNG HỢP THÀNH CÔNG (Giữ nguyên cấu trúc HTML/CSS cũ của bạn)
+    // 3. TRƯỜNG HỢP THÀNH CÔNG (Hiển thị thông tin event + shortcuts tới các tab)
     if (eventData) {
+      const isJoined = (eventData.volunteers || []).some(v => (v._id ? v._id.toString() : v).toString() === userId);
+      const currentUserInEvent = (eventData.volunteers || []).find(v => (v._id ? v._id.toString() : v).toString() === userId);
+      const currentUserIsCreator = ((eventData.createdBy?._id || eventData.createdBy) ? (eventData.createdBy._id ? eventData.createdBy._id.toString() : eventData.createdBy.toString()) : '') === userId;
+      const isOwnerLocal = currentUserInEvent && currentUserIsCreator && (currentUserInEvent.role === 'manager');
+
+      const items = [
+        { id: 0, label: 'Bài đăng', icon: <ChatOutlined />, requiresJoin: eventData.privacy === 'Private' },
+        { id: 1, label: 'Thông tin', icon: <Public /> },
+        { id: 2, label: 'Thành viên', icon: <PeopleOutline /> },
+      ];
+
+      if (isOwnerLocal) {
+        items.push({ id: 3, label: `Yêu cầu (${eventData.requests?.length || 0})`, icon: <ErrorOutline /> });
+      }
+
       return (
         <Box 
-          className="event-vnav-container" // Class CSS cũ
+          className="event-vnav-container"
           onClick={drawerVariant === 'temporary' ? onClose : undefined}
         >
           <Box sx={{ px: 2, pb: 2, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            {/* Banner/Avatar - Ưu tiên banner, fallback về avatar hoặc placeholder */}
-            <Box
-              sx={{
-                width: 279,
-                height: 140,
-                mb: 1.5,
-                overflow: 'hidden',
-                bgcolor: '#f5f5f5',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-            >
-              <img
-                src={getBannerUrl(eventData.banner) || eventData.avatarUrl || eventGroupAvatar}
-                alt={eventData.name}
-                loading="lazy"
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover'
-                }}
-              />
+            <Box sx={{ width: 279, height: 140, mb: 1.5, overflow: 'hidden', bgcolor: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <img src={getBannerUrl(eventData.banner) || eventData.avatarUrl || eventGroupAvatar} alt={eventData.name} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             </Box>
-            
-            <Typography variant="h5" fontWeight="bold" textAlign="center">
-              {eventData.name}
-            </Typography>
+
+            <Typography variant="h5" fontWeight="bold" textAlign="center">{eventData.name}</Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5 }}>
-              {eventData.privacy === 'Public' ? (
-                <Public sx={{ fontSize: '1rem', mr: 0.5 }} />
-              ) : (
-                <Lock sx={{ fontSize: '1rem', mr: 0.5 }} />
-              )}
-              <Typography variant="body2" color="text.secondary">
-                {eventData.privacy === 'Public' ? "Sự kiện Công khai" : "Sự kiện Riêng tư"} • {eventData.volunteers?.length || 0} thành viên
-              </Typography>
+              {eventData.privacy === 'Public' ? <Public sx={{ fontSize: '1rem', mr: 0.5 }} /> : <Lock sx={{ fontSize: '1rem', mr: 0.5 }} />}
+              <Typography variant="body2" color="text.secondary">{eventData.privacy === 'Public' ? "Sự kiện Công khai" : "Sự kiện Riêng tư"} • {eventData.volunteers?.length || 0} thành viên</Typography>
             </Box>
           </Box>
-          
+
           <Divider />
-          
-          <Typography variant="overline" className="chat-title"> {/* Class CSS cũ */}
-            Đoạn chat
-          </Typography>
-          <List dense>
-            {mockChats.map((chat) => (
-              <ListItemButton key={chat.id} onClick={handleNavigate}>
-                <ListItemIcon sx={{ minWidth: '40px' }}>
-                  <Avatar sx={{ width: 28, height: 28, bgcolor: '#49BBBD' }}>
-                    <ChatOutlined sx={{ fontSize: '1rem' }} />
-                  </Avatar>
-                </ListItemIcon>
-                <ListItemText primary={chat.name} />
-              </ListItemButton>
-            ))}
+
+          <Typography variant="overline" className="chat-title">Lối tắt</Typography>
+          <List spacing={1}>
+            {items.map(item => {
+              const locked = item.id === 0 && item.requiresJoin && !isJoined;
+              return (
+                <ListItemButton key={item.id} onClick={() => {
+                  // Navigate to event page with tab query param
+                  const base = `/event/${slug}`;
+                  const url = `${base}?tab=${item.id}`;
+                  navigate(url);
+                  if (drawerVariant === 'temporary') onClose();
+                }} sx={{ opacity: locked ? 0.6 : 1 }}>
+                  <ListItemIcon sx={{ minWidth: '40px' }}>
+                    {locked ? <Avatar sx={{ width: 28, height: 28, bgcolor: '#bdbdbd' }}><Lock sx={{ fontSize: '1rem' }} /></Avatar> : (
+                      <Avatar sx={{ width: 28, height: 28, bgcolor: '#49BBBD' }}>{item.icon}</Avatar>
+                    )}
+                  </ListItemIcon>
+                  <ListItemText primary={item.label} />
+                </ListItemButton>
+              );
+            })}
           </List>
         </Box>
       );

@@ -291,7 +291,7 @@ export default function Discovery() {
               {event.location || "Chưa xác định"}
             </Typography>
 
-            <Typography variant="body2" sx={{ mt: 1 }}>
+            <Typography variant="body2">
               <b>Tình nguyện viên:</b>{" "}
               {event.volunteers?.length || 0} người
             </Typography>
