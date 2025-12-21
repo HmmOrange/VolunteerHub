@@ -89,7 +89,7 @@ export default function Landing() {
       <CssBaseline />
       
       {/* --- NAVBAR --- */}
-      <AppBar position="fixed" elevation={0} sx={{ bgcolor: '#49BBBD' }}>
+      <AppBar position="fixed" elevation={1} sx={{ bgcolor: '#ffffff', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
         <Container maxWidth="xl">
           <Toolbar sx={{ height: 64, justifyContent: 'space-between' }}>
             <Stack 
@@ -99,16 +99,26 @@ export default function Landing() {
               onClick={() => navigate("/")} 
               sx={{ cursor: 'pointer' }}
             >
-              <VolunteerActivismIcon sx={{ fontSize: 32, color: '#ffffff' }} />
-              <Typography variant="h6" sx={{ color: '#ffffff', fontWeight: 'bold' }}>
-                VolunteerHub
+              <VolunteerActivismIcon sx={{ fontSize: 32, color: '#49BBBD' }} />
+              <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                <Box component="span" sx={{ color: '#000000' }}>Volunteer</Box>
+                <Box component="span" sx={{ color: '#49BBBD' }}>Hub</Box>
               </Typography>
             </Stack>
 
             <Stack direction="row" spacing={2} alignItems="center">
               <Button 
                 variant="text" 
-                sx={{ color: '#ffffff', display: { xs: 'none', sm: 'block' } }}
+                sx={{ 
+                  color: '#2D3436', 
+                  display: { xs: 'none', sm: 'block' },
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    color: '#49BBBD',
+                    backgroundColor: 'rgba(73, 187, 189, 0.08)',
+                    transform: 'translateY(-2px)'
+                  }
+                }}
                 onClick={() => navigate("/login")}
               >
                 Đăng nhập
@@ -116,10 +126,16 @@ export default function Landing() {
               <Button 
                 variant="contained" 
                 sx={{ 
-                  bgcolor: '#ffffff', 
-                  color: '#49BBBD',
+                  bgcolor: '#49BBBD', 
+                  color: '#ffffff',
                   fontWeight: 'bold',
-                  '&:hover': { bgcolor: '#f1f1f1' }
+                  transition: 'all 0.3s ease',
+                  boxShadow: '0 4px 12px rgba(73, 187, 189, 0.3)',
+                  '&:hover': { 
+                    bgcolor: '#3daeb0',
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 6px 16px rgba(73, 187, 189, 0.4)'
+                  }
                 }}
                 onClick={() => navigate("/register")}
               >
@@ -146,20 +162,6 @@ export default function Landing() {
       }}>
         <Container maxWidth="md" sx={{ textAlign: 'center' }}>
           
-          <Box 
-            sx={{ 
-              display: 'inline-block', 
-              border: '1px solid #49BBBD', 
-              color: '#49BBBD', 
-              px: 3, py: 1, 
-              borderRadius: 20, 
-              mb: 4,
-              fontWeight: 600
-            }}
-          >
-             👋 Mạng xã hội kết nối thiện nguyện
-          </Box>
-
           <Typography variant="h2" sx={{ color: '#2D3436', mb: 1, fontWeight: 800 }}>
             Kết Nối Trái Tim
           </Typography>
@@ -224,7 +226,7 @@ export default function Landing() {
                     flexDirection: 'column',
                     justifyContent: 'flex-start',
                     flex: 1, 
-                    border: '1px solid #49BBBD',
+                    border: '2px solid #49BBBD',
                     borderRadius: 4, 
                     bgcolor: '#ffffff',
                     transition: 'all 0.3s',
@@ -262,7 +264,7 @@ export default function Landing() {
       </Box>
 
       {/* --- FOOTER --- */}
-      <Box sx={{ bgcolor: '#F9F9F9', py: 4, textAlign: 'center', borderTop: '1px solid #eee' }}>
+      <Box sx={{ bgcolor: '#f1f4f7', py: 4, textAlign: 'center', borderTop: '2px solid #49BBBD' }}>
         <Container>
           <Typography variant="body2" color="text.secondary">
             © 2025 VolunteerHub Social Network.

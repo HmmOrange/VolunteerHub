@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { loginUser } from "../../api/Auth";
-// Cần cài đặt: npm install lucide-react
-import { Heart, ArrowLeft } from "lucide-react"; 
+import { ArrowLeft } from "lucide-react"; 
+import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism';
 import "./Login.css";
 
 // Bạn có thể thay link ảnh này bằng ảnh thật của dự án
@@ -77,9 +77,11 @@ export default function Login() {
         <div className="visual-overlay">
           <div className="brand-header">
             <div className="logo-circle">
-              <Heart size={28} color="#49BBBD" fill="#49BBBD" />
+              <VolunteerActivismIcon sx={{ fontSize: 28, color: '#49BBBD' }} />
             </div>
-            <h1 className="brand-name">VolunteerHub</h1>
+            <h1 className="brand-name" style={{ backgroundColor: 'rgba(255, 255, 255, 0.95)', padding: '0.2rem 0.5rem', borderRadius: '0.25rem' }}>
+              <span style={{ color: '#000000' }}>Volunteer</span><span style={{ color: '#49BBBD' }}>Hub</span>
+            </h1>
           </div>
           
           <div className="quote-container">
@@ -91,9 +93,9 @@ export default function Login() {
 
       {/* CỘT FORM (RIGHT) */}
       <div className="login-content">
-        <div className="form-box">
+        <div className="form-box" style={{ border: '2px solid #49BBBD', borderRadius: '1rem', padding: '2rem' }}>
           <div className="form-header">
-            <h2>Xin chào! 👋</h2>
+            <h2>Chào bạn!</h2>
             <p>Nhập thông tin đăng nhập để truy cập hệ thống.</p>
           </div>
 

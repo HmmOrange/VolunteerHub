@@ -267,11 +267,30 @@
 @media (max-width: 900px) {
   .login-wrapper {
     flex-direction: column;
+    overflow-y: auto;
   }
   
   .login-visual {
     flex: none;
-    height: 15.625rem;
+    height: 200px;
+    min-height: 200px;
+  }
+  
+  .visual-overlay {
+    padding: 1.5rem 1.25rem;
+  }
+  
+  .brand-header {
+    gap: 0.625rem;
+  }
+  
+  .logo-circle {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+  
+  .brand-name {
+    font-size: 1.25rem;
   }
   
   .quote-container {
@@ -281,12 +300,89 @@
   .login-content {
     flex: 1;
     margin-left: 0;
-    margin-top: -1.875rem; /* Đẩy form lên đè ảnh */
-    border-radius: 1.875rem 1.875rem 0 0;
-    padding: 1.875rem 1.25rem;
+    margin-top: -30px; /* Đẩy form lên đè ảnh */
+    border-radius: 30px 30px 0 0;
+    border-top-left-radius: 30px;
+    border-bottom-left-radius: 0;
+    padding: 2rem 1.5rem;
+    min-height: calc(100vh - 170px);
+  }
+  
+  .form-box {
+    max-width: 100%;
+  }
+  
+  .form-header {
+    margin-bottom: 1.5rem;
   }
   
   .form-header h2 {
-    font-size: 1.625rem;
+    font-size: 1.5rem;
+  }
+  
+  .form-header p {
+    font-size: 0.875rem;
+  }
+  
+  .auth-form {
+    gap: 1rem;
+  }
+  
+  .form-group input {
+    padding: 0.75rem 0.875rem;
+    font-size: 0.9375rem;
+  }
+  
+  .btn-primary {
+    padding: 0.875rem;
+    font-size: 0.9375rem;
+  }
+  
+  .form-footer {
+    margin-top: 1.5rem;
+    font-size: 0.8125rem;
+  }
+}
+
+/* Tablet và màn hình nhỏ hơn */
+@media (max-width: 768px) {
+  .login-visual {
+    height: 180px;
+  }
+  
+  .login-content {
+    padding: 1.5rem 1.25rem;
+  }
+}
+
+/* Mobile nhỏ */
+@media (max-width: 480px) {
+  .login-visual {
+    height: 160px;
+  }
+  
+  .visual-overlay {
+    padding: 1.25rem 1rem;
+  }
+  
+  .brand-name {
+    font-size: 1.125rem;
+  }
+  
+  .login-content {
+    padding: 1.5rem 1rem;
+    margin-top: -25px;
+  }
+  
+  .form-header h2 {
+    font-size: 1.375rem;
+  }
+  
+  .form-group input {
+    padding: 0.625rem 0.75rem;
+  }
+  
+  .btn-primary {
+    padding: 0.75rem;
   }
 }

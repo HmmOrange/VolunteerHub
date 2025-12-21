@@ -275,13 +275,15 @@ export default function Register() {
         <div className="visual-overlay">
           <div className="brand-header">
             <div className="logo-circle"><UserPlus size={28} color="#49BBBD" /></div>
-            <h1 className="brand-name">VolunteerHub</h1>
+            <h1 className="brand-name" style={{ backgroundColor: 'rgba(255, 255, 255, 0.95)', padding: '0.2rem 0.5rem', borderRadius: '0.25rem' }}>
+              <span style={{ color: '#000000' }}>Volunteer</span><span style={{ color: '#49BBBD' }}>Hub</span>
+            </h1>
           </div>
         </div>
       </div>
 
       <div className="register-content">
-        <div className="form-box">
+        <div className="form-box" style={{ border: '2px solid #49BBBD', borderRadius: '1rem', padding: '2rem' }}>
           <div className="form-header">
             <h2>Tạo tài khoản mới</h2>
             <p>Hoàn thành các bước để trở thành thành viên.</p>
