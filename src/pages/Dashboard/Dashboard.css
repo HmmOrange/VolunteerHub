@@ -1,6 +1,12 @@
 /* Style cho Container (từ sx={{ p: 3 }}) */
 .dashboard-container-split {
-  padding: 8px 24px 24px 24px !important;
+  padding: 0.5rem 1.5rem 1.5rem 1.5rem !important;
+}
+
+@media (max-width: 600px) {
+  .dashboard-container-split {
+    padding: 0.5rem 0.5rem 1rem 0.5rem !important;
+  }
 }
 
 /* Style cho Grid container (từ justifyContent="center") */
@@ -10,24 +16,39 @@
 
 /* Style cho Card */
 .event-card-split {
-  padding: 8px 8px 0 8px !important; 
+  padding: 0.5rem 0.5rem 0 0.5rem !important; 
   height: 100%;
-  width: 220px !important; 
+  width: min(13.75rem, 90vw) !important; 
   margin-left: auto !important; 
   margin-right: auto !important; 
 }
 
+@media (max-width: 600px) {
+  .event-card-split {
+    width: 100% !important;
+  }
+}
+
 /* Class cho khu vực nút Sửa/Xóa (kéo lên) */
 .event-actions-split {
-  padding-top: 0px !important;
-  padding-bottom: 16px !important;
-  margin-top: -4px !important;
+  padding-top: 0 !important;
+  padding-bottom: 1rem !important;
+  margin-top: -0.25rem !important;
 }
 
 /* Class mới cho thẻ Card có thể bấm */
+.event-card-clickable {
+  transition: all 0.2s ease-in-out;
+}
+
 .event-card-clickable:hover {
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); 
-  transform: translateY(-2px);
-  transition: all 0.2s ease-in-out;
+  box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.1) !important; 
+  transform: translateY(-0.125rem);
+}
+
+@media (max-width: 900px) {
+  .event-card-clickable:hover {
+    transform: translateY(-0.0625rem);
+  }
 }

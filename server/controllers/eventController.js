@@ -971,6 +971,49 @@ export const updateMemberAttendance = async (req, res) => {
 
     await event.save();
 
+    // If marked completed, award badge and notify user; if marked absent, remove badge
+    try {
+      if (attendance === 'completed') {
+        const user = await User.findById(userId);
+        if (user) {
+          user.badges = user.badges || [];
+          const existing = user.badges.find(b => b.eventId && b.eventId.toString() === event._id.toString());
+          const eventBadge = event.badge || null;
+          if (!existing) {
+            user.badges.push({ eventId: event._id, eventName: event.name, level: 1, image: eventBadge, visible: true, eventEndDate: event.endDate || event.date });
+          } else {
+            existing.image = eventBadge;
+            existing.eventName = event.name;
+            existing.eventEndDate = event.endDate || event.date;
+            existing.level = existing.level || 1;
+          }
+          await user.save();
+
+          // Send notification
+          try {
+            await createNotificationInternal({
+              recipientId: user._id,
+              type: 'AWARDED_BADGE',
+              message: `Bạn đã được ghi nhận hoàn thành sự kiện "${event.name}" và được trao Badge.`,
+              relatedId: event._id,
+              relatedModel: 'Event'
+            });
+          } catch (e) {
+            console.warn('Notification error:', e);
+          }
+        }
+      } else if (attendance === 'absent') {
+        // remove badge if exists
+        const user = await User.findById(userId);
+        if (user) {
+          user.badges = (user.badges || []).filter(b => !(b.eventId && b.eventId.toString() === event._id.toString()));
+          await user.save();
+        }
+      }
+    } catch (e) {
+      console.error('Error updating badge after attendance change:', e);
+    }
+
     res.status(200).json({ 
       message: "Cập nhật trạng thái tham gia thành công",
       attendance: attendance
@@ -1130,41 +1173,54 @@ export const saveContributions = async (req, res) => {
     const isCreator = event.createdBy.toString() === requesterId;
     if (!isCreator) return res.status(403).json({ message: 'Bạn không có quyền cập nhật đóng góp' });
 
-    // Update event.contributions array
+    // Update event.contributions array (completed boolean)
     event.contributions = event.contributions || [];
     for (const [userId, value] of Object.entries(contributions)) {
-      const v = parseInt(value) || 0;
+      const completed = !!value;
       const idx = event.contributions.findIndex(c => (c.user.toString ? c.user.toString() : c.user) === userId);
       if (idx !== -1) {
-        event.contributions[idx].value = v;
+        event.contributions[idx].completed = completed;
       } else {
-        event.contributions.push({ user: userId, value: v });
+        event.contributions.push({ user: userId, completed: completed });
       }
     }
 
     await event.save();
 
-    // Gắn/loại bỏ badge cho từng user dựa trên mức >=3
+    // Gắn/loại bỏ badge cho từng user dựa trên completed === true
     const eventBadge = event.badge || null;
     const updates = [];
     for (const c of event.contributions) {
       const uid = c.user.toString ? c.user.toString() : c.user;
-      const level = c.value || 0;
+      const completed = !!c.completed;
       const user = await User.findById(uid);
       if (!user) continue;
 
-      // Ensure badges array
       user.badges = user.badges || [];
-
       const existing = user.badges.find(b => b.eventId && b.eventId.toString() === event._id.toString());
-      if (level >= 3) {
+
+      if (completed) {
         // Add or update badge (keep existing.visible if present)
         if (existing) {
-          existing.level = level;
+          existing.level = existing.level || 1;
           existing.image = eventBadge;
           existing.eventName = event.name;
+          existing.eventEndDate = event.endDate || event.date;
         } else {
-          user.badges.push({ eventId: event._id, eventName: event.name, level: level, image: eventBadge, visible: true });
+          user.badges.push({ eventId: event._id, eventName: event.name, level: 1, image: eventBadge, visible: true, eventEndDate: event.endDate || event.date });
+        }
+
+        // Send notification to user about badge
+        try {
+          await createNotificationInternal({
+            recipientId: user._id,
+            type: 'AWARDED_BADGE',
+            message: `Bạn đã được ghi nhận hoàn thành sự kiện "${event.name}" và được trao Badge.`,
+            relatedId: event._id,
+            relatedModel: 'Event'
+          });
+        } catch (e) {
+          console.warn('Failed to create notification for badge:', e);
         }
       } else {
         // Remove badge if exists

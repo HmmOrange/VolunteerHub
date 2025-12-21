@@ -19,6 +19,7 @@ import {
   ListItemText,
   ClickAwayListener,
   ListItemAvatar,
+  Button,
 } from "@mui/material";
 import {
   Menu as MenuIcon,
@@ -151,11 +152,6 @@ export default function HNavbar({ onToggleVNavBar }) {
   }
 
   const handleAddEvent = () => navigate("/event/create");
-  
-  const handleUserList = () => {
-    handleProfileMenuClose();
-    navigate("/admin/users");
-  };
 
   // === HANDLERS SEARCH ===
   const handleSearchChange = (e) => {
@@ -216,6 +212,29 @@ export default function HNavbar({ onToggleVNavBar }) {
   };
 
   const handleNotiMenuClose = () => setAnchorElNoti(null);
+
+  const handleMarkAllRead = async () => {
+    if (!userId) return;
+    try {
+      const res = await fetch(`http://localhost:5000/api/notifications/${userId}/read-all`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": token ? `Bearer ${token}` : "",
+        },
+      });
+
+      if (!res.ok) {
+        throw new Error("Không thể đánh dấu tất cả đã đọc");
+      }
+
+      // Update local state
+      setNotifications((prev) => prev.map(n => ({ ...n, isRead: true })));
+      setUnreadCount(0);
+    } catch (err) {
+      console.error("Lỗi markAllRead:", err);
+    }
+  };
 
   // === LOGIC CLICK THÔNG BÁO ===
   const handleNotificationClick = async (noti) => {
@@ -465,34 +484,45 @@ export default function HNavbar({ onToggleVNavBar }) {
           transformOrigin={{ horizontal: "right", vertical: "top" }}
           anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
         >
-            <Typography variant="subtitle1" sx={{ p: 2, fontWeight: 'bold' }}>
-                Thông báo
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 2, pt: 1, pb: 1 }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>Thông báo</Typography>
+              <Button 
+                onClick={handleMarkAllRead} 
+                size="small" 
+                sx={{ 
+                  textTransform: 'none', 
+                  fontWeight: 'normal', 
+                  color: '#49BBBD' // Đã đổi màu tại đây
+                }}
+              >
+                Đánh dấu tất cả đã đọc
+              </Button>
+            </Box>
             <Divider />
-            
+
             {notifications.length === 0 ? (
-                <MenuItem disabled>Không có thông báo nào</MenuItem>
+              <MenuItem disabled>Không có thông báo nào</MenuItem>
             ) : (
-                notifications.map((noti) => (
-                    <MenuItem 
-                        key={noti._id} 
-                        onClick={() => handleNotificationClick(noti)}
-                        sx={{
-                            whiteSpace: 'normal', 
-                            backgroundColor: noti.isRead ? 'inherit' : '#e3f2fd', 
-                            borderBottom: '1px solid #f0f0f0'
-                        }}
-                    >
-                        <Box>
-                            <Typography variant="body2" sx={{ fontWeight: noti.isRead ? 'normal' : 'bold' }}>
-                                {noti.message}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                                {new Date(noti.createdAt).toLocaleString('vi-VN')}
-                            </Typography>
-                        </Box>
-                    </MenuItem>
-                ))
+              notifications.map((noti) => (
+                <MenuItem 
+                  key={noti._id} 
+                  onClick={() => handleNotificationClick(noti)}
+                  sx={{
+                    whiteSpace: 'normal', 
+                    backgroundColor: noti.isRead ? 'inherit' : '#e3f2fd', 
+                    borderBottom: '1px solid #f0f0f0'
+                  }}
+                >
+                  <Box>
+                    <Typography variant="body2" sx={{ fontWeight: noti.isRead ? 'normal' : 'bold' }}>
+                      {noti.message}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {new Date(noti.createdAt).toLocaleString('vi-VN')}
+                    </Typography>
+                  </Box>
+                </MenuItem>
+              ))
             )}
         </Menu>
 

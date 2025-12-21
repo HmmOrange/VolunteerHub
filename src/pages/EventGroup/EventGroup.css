@@ -1,22 +1,22 @@
 /* Giấy chứa các Tab */
 .event-group-tabs-paper {
-  border-radius: 8px !important;
-  margin-bottom: 16px; /* Khoảng cách giữa Tab và nội dung */
+  border-radius: 0.5rem !important;
+  margin-bottom: 1rem; /* Khoảng cách giữa Tab và nội dung */
 }
 
 /* Box tạm cho bài đăng */
 .temp-post-box {
-  width: 800px;
-  height: 600px;
+  width: min(50vw, 50rem);
+  height: min(37.5vh, 37.5rem);
   /* Tự động căn giữa */
   margin-left: auto;
   margin-right: auto;
   /* Responsive */
   max-width: 100%; 
   
-  padding: 16px;
-  border-radius: 8px !important;
-  margin-bottom: 16px; 
+  padding: 1rem;
+  border-radius: 0.5rem !important;
+  margin-bottom: 1rem; 
 }
 
 /* Style riêng cho tab Thông tin (không cần chiều cao 600px) */

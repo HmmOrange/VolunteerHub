@@ -80,3 +80,25 @@ export const createNotificationInternal = async ({ recipientId, type, message, r
     console.error("Error creating notification:", error);
   }
 };
+
+// 3. Đánh dấu tất cả thông báo của user là đã đọc
+export const markAllRead = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ message: "ID người dùng không hợp lệ" });
+    }
+
+    const result = await Notification.updateMany(
+      { recipient: userId, isRead: false },
+      { $set: { isRead: true } }
+    );
+
+    // Trả về số lượng đã cập nhật
+    res.status(200).json({ message: "Đã đánh dấu tất cả đã đọc", modifiedCount: result.modifiedCount || result.nModified || 0 });
+  } catch (err) {
+    console.error("markAllRead error:", err);
+    res.status(500).json({ message: "Lỗi server" });
+  }
+};

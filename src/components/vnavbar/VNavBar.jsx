@@ -11,6 +11,8 @@ import {
   PeopleOutline,
   AdminPanelSettingsOutlined,
 } from "@mui/icons-material";
+import { useEffect, useState } from "react";
+import { getUserEvents } from "../../api/Events";
 
 import "./VNavBar.css";
 
@@ -18,11 +20,46 @@ export default function VNavBar({ isOpen, drawerWidth, drawerVariant, onClose })
   const navigate = useNavigate();
   const role = localStorage.getItem("role"); // ✅ READ ROLE ONCE
 
-  const shortcuts = [
-    { name: "TeamTree", avatar: "/path/to/tree-icon.png" },
-    { name: "Sự kiện 2", avatar: "/path/to/tree-icon.png" },
-    { name: "Sự kiện 3", avatar: "/path/to/tree-icon.png" },
-  ];
+  const [shortcuts, setShortcuts] = useState([]);
+
+  // Load up to 5 events the user has joined
+  useEffect(() => {
+    const loadUserEvents = async () => {
+      try {
+        const userJson = localStorage.getItem("user");
+        let userId = null;
+        if (userJson) {
+          try {
+            const userObj = JSON.parse(userJson);
+            userId = userObj._id || userObj.id || null;
+          } catch (e) {
+            // fallback: maybe stored as plain id
+            userId = userJson;
+          }
+        } else {
+          // fallback to explicit localStorage key
+          userId = localStorage.getItem("userId");
+        }
+
+        if (!userId) return;
+
+        const resp = await getUserEvents(userId);
+        // API returns { message, events } — normalize to array
+        const events = Array.isArray(resp) ? resp : resp?.events || [];
+        const list = (events || []).slice(0, 5).map((ev) => ({
+          name: ev.name || ev.title || ev.slug || "Sự kiện",
+          avatar: ev.banner || ev.image || "",
+          slug: ev.slug || ev._id || ev.id,
+        }));
+
+        setShortcuts(list);
+      } catch (err) {
+        console.error("Failed to load user events for shortcuts:", err);
+      }
+    };
+
+    loadUserEvents();
+  }, []);
 
   const handleNavigate = (path) => {
     navigate(path);
@@ -107,11 +144,11 @@ export default function VNavBar({ isOpen, drawerWidth, drawerVariant, onClose })
 
       <List>
         {shortcuts.map((item) => (
-          <ListItem key={item.name} disablePadding>
-            <ListItemButton onClick={() => handleNavigate(`/event/${item.name}`)}>
+          <ListItem key={item.slug || item.name} disablePadding>
+            <ListItemButton onClick={() => handleNavigate(item.slug ? `/event/${item.slug}` : `/events`)}>
               <ListItemIcon>
                 <Avatar src={item.avatar} className="vnavbar-shortcut-avatar">
-                  {item.name.charAt(0)}
+                  {item.name ? item.name.charAt(0) : "S"}
                 </Avatar>
               </ListItemIcon>
               <ListItemText primary={item.name} />
