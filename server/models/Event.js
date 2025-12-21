@@ -97,10 +97,10 @@ const eventSchema = new mongoose.Schema(
       default: "/uploads/badges/default.jpg"
     },
 
-    // --- CONTRIBUTIONS: store contribution level per volunteer ---
+    // --- CONTRIBUTIONS: store completion boolean per volunteer (owner marks completed) ---
     contributions: [{
       user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-      value: { type: Number, default: 0 }
+      completed: { type: Boolean, default: false }
     }],
 
     // --- TRẠNG THÁI THAM GIA CỦA VOLUNTEERS ---

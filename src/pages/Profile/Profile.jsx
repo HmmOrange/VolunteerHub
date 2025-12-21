@@ -171,18 +171,28 @@ export default function Profile() {
   // Logic hiển thị ảnh: Ưu tiên ảnh Preview -> Ảnh từ Server -> Mặc định
   const displayAvatar = previewUrl || (profile.avatar ? `http://localhost:5000${profile.avatar}` : "");
 
+  const getBadgeUrl = (badgePath) => {
+    if (!badgePath) return null;
+    // Trường hợp 1: Link ảnh online (firebase, cloudinary...)
+    if (badgePath.startsWith("http")) return badgePath;
+    // Trường hợp 2: Ảnh dạng base64
+    if (badgePath.startsWith("data:")) return badgePath;
+    // Trường hợp 3: Ảnh lưu local server -> nối thêm host
+    const path = badgePath.startsWith("/") ? badgePath : `/${badgePath}`;
+    return `http://localhost:5000${path}`;
+  };
+
   // Prepare badges per rules:
-  // - manage mode: show all earned badges (level >=3)
-  // - otherwise: show badges with visible !== false; if user hasn't customized (all visible) and >4, show 4 most recent
-  const allEarnedBadges = Array.isArray(profile.badges) ? profile.badges.filter(b => (b.level || 0) >= 3) : [];
-  const visibleBadges = allEarnedBadges.filter(b => b.visible !== false);
+  // - manage mode: show all badges earned (contribution completed)
+  // - otherwise: show badges with visible !== false; if user hasn't customized and >4, show 4 most recent
+  const allBadges = Array.isArray(profile.badges) ? profile.badges : [];
+  const visibleBadges = allBadges.filter(b => b.visible !== false);
   let badgesToShow = [];
   if (manageBadges) {
-    badgesToShow = [...allEarnedBadges].reverse();
+    badgesToShow = [...allBadges].reverse();
   } else {
-    // if user hasn't customized (all badges are visible) and there are more than 4, show 4 most recent
-    if (visibleBadges.length === allEarnedBadges.length && allEarnedBadges.length > 4) {
-      badgesToShow = [...allEarnedBadges].slice(-4).reverse();
+    if (visibleBadges.length === allBadges.length && allBadges.length > 4) {
+      badgesToShow = [...allBadges].slice(-4).reverse();
     } else {
       badgesToShow = [...visibleBadges].reverse();
     }
@@ -271,39 +281,75 @@ export default function Profile() {
               <Box sx={{ mt: 4, position: 'relative', px: 1 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'center', flex: 1 }}>
+                    
                     {badgesToShow.map((b, idx) => {
-                    const getBadgeUrl = (img) => {
-                      if (!img) return null;
-                      if (img.startsWith('http')) return img;
-                      const path = img.startsWith('/') ? img : `/${img}`;
-                      return `http://localhost:5000${path}`;
-                    };
-                    const visible = b.visible !== undefined ? b.visible : true;
-                    // When not managing we already filtered visible badges; when managing show all
-                    if (!manageBadges && !visible) return null;
-                    return (
-                      <Paper key={idx} elevation={1} sx={{ width: 181, p: 1, textAlign: 'center', position: 'relative' }}>
-                        {manageBadges && (
-                          <Checkbox
-                            checked={visible}
-                            onChange={() => handleToggleBadge(b)}
-                            sx={{ position: 'absolute', top: 4, right: 4 }}
-                          />
-                        )}
-                        <Box sx={{ width: '100%', height: 84, mb: 1, overflow: 'hidden', borderRadius: 1, bgcolor: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          {b.image ? (
-                            <img src={getBadgeUrl(b.image)} alt={b.eventName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                          ) : (
-                            <Typography variant="caption" color="text.secondary">No image</Typography>
+                      const visible = b.visible !== undefined ? b.visible : true;
+                      
+                      // Nếu không ở chế độ quản lý thì ẩn các badge bị tắt
+                      if (!manageBadges && !visible) return null;
+
+                      return (
+                        <Paper 
+                          key={idx} 
+                          elevation={1} 
+                          sx={{ width: 181, p: 1, textAlign: 'center', position: 'relative' }}
+                        >
+                          {/* Checkbox chỉ hiện khi ở chế độ chỉnh sửa */}
+                          {manageBadges && (
+                            <Checkbox
+                              checked={visible}
+                              onChange={() => handleToggleBadge(b)}
+                              sx={{ position: 'absolute', top: 4, right: 4, zIndex: 10 }}
+                            />
                           )}
-                        </Box>
-                        <Typography variant="caption" sx={{ display: 'block', fontWeight: 700 }}>{b.eventName}</Typography>
-                        <Typography variant="caption" color="text.secondary">Đóng góp {b.level}/5</Typography>
-                      </Paper>
-                    );
-                  })}
+
+                          {/* Khung ảnh Badge */}
+                          <Box 
+                            sx={{ 
+                              width: '100%', 
+                              height: 84, 
+                              mb: 1, 
+                              overflow: 'hidden', 
+                              borderRadius: 1, 
+                              bgcolor: '#f5f5f5', 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              justifyContent: 'center' 
+                            }}
+                          >
+                            {b.image ? (
+                              <img
+                                src={getBadgeUrl(b.image)}
+                                alt={b.eventName}
+                                style={{ width: '100%', height: '100%', objectFit: 'cover' }} // Dùng 'contain' để nhìn rõ toàn bộ badge
+                                onError={(e) => {
+                                  // Xử lý khi ảnh bị lỗi (404)
+                                  e.target.onerror = null; 
+                                  e.target.style.display = 'none'; // Ẩn ảnh lỗi đi
+                                  // Hoặc bạn có thể set src về ảnh mặc định:
+                                  // e.target.src = 'https://via.placeholder.com/150?text=No+Badge';
+                                }}
+                              />
+                            ) : (
+                              <Typography variant="caption" color="text.secondary">No image</Typography>
+                            )}
+                          </Box>
+
+                          {/* Tên và ngày sự kiện */}
+                          <Typography variant="caption" sx={{ display: 'block', fontWeight: 700, lineHeight: 1.2, mb: 0.5 }}>
+                            {b.eventName}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {b.eventEndDate ? new Date(b.eventEndDate).toLocaleDateString('vi-VN') : '—'}
+                          </Typography>
+                        </Paper>
+                      );
+                    })}
+
                   </Box>
                 </Box>
+
+                {/* Nút chỉnh sửa Badge */}
                 <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
                   <Button
                     size="small"
@@ -312,12 +358,17 @@ export default function Profile() {
                     sx={{
                       backgroundColor: "#49BBBD",
                       color: "white",
-                      textTransform: "none",   // ❌ bỏ viết hoa
-                      fontSize: "11px",        // 🔽 chữ nhỏ hơn nữa
-                      padding: "2px 6px"       // 🔽 thu nhỏ button
+                      textTransform: "none",
+                      fontSize: "11px",
+                      padding: "2px 6px",
+                      border: "none",
+                      "&:hover": {
+                        backgroundColor: "#359698",
+                        border: "none"
+                      }
                     }}
                   >
-                    Chỉnh sửa Badge
+                    {manageBadges ? "Hoàn tất" : "Chỉnh sửa Badge"}
                   </Button>
                 </Box>
               </Box>

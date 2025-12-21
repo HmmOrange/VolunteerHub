@@ -6,7 +6,6 @@ import {
   IconButton, Chip, Stack, Dialog, DialogTitle, DialogContent, DialogActions,
   TextField, Badge, FormControl, FormLabel, RadioGroup, FormControlLabel, Radio,
   Menu, MenuItem,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow
 } from "@mui/material";
 import { Close as CloseIcon, LockOutlined, Edit as EditIcon, ErrorOutline, MoreVert as MoreVertIcon, Cancel, Stop, AccessTime, CheckCircle, PersonOff } from "@mui/icons-material";
 
@@ -247,12 +246,12 @@ export default function EventGroup() {
       if (Array.isArray(eventData.contributions) && eventData.contributions.length > 0) {
         eventData.contributions.forEach(c => {
           const uid = c.user?._id ? c.user._id : c.user;
-          map[uid] = c.value || 0;
+          map[uid] = !!c.completed;
         });
       } else if (eventData.volunteers) {
         eventData.volunteers.forEach(m => {
           const memberId = m._id || m;
-          map[memberId] = (m.contribution != null ? m.contribution : 0);
+          map[memberId] = !!(m.contribution || m.completed || false);
         });
       }
       setContributions(map);
@@ -371,12 +370,25 @@ export default function EventGroup() {
           console.error("Banner upload error:", bannerErr);
         }
       }
+      // Upload badge nếu có file mới (badge upload moved into edit modal)
+      let finalBadge = updated.badge;
+      let badgeUpdated = false;
+      if (badgeFile) {
+        try {
+          const badgeRes = await uploadBadge(eventData.slug, badgeFile);
+          finalBadge = badgeRes.badge || badgeRes.badgePath || badgeRes.path || badgeRes.badge;
+          badgeUpdated = true;
+        } catch (badgeErr) {
+          console.error("Badge upload error:", badgeErr);
+        }
+      }
       
       // Cập nhật eventData với thông tin mới
       setEventData(prev => ({ 
         ...prev,
         ...updated,
         banner: finalBanner,
+        badge: finalBadge,
         createdBy: prev.createdBy, 
         volunteers: prev.volunteers, 
         requests: prev.requests 
@@ -398,6 +410,22 @@ export default function EventGroup() {
           setPosts(prev => [newPost, ...prev]);
         } catch (postErr) {
           console.error("Auto post creation error:", postErr);
+        }
+      }
+
+      // Tạo post khi badge được cập nhật (tùy chọn)
+      if (badgeUpdated && finalBadge) {
+        try {
+          const newPost = await createPost({
+            eventId: eventData._id,
+            content: "🏅 Badge sự kiện đã được cập nhật!",
+            userId: currentUserId,
+            username: currentUserUsername,
+            imageUrl: finalBadge
+          });
+          setPosts(prev => [newPost, ...prev]);
+        } catch (e) {
+          console.error('Auto post for badge failed:', e);
         }
       }
       
@@ -709,7 +737,7 @@ export default function EventGroup() {
         elevation={0}
         sx={{
           width: '100%',
-          height: '300px',
+          height: '30vh',
           mb: 2,
           borderRadius: 2,
           overflow: 'hidden',
@@ -738,11 +766,8 @@ export default function EventGroup() {
             <Tab label="Bài đăng" />
             <Tab label="Thông tin" />
             <Tab label="Thành viên" />
-            {isOwner && (
-                <Tab label={<Badge badgeContent={pendingRequests.length} color="error">Yêu cầu tham gia</Badge>} />
-            )}
               {isOwner && (
-                <Tab label="Đóng góp" />
+                <Tab label={<Badge badgeContent={pendingRequests.length} color="error">Yêu cầu tham gia</Badge>} />
               )}
           </Tabs>
 
@@ -1148,55 +1173,75 @@ export default function EventGroup() {
         {/* TAB 1: THÔNG TIN */}
         {currentTab === 1 && (
           <Paper sx={{ mt: 2, p: 2 }} variant="outlined">
+            {/* Header & Edit Button */}
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="h6">Thông tin sự kiện</Typography>
-                {isOwner && (
-                  <Button startIcon={<EditIcon />} variant="contained" size="small" onClick={handleEditClick} sx={{ bgcolor: '#49BBBD' }}>
-                      Chỉnh sửa
-                  </Button>
-                )}
+              <Typography variant="h6">Thông tin sự kiện</Typography>
+              {isOwner && (
+                <Button startIcon={<EditIcon />} variant="contained" size="small" onClick={handleEditClick} sx={{ bgcolor: '#49BBBD' }}>
+                  Chỉnh sửa
+                </Button>
+              )}
             </Box>
-            <Divider sx={{ my: 2 }} />
             
-            {/* Event Banner */}
+            <Divider sx={{ my: 2 }} />
+
+            {/* --- BANNER SECTION --- */}
+            <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }}>Banner sự kiện</Typography>
             <Box
               sx={{
                 width: '20vw',
-                height: '15vh',
+                height: '20vh',
                 mb: 2,
                 borderRadius: 1,
                 overflow: 'hidden',
                 bgcolor: '#f5f5f5',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center'
+                justifyContent: 'center',
+                border: '1px solid #e0e0e0'
               }}
             >
               {eventData.banner ? (
                 <img
                   src={getBannerUrl(eventData.banner)}
-                  alt={eventData.name}
+                  alt="Banner"
                   loading="lazy"
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover'
-                  }}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />
               ) : (
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  sx={{ textAlign: 'center', p: 1 }}
-                >
-                  No banner
-                </Typography>
+                <Typography variant="caption" color="text.secondary">No banner</Typography>
               )}
             </Box>
 
-            <Typography sx={{ whiteSpace: 'pre-wrap', mb: 2 }}>{eventData.description}</Typography>
+            {/* --- BADGE SECTION (Moved Here) --- */}
+            <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }}>Badge sự kiện</Typography>
+            <Box 
+              sx={{ 
+                width: '20vw', // Badge thường hình vuông hoặc nhỏ hơn banner
+                height: '20vh',
+                mb: 2, 
+                bgcolor: '#f5f5f5', 
+                borderRadius: 1, 
+                overflow: 'hidden', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                border: '1px solid #e0e0e0'
+              }}
+            >
+              {badgePreview ? (
+                <img src={badgePreview} alt="Badge" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                <Typography variant="caption" color="text.secondary">Chưa có badge</Typography>
+              )}
+            </Box>
+            
             <Divider sx={{ my: 2 }} />
+            
+            {/* --- DETAILS SECTION --- */}
             <Stack spacing={1}>
+                <Typography><b>Tên sự kiện:</b> {eventData.name}</Typography>
+                <Typography sx={{ whiteSpace: 'pre-wrap', mb: 2 }}><b>Mô tả:</b> {eventData.description}</Typography>
                 <Typography><b>Địa điểm:</b> {eventData.location}</Typography>
                 <Typography><b>Ngày tổ chức:</b> {new Date(eventData.date).toLocaleDateString('vi-VN')}</Typography>
                 <Typography><b>Quyền riêng tư:</b> {eventData.privacy === 'Private' ? 'Riêng tư' : 'Công khai'}</Typography>
@@ -1208,6 +1253,7 @@ export default function EventGroup() {
                   'Sắp diễn ra'
                 }</Typography>
                 <Typography><b>Người tạo:</b> {eventData.createdBy?.username || "Không xác định"}</Typography>
+                
                 {isOwner && eventData.privacy === 'Private' && eventData.question && (
                     <Typography sx={{ mt: 1 }}><b>Câu hỏi tham gia:</b> {eventData.question}</Typography>
                 )}
@@ -1340,107 +1386,6 @@ export default function EventGroup() {
             </List>
           </Paper>
         )}
-
-        {/* TAB 4: ĐÓNG GÓP - Owner only */}
-        {currentTab === 4 && isOwner && (
-          <Paper sx={{ mt: 2 }} variant="outlined">
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2 }}>
-              <Typography variant="h6">Đóng góp</Typography>
-              {isOwner && (
-                isEditingContributions ? (
-                  <Stack direction="row" spacing={1}>
-                    <Button size="small" onClick={handleCancelContributions}>Hủy</Button>
-                    <Button size="small" variant="contained" onClick={handleConfirmContributions} sx={{ bgcolor: '#49BBBD' }}>Xác nhận</Button>
-                  </Stack>
-                ) : (
-                  <Button size="small" variant="contained" onClick={handleStartEditContributions} sx={{ bgcolor: '#49BBBD' }}>Chỉnh sửa</Button>
-                )
-              )}
-            </Box>
-              <Divider />
-            <Box sx={{ display: 'flex', gap: 3, p: 2 }}>
-              {/* Left: contributions table (width like posts area) */}
-              <Box sx={{ flex: 1, minWidth: 0 }}>
-                <TableContainer component={Paper} variant="outlined">
-                  <Table size="small">
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Thành viên</TableCell>
-                        <TableCell align="center">Mức độ hoàn thành</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {eventData.volunteers?.map(member => {
-                        const memberId = member._id || member;
-                        const val = contributions[memberId] ?? 0;
-                        return (
-                          <TableRow key={memberId}>
-                            <TableCell>
-                              <Stack direction="row" spacing={1} alignItems="center">
-                                <Avatar {...renderAvatarProps(member)} sx={{ width: 36, height: 36 }} />
-                                <Typography>{member.username}</Typography>
-                              </Stack>
-                            </TableCell>
-                            <TableCell align="center">
-                              <Stack direction="row" spacing={1} justifyContent="center">
-                                {[0,1,2,3,4,5].map(n => (
-                                  <Button
-                                    key={n}
-                                    size="small"
-                                    variant={val === n ? 'contained' : 'outlined'}
-                                    onClick={() => handleSetContribution(memberId, n)}
-                                    disabled={!isEditingContributions}
-                                    sx={val === n ? { bgcolor: '#49BBBD', '&:hover': { bgcolor: '#3daeb0' } } : {}}
-                                  >
-                                    {n}
-                                  </Button>
-                                ))}
-                              </Stack>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              </Box>
-
-              {/* Right: badge panel (width like countdown) */}
-              <Paper
-                elevation={3}
-                sx={{
-                  width: '320px',
-                  flexShrink: 0,
-                  p: 2,
-                  borderRadius: 3,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'stretch'
-                }}
-              >
-                <Typography variant="subtitle1" fontWeight="bold">Badge sự kiện</Typography>
-                <Box sx={{ mt: 2, mb: 2, width: '100%', height: 220, bgcolor: '#f5f5f5', borderRadius: 1, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {badgePreview ? (
-                    <img src={badgePreview} alt="Badge" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  ) : (
-                    <Typography color="text.secondary">Chưa có badge</Typography>
-                  )}
-                </Box>
-                {isOwner && (
-                  <Button variant="outlined" component="label" fullWidth>
-                    Thay đổi ảnh
-                    <input
-                      type="file"
-                      hidden
-                      accept="image/*"
-                      onChange={(e) => { const file = e.target.files[0]; handleBadgeFileChange(file); e.target.value = ''; }}
-                    />
-                  </Button>
-                )}
-              </Paper>
-            </Box>
-          </Paper>
-        )}
       </Box>
 
       {/* MODAL JOIN */}
@@ -1522,7 +1467,7 @@ export default function EventGroup() {
                 <Box
                   sx={{
                     width: '100%',
-                    height: '150px',
+                    height: '300px',
                     borderRadius: 1,
                     overflow: 'hidden',
                     bgcolor: '#f5f5f5',
@@ -1542,7 +1487,65 @@ export default function EventGroup() {
                   />
                 </Box>
               )}
+            
+            {/* Badge Upload (moved into Edit modal) */}
+            <Box>
+              <Typography variant="subtitle2" gutterBottom sx={{ mt: 1 }}>Badge sự kiện</Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                Ảnh phải nhỏ hơn 2MB
+              </Typography>
+              <Button
+                variant="outlined"
+                component="label"
+                fullWidth
+                sx={{ mb: badgePreview ? 2 : 0 }}
+              >
+                {badgeFile ? "Thay đổi badge" : (badgePreview ? "Cập nhật badge" : "Chọn badge")}
+                <input
+                  type="file"
+                  hidden
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      const maxSize = 2 * 1024 * 1024;
+                      if (file.size > maxSize) {
+                        alert('Ảnh quá lớn! Vui lòng chọn ảnh nhỏ hơn 2MB.');
+                        e.target.value = '';
+                        return;
+                      }
+                      setBadgeFile(file);
+                      setBadgePreview(URL.createObjectURL(file));
+                    }
+                  }}
+                />
+              </Button>
+              {badgePreview && (
+                <Box
+                  sx={{
+                    width: '100%',
+                    height: '300px',
+                    borderRadius: 1,
+                    overflow: 'hidden',
+                    bgcolor: '#f5f5f5',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <img
+                    src={badgePreview}
+                    alt="Badge preview"
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover'
+                    }}
+                  />
+                </Box>
+              )}
             </Box>
+          </Box>
             
             <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
               <TextField 

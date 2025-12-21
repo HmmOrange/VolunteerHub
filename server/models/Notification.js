@@ -20,7 +20,8 @@ const notificationSchema = new mongoose.Schema(
         "NEW_MEMBER_JOINED",
         "JOIN_REQUEST",
         "EVENT_DELETED",
-        "MEMBER_REMOVED"
+        "MEMBER_REMOVED",
+        'AWARDED_BADGE'
       ], 
       required: true 
     },

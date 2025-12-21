@@ -1,4 +1,5 @@
 import User from "../models/User.js";
+import Event from "../models/Event.js";
 import bcrypt from "bcryptjs";
 
 /* ======================================================
@@ -151,10 +152,32 @@ export const toggleUserLock = async (req, res) => {
 ====================================================== */
 export const getProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select("-password -__v");
+    const user = await User.findById(req.user.id).select("-password -__v").lean();
 
     if (!user) {
       return res.status(404).json({ message: "Không tìm thấy người dùng" });
+    }
+
+    // If user has badges, fetch corresponding events to get endDate
+    const badges = Array.isArray(user.badges) ? user.badges : [];
+    const eventIds = badges
+      .map(b => (b && b.eventId ? (b.eventId._id ? b.eventId._id : b.eventId) : null))
+      .filter(Boolean)
+      .map(id => id.toString());
+
+    if (eventIds.length > 0) {
+      const events = await Event.find({ _id: { $in: eventIds } }).select('endDate date').lean();
+      const eventsById = Object.fromEntries(events.map(e => [e._id.toString(), e.endDate || e.date]));
+
+      user.badges = badges.map(b => {
+        const rawId = b && b.eventId ? (b.eventId._id ? b.eventId._id.toString() : b.eventId.toString()) : null;
+        return {
+          ...b,
+          eventEndDate: rawId ? (eventsById[rawId] || null) : null
+        };
+      });
+    } else {
+      user.badges = badges;
     }
 
     res.json(user);

@@ -146,11 +146,6 @@ export default function HNavbar({ onToggleVNavBar }) {
   };
 
   const handleAddEvent = () => navigate("/event/create");
-  
-  const handleUserList = () => {
-    handleProfileMenuClose();
-    navigate("/admin/users");
-  };
 
   // === HANDLERS SEARCH ===
   const handleSearchChange = (e) => {
@@ -504,11 +499,6 @@ export default function HNavbar({ onToggleVNavBar }) {
             Xin chào, {username}
           </MenuItem>
           <MenuItem onClick={handleProfile}>Thông tin cá nhân</MenuItem>
-          {role === "admin" && (
-            <MenuItem onClick={handleUserList}>
-              Danh sách người dùng
-            </MenuItem>
-          )}
           <MenuItem onClick={handleLogout}>Đăng xuất</MenuItem>
         </Menu>
 
