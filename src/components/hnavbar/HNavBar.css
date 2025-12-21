@@ -3,7 +3,7 @@
   /* Ghi đè style của MUI */
   background-color: white !important;
   color: #000000 !important;
-  border-bottom: 2px solid #49BBBD;
+  border-bottom: 1px solid #e0e0e0;
   box-shadow: none !important;
 
   /* THÊM MỚI (Rất quan trọng) */
@@ -21,6 +21,13 @@
 /* === 2. Bên trái (Logo & Nút Menu) === */
 .hnavbar-icon-btn {
   color: #000000 !important;
+}
+
+/* Hover / active: icons adopt accent color for interaction only */
+.hnavbar-icon-btn:hover,
+.hnavbar-icon-btn:active,
+.hnavbar-icon-btn.Mui-focusVisible {
+  color: #49BBBD !important;
 }
 
 .hnavbar-logo {
@@ -65,10 +72,11 @@
 
 /* === 4. Bên phải (Nút & Avatar) === */
 .hnavbar-add-btn {
-  color: #49BBBD !important;
+  color: inherit !important;
 }
 .hnavbar-add-btn:hover {
-  background-color: rgba(73, 187, 189, 0.08) !important;
+  background-color: rgba(73, 187, 189, 0.06) !important;
+  color: #49BBBD !important;
 }
 .hnavbar-avatar-btn {
   margin-left: 0.5rem !important;
@@ -91,9 +99,8 @@
 }
 
 .hnavbar-menu-paper .MuiMenuItem-root:hover {
-  background-color: rgba(73, 187, 189, 0.1) !important;
+  background-color: rgba(73, 187, 189, 0.08) !important;
   transform: translateX(4px);
-  border-left: 3px solid #49BBBD;
 }
 
 .hnavbar-menu-user {

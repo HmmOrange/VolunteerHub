@@ -218,7 +218,7 @@ export default function CalendarPage() {
       }}>
         <EventOutlined sx={{ 
           fontSize: { xs: 24, sm: 28, md: 32 }, 
-          color: 'primary.main' 
+          color: '#49BBBD'
         }} />
         <Typography 
           variant="h4" 
@@ -231,10 +231,11 @@ export default function CalendarPage() {
         </Typography>
         <Chip 
           label={`${events.length} sự kiện`} 
-          color="primary" 
           variant="outlined"
           sx={{
-            fontSize: { xs: '0.75rem', sm: '0.8125rem', md: '0.875rem' }
+            fontSize: { xs: '0.75rem', sm: '0.8125rem', md: '1rem' },
+            color: '#49BBBD',
+            borderColor: '#49BBBD'
           }}
         />
       </Box>

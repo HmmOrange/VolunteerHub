@@ -387,9 +387,8 @@ export default function HNavbar({ onToggleVNavBar }) {
                             sx={{
                               transition: 'all 0.2s ease',
                               '&:hover': {
-                                bgcolor: 'rgba(73, 187, 189, 0.1)',
-                                transform: 'translateX(8px)',
-                                borderLeft: '3px solid #49BBBD',
+                                bgcolor: 'rgba(73, 187, 189, 0.06)',
+                                transform: 'translateX(8px)'
                               },
                             }}
                           >
@@ -451,9 +450,8 @@ export default function HNavbar({ onToggleVNavBar }) {
                             sx={{
                               transition: 'all 0.2s ease',
                               '&:hover': {
-                                bgcolor: 'rgba(73, 187, 189, 0.1)',
-                                transform: 'translateX(8px)',
-                                borderLeft: '3px solid #49BBBD',
+                                bgcolor: 'rgba(73, 187, 189, 0.06)',
+                                transform: 'translateX(8px)'
                               },
                             }}
                           >
@@ -570,9 +568,8 @@ export default function HNavbar({ onToggleVNavBar }) {
                     borderBottom: '1px solid #f0f0f0',
                     transition: 'all 0.2s ease',
                     '&:hover': {
-                      backgroundColor: 'rgba(73, 187, 189, 0.15)',
-                      transform: 'translateX(4px)',
-                      borderLeft: '3px solid #49BBBD',
+                      backgroundColor: 'rgba(73, 187, 189, 0.12)',
+                      transform: 'translateX(4px)'
                     },
                   }}
                 >

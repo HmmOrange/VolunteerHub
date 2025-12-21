@@ -345,7 +345,7 @@ export default function Dashboard() {
         }}
       >
         {/* Sự kiện sắp diễn ra - Carousel */}
-        <Paper elevation={2} sx={{ p: { xs: 2, sm: 2.5, md: 3 }, mb: { xs: 3, md: 4 }, mt: { xs: 2, md: 3 }, borderRadius: { xs: 2, md: 3 }, border: '2px solid #49BBBD' }}>
+        <Paper elevation={2} sx={{ p: { xs: 2, sm: 2.5, md: 3 }, mb: { xs: 3, md: 4 }, mt: { xs: 2, md: 3 }, borderRadius: { xs: 2, md: 3 } }}>
           <Typography 
             variant="h6" 
             fontWeight="bold" 
@@ -448,7 +448,6 @@ export default function Dashboard() {
                       minWidth: { xs: '100%', md: 'calc(33.33% - 11px)' },
                       maxWidth: { xs: '100%', md: 'calc(33.33% - 11px)' },
                       flexShrink: 0,
-                      border: '2px solid #49BBBD',
                       transform: { 
                         xs: `translateX(-${upcomingScrollIndex * 100}%)`,
                         md: `translateX(-${upcomingScrollIndex * (100 / 3 + 0.67)}%)` 
@@ -479,7 +478,7 @@ export default function Dashboard() {
                         display="block"
                         sx={{ 
                           color: eventStatusColor[calculateEventStatus(event)],
-                          fontWeight: 'bold',
+                          fontWeight: 500,
                           mb: 1,
                           fontSize: { xs: '0.7rem', sm: '0.75rem' }
                         }}
@@ -560,7 +559,7 @@ export default function Dashboard() {
       <Box sx={{ mb: 4, display: 'flex', gap: { xs: 2, md: '2%' }, alignItems: 'flex-start', flexDirection: { xs: 'column', md: 'row' }, overflow: 'visible' }}>
         {/* Cột trái: Danh sách bài viết - 100% trên mobile, 65% trên desktop */}
         <Box sx={{ flex: { xs: '1 1 100%', md: '0 0 65%' }, width: '100%', minWidth: 0 }}>
-          <Paper elevation={2} sx={{ p: { xs: 2, sm: 2.5, md: 3 }, borderRadius: { xs: 2, md: 3 }, border: '2px solid #49BBBD' }}>
+          <Paper elevation={2} sx={{ p: { xs: 2, sm: 2.5, md: 3 }, borderRadius: { xs: 2, md: 3 } }}>
             <Typography 
               variant="h6" 
               fontWeight="bold" 
@@ -597,7 +596,7 @@ export default function Dashboard() {
                 {/* Loading indicator */}
                 {loadingPosts && (
                   <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
-                    <CircularProgress sx={{ color: '#49BBBD' }} />
+                    <CircularProgress />
                   </Box>
                 )}
                 
@@ -629,8 +628,7 @@ export default function Dashboard() {
               p: { xs: 2, sm: 2.5 }, 
               bgcolor: "#f5f5f5", 
               minHeight: { xs: 'auto', md: '400px' },
-              borderRadius: { xs: 2, md: 3 },
-              border: '2px solid #49BBBD'
+              borderRadius: { xs: 2, md: 3 }
             }}
           >
               <Typography 
@@ -682,7 +680,7 @@ export default function Dashboard() {
                           display="block"
                           sx={{
                             color: calculateEventStatus(hotEvents[currentPage]) === 'upcoming' ? "#1976d2" : "#2e7d32",
-                            fontWeight: "bold",
+                            fontWeight: 500,
                             mb: 1.5,
                             fontSize: { xs: '0.7rem', sm: '0.75rem' }
                           }}
@@ -750,7 +748,7 @@ export default function Dashboard() {
                             <span style={{ fontSize: "1rem" }}>📅</span>
                             <strong>Ngày:</strong> {new Date(hotEvents[currentPage].date).toLocaleDateString()}
                           </Typography>
-                          <Typography variant="body2" fontWeight="bold" color="primary" sx={{ display: "flex", alignItems: "center", gap: 0.5, fontSize: { xs: '0.8rem', sm: '0.85rem', md: '0.875rem' }, color: '#49BBBD' /* Màu nhấn */ }}>
+                          <Typography variant="body2" sx={{ display: "flex", alignItems: "center", gap: 0.5, fontSize: { xs: '0.8rem', sm: '0.85rem', md: '0.875rem' }, color: 'text.primary', fontWeight: 500 }}>
                             <span style={{ fontSize: "1.2rem" }}>👥</span>
                             {hotEvents[currentPage].volunteers?.length || 0} thành viên đã tham gia
                           </Typography>

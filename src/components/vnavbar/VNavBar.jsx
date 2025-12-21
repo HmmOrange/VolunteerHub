@@ -70,7 +70,7 @@ export default function VNavBar({ isOpen, drawerWidth, drawerVariant, onClose })
   };
 
   const drawerContent = (
-    <div style={{ borderRight: '2px solid #49BBBD', height: '100%' }}>
+    <div style={{ borderRight: '1px solid #e0e0e0', height: '100%' }}>
       <Toolbar />
       <Divider />
 
