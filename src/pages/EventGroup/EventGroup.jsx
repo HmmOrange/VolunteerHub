@@ -836,7 +836,7 @@ export default function EventGroup() {
                 disabled={requestStatus === 'pending'} 
                 sx={{ 
                   ml: { xs: 0, sm: 2 },
-                  mr: { xs: 0, sm: 0 },
+                  mr: { xs: 0, sm: 2 },
                   mt: { xs: 1, sm: 0 },
                   bgcolor: '#49BBBD',
                   width: { xs: '100%', sm: 'auto' },
@@ -893,12 +893,17 @@ export default function EventGroup() {
                   onClick={handleLeaveEvent} 
                   sx={{ 
                     ml: { xs: 0, sm: 2 },
-                    mr: { xs: 0, sm: 0 },
+                    mr: { xs: 0, sm: 2 },
                     mt: { xs: 1, sm: 0 },
                     color: 'gray', 
                     borderColor: 'gray',
                     width: { xs: '100%', sm: 'auto' },
-                    fontSize: { xs: '0.8rem', sm: '0.875rem' }
+                    fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                    '&:hover': {
+                      color: 'white',
+                      backgroundColor: '#d32f2f',
+                      borderColor: '#d32f2f'
+                    }
                   }}
                 >
                   Rời khỏi
