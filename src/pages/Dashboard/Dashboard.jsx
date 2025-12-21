@@ -754,11 +754,11 @@ export default function Dashboard() {
                           width: currentPage === index ? { xs: 28, sm: 40 } : { xs: 10, sm: 12 },
                           height: { xs: 10, sm: 12 },
                           borderRadius: { xs: 5, sm: 6 },
-                          bgcolor: currentPage === index ? "primary.main" : "#ccc",
+                          bgcolor: currentPage === index ? "#49BBBD" : "#ccc",
                           cursor: "pointer",
                           transition: "all 0.3s ease",
                           "&:hover": {
-                            bgcolor: currentPage === index ? "primary.dark" : "#999",
+                            bgcolor: currentPage === index ? "#328078" : "#999",
                           },
                         }}
                       />
