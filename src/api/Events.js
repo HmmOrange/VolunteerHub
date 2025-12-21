@@ -10,6 +10,17 @@ const getHeaders = () => {
   };
 };
 
+// --- HÀM CHỈ LẤY AUTH (CHO UPLOAD) ---
+const getAuthOnlyHeader = () => {
+  const token = localStorage.getItem("token");
+  if (!token) {
+    throw new Error("Not authenticated");
+  }
+  return {
+    "Authorization": `Bearer ${token}`,
+  };
+};
+
 export const createEvent = async (data) => {
   const res = await fetch(`${API_URL}/create`, {
     method: "POST",
@@ -33,6 +44,28 @@ export const getAllEvents = async ({ approvedOnly = true } = {}) => {
   return res.json();
 };
 
+// Search events
+export const searchEvents = async (query = "") => {
+  try {
+    const res = await fetch(`${API_URL}/search?query=${encodeURIComponent(query)}`, {
+      method: "GET",
+      headers: getHeaders(),
+    });
+    
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.message || "Lỗi tìm kiếm");
+    }
+    
+    const result = await res.json();
+    console.log("API searchEvents result:", result);
+    return result;
+  } catch (error) {
+    console.error("searchEvents API error:", error);
+    throw error;
+  }
+};
+
 
 export const getEventBySlug = async ({ slug, userId }) => {
   const url = userId 
@@ -42,8 +75,32 @@ export const getEventBySlug = async ({ slug, userId }) => {
   const res = await fetch(url, {
       headers: getHeaders()
   });
-  if (!res.ok) throw new Error(`Failed to fetch event with slug ${slug}`);
-  return res.json();
+
+  // TRƯỜNG HỢP 1: Thành công (200-299)
+  // Trả về JSON ngay lập tức, không làm gì thêm để tránh lỗi parse
+  if (res.ok) {
+    return res.json();
+  }
+
+  // TRƯỜNG HỢP 2: Có lỗi (403, 404, 500...)
+  // Chúng ta cố gắng đọc body để lấy message lỗi từ backend
+  let errorMessage = `Lỗi tải sự kiện (Mã: ${res.status})`;
+  
+  try {
+    const errorData = await res.json(); // Cố đọc JSON lỗi
+    if (errorData && errorData.message) {
+      errorMessage = errorData.message; // Lấy message từ backend nếu có
+    }
+  } catch (e) {
+    // Nếu backend trả về lỗi dạng HTML hoặc text thường (không phải JSON)
+    // thì bỏ qua bước parse JSON và dùng message mặc định ở trên
+    console.error("Không thể đọc lỗi chi tiết từ backend:", e);
+  }
+
+  // Tạo object lỗi và gắn status code vào để VNavBar nhận diện (403 hay 404)
+  const error = new Error(errorMessage);
+  error.status = res.status; 
+  throw error;
 };
 
 export const updateEvent = async (updateData) => {
@@ -119,5 +176,81 @@ export const removeMember = async ({ slug, memberId, managerId }) => {
   });
   const json = await res.json();
   if (!res.ok) throw new Error(json.message || "Lỗi khi xóa thành viên");
+  return json;
+};
+
+export const updateMemberAttendance = async ({ slug, userId, attendance, requesterId }) => {
+  const res = await fetch(`${API_URL}/${slug}/attendance`, {
+    method: "PUT",
+    headers: getHeaders(),
+    body: JSON.stringify({ userId, attendance, requesterId }),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.message || "Lỗi khi cập nhật trạng thái tham gia");
+  return json;
+};
+
+// --- UPLOAD BANNER ---
+export const uploadBanner = async (slug, file) => {
+  // Tạo FormData để upload file
+  const formData = new FormData();
+  formData.append("banner", file);
+
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${API_URL}/${slug}/banner`, {
+    method: "PUT",
+    headers: {
+      "Authorization": `Bearer ${token}`,
+      // Không set Content-Type, browser tự set với boundary cho multipart/form-data
+    },
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.message || "Upload banner failed");
+  }
+  return res.json();
+};
+
+// --- UPLOAD BADGE ---
+export const uploadBadge = async (slug, file) => {
+  const formData = new FormData();
+  formData.append('badge', file);
+  const token = localStorage.getItem('token');
+  const res = await fetch(`${API_URL}/${slug}/badge`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    },
+    body: formData
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.message || 'Lỗi tải ảnh badge');
+  }
+  return res.json();
+};
+
+// --- SAVE CONTRIBUTIONS ---
+export const saveContributions = async (slug, contributions) => {
+  const res = await fetch(`${API_URL}/${slug}/contributions`, {
+    method: 'PUT',
+    headers: getHeaders(),
+    body: JSON.stringify({ contributions })
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.message || 'Lỗi lưu đóng góp');
+  return json;
+};
+
+// --- GET USER'S JOINED EVENTS ---
+export const getUserEvents = async (userId) => {
+  const res = await fetch(`${API_URL}/user/${userId}`, {
+    method: "GET",
+    headers: getHeaders(),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.message || "Lỗi khi tải sự kiện của người dùng");
   return json;
 };

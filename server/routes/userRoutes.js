@@ -8,8 +8,12 @@ import {
   getProfile,
   createManager,
   importUsers,
+<<<<<<< HEAD
   updateCredentials,
   changePassword
+=======
+  setBadgeVisibility,
+>>>>>>> fdf9d341f67f54799accd0efc9559e9e014fea35
 } from "../controllers/userController.js";
 
 import { uploadAvatar } from "../middleware/uploadAvatar.js";
@@ -79,5 +83,8 @@ router.put(
   changePassword
 );
 
+
+// PUT /api/users/profile/badge-visibility
+router.put('/profile/badge-visibility', protect, setBadgeVisibility);
 
 export default router;

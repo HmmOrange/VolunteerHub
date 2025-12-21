@@ -82,3 +82,21 @@ export const deletePost = async (postId, username) => {
   if (!res.ok) throw new Error("Xóa bài đăng thất bại");
   return res.json();
 };
+
+export const getPostsByEventsPaginated = async (eventIds, page = 1, limit = 10) => {
+  const eventIdsParam = Array.isArray(eventIds) ? eventIds.join(',') : eventIds;
+  const res = await fetch(`${API_URL}/by-events?eventIds=${eventIdsParam}&page=${page}&limit=${limit}`, {
+    headers: getHeaders()
+  });
+  if (!res.ok) throw new Error("Failed to fetch posts");
+  return res.json();
+};
+
+export const getAllPublicPosts = async (page = 1, limit = 10, userId = null) => {
+  const userParam = userId ? `&userId=${userId}` : '';
+  const res = await fetch(`${API_URL}/public?page=${page}&limit=${limit}${userParam}`, {
+    headers: getHeaders()
+  });
+  if (!res.ok) throw new Error("Failed to fetch public posts");
+  return res.json();
+};

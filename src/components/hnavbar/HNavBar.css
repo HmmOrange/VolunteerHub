@@ -53,10 +53,14 @@
 .hnavbar-search-icon {
   color: gray;
   margin-right: 8px;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
 }
 
 .hnavbar-search-input {
   font-size: 0.95rem;
+  flex: 1;
 }
 
 /* === 4. Bên phải (Nút & Avatar) === */

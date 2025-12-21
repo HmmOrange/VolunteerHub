@@ -2,19 +2,10 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { registerUser } from "../../api/Auth";
 import { uploadAvatar } from "../../api/Users";
-import {
-  Container,
-  Paper,
-  Typography,
-  TextField,
-  Button,
-  Stack,
-  Box,
-  Alert,
-  Avatar,
-  IconButton,
-} from "@mui/material";
-import { PhotoCamera, Close } from "@mui/icons-material";
+import { UserPlus, Camera, ArrowLeft, Check, ArrowRight } from "lucide-react";
+import "./Register.css";
+
+const registerImage = "https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=2070&auto=format&fit=crop";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -32,8 +23,11 @@ export default function Register() {
 
   // ===== STEP CONTROL =====
   const [step, setStep] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [msg, setMsg] = useState("");
+  const [error, setError] = useState("");
 
-  // ===== STEP 1 =====
+  // ===== DATA STATE =====
   const [accountForm, setAccountForm] = useState({
     email: "",
     username: "",
@@ -41,64 +35,37 @@ export default function Register() {
     confirmPassword: "",
   });
 
-  // ===== STEP 2 =====
   const [profileForm, setProfileForm] = useState({
     fullName: "",
     dob: "",
     address: "",
   });
 
-  // ===== AVATAR =====
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(null);
   const fileInputRef = useRef(null);
 
-  const [msg, setMsg] = useState("");
-  const [error, setError] = useState("");
-
-  // ================= STEP 1 =================
-  const handleAccountSubmit = async (e) => {
-
+  // ================= BƯỚC 1: CHỈ VALIDATE VÀ CHUYỂN BƯỚC =================
+  const handleNextStep = (e) => {
     e.preventDefault();
     setError("");
-    setMsg("");
 
-    const { email, username, password, confirmPassword } = accountForm;
-
-    if (password !== confirmPassword) {
+    // Validate cơ bản
+    if (accountForm.password !== accountForm.confirmPassword) {
       setError("Mật khẩu nhập lại không khớp");
       return;
     }
-
-    if (!captcha || !captchaAnswer) {
-      setError("Vui lòng nhập captcha");
+    if (!captchaAnswer) {
+      setError("Vui lòng nhập mã xác thực");
       return;
     }
 
-    try {
-      const res = await registerUser({
-        email,
-        username,
-        password,
-        captchaAnswer,
-        captchaToken: captcha.token,
-      });
-
-      // ✅ SAVE AUTH INFO
-      localStorage.setItem("token", res.token);
-      localStorage.setItem("userId", res.user.id);
-      localStorage.setItem("username", res.user.username);
-      localStorage.setItem("role", res.user.role);
-      localStorage.setItem("avatar", res.user.avatar || "");
-
-      setStep(2);
-    } catch (err) {
-      setError(err.message || "Đăng ký thất bại");
-    }
+    // Nếu ổn thì chuyển sang bước 2 (Chưa gọi API)
+    setStep(2);
   };
 
-  // ================= STEP 2 =================
-  const handleProfileSubmit = async (e) => {
+  // ================= BƯỚC 2: GỌI API ĐĂNG KÝ + CẬP NHẬT PROFILE =================
+  const handleFinalSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setMsg("");
@@ -108,13 +75,34 @@ export default function Register() {
       return;
     }
 
+    setIsLoading(true);
+
     try {
-      // 1️⃣ update profile info
-      await fetch("http://localhost:5000/api/users/profile", {
+      // 1️⃣ GỌI API ĐĂNG KÝ (Sử dụng dữ liệu từ Bước 1)
+      const res = await registerUser({
+        email: accountForm.email,
+        username: accountForm.username,
+        password: accountForm.password,
+        captchaAnswer,
+        captchaToken: captcha?.token,
+      });
+
+      // Lưu Token tạm thời
+      const token = res.token;
+      localStorage.setItem("token", token);
+      
+      // Lưu thông tin cơ bản để hiển thị nếu cần
+      localStorage.setItem("userId", res.user.id);
+      localStorage.setItem("username", res.user.username);
+      localStorage.setItem("role", res.user.role);
+
+      // 2️⃣ GỌI API CẬP NHẬT PROFILE (Sử dụng dữ liệu Bước 2)
+      // Lưu ý: Đảm bảo backend endpoint này hoạt động
+      const profileRes = await fetch("http://localhost:5000/api/users/profile", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${token}`, // Dùng token vừa nhận được
         },
         body: JSON.stringify({
           fullName: profileForm.fullName,
@@ -123,23 +111,41 @@ export default function Register() {
         }),
       });
 
-      // 2️⃣ upload avatar (SAME AS Profile.jsx)
-      if (avatarFile) {
-        const res = await uploadAvatar(avatarFile);
-        localStorage.setItem("avatar", res.avatar);
+      if (!profileRes.ok) {
+        const errData = await profileRes.json();
+        throw new Error(errData.message || "Cập nhật thông tin thất bại");
       }
 
-      setMsg("Hoàn tất đăng ký! Đang chuyển đến trang đăng nhập...");
+      // 3️⃣ UPLOAD AVATAR (Nếu có)
+      let finalAvatar = "";
+      if (avatarFile) {
+        const uploadRes = await uploadAvatar(avatarFile);
+        finalAvatar = uploadRes.avatar;
+        localStorage.setItem("avatar", finalAvatar);
+      }
+
+      setMsg("Đăng ký thành công! Đang vào hệ thống...");
 
       setTimeout(() => {
+        // Chuyển hướng thẳng vào dashboard hoặc trang login tùy logic
+        // window.location.href = "/dashboard"; 
         navigate("/login");
       }, 1500);
+
     } catch (err) {
-      setError(err.message || "Không thể hoàn tất đăng ký");
+      console.error(err);
+      // Nếu lỗi ở bước đăng ký, có thể do trùng username/email -> Quay về bước 1 để sửa
+      if (err.message.includes("email") || err.message.includes("username") || err.message.includes("tồn tại")) {
+        setError(err.message + ". Vui lòng quay lại bước 1 để kiểm tra.");
+      } else {
+        setError(err.message || "Đăng ký thất bại");
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // ===== AVATAR HANDLERS =====
+  // ===== AVATAR HANDLER =====
   const handleAvatarChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -147,159 +153,166 @@ export default function Register() {
     setAvatarPreview(URL.createObjectURL(file));
   };
 
-  const clearAvatar = () => {
-    setAvatarFile(null);
-    setAvatarPreview(null);
-  };
-
   return (
-    <Container maxWidth="sm" sx={{ mt: 6 }}>
-      <Paper elevation={3} sx={{ p: 4 }}>
-        <Typography variant="h5" textAlign="center" fontWeight="bold" mb={3}>
-          Đăng ký
-        </Typography>
+    <div className="register-wrapper">
+      <div className="register-visual" style={{ backgroundImage: `url(${registerImage})` }}>
+        <div className="visual-overlay">
+          <div className="brand-header">
+            <div className="logo-circle"><UserPlus size={28} color="#49BBBD" /></div>
+            <h1 className="brand-name">VolunteerHub</h1>
+          </div>
+        </div>
+      </div>
 
-        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-        {msg && <Alert severity="success" sx={{ mb: 2 }}>{msg}</Alert>}
+      <div className="register-content">
+        <div className="form-box">
+          <div className="form-header">
+            <h2>Tạo tài khoản mới</h2>
+            <p>Hoàn thành các bước để trở thành thành viên.</p>
+          </div>
 
-        {/* ===== STEP 1 ===== */}
-        {step === 1 && (
-          <Box component="form" onSubmit={handleAccountSubmit}>
-            <Stack spacing={2}>
-              <TextField
-                label="Email"
-                type="email"
-                value={accountForm.email}
-                onChange={(e) =>
-                  setAccountForm({ ...accountForm, email: e.target.value })
-                }
-                required
-                fullWidth
-              />
+          {/* STEPPER: Có thể click để quay lại */}
+          <div className="stepper">
+            <div 
+              className={`step-item ${step >= 1 ? "active" : ""}`}
+              onClick={() => setStep(1)} 
+              style={{cursor: 'pointer'}}
+            >
+              <div className="step-circle">1</div>
+              <span className="step-label">Tài khoản</span>
+            </div>
+            <div className={`step-line ${step >= 2 ? "active" : ""}`}></div>
+            <div className={`step-item ${step >= 2 ? "active" : ""}`}>
+              <div className="step-circle">2</div>
+              <span className="step-label">Cá nhân</span>
+            </div>
+          </div>
 
-              <TextField
-                label="Tên đăng nhập"
-                value={accountForm.username}
-                onChange={(e) =>
-                  setAccountForm({ ...accountForm, username: e.target.value })
-                }
-                required
-                fullWidth
-              />
+          {error && <div className="alert-box error">{error}</div>}
+          {msg && <div className="alert-box success">{msg}</div>}
 
-              <TextField
-                label="Mật khẩu"
-                type="password"
-                value={accountForm.password}
-                onChange={(e) =>
-                  setAccountForm({ ...accountForm, password: e.target.value })
-                }
-                required
-                fullWidth
-              />
-
-              <TextField
-                label="Nhập lại mật khẩu"
-                type="password"
-                value={accountForm.confirmPassword}
-                onChange={(e) =>
-                  setAccountForm({
-                    ...accountForm,
-                    confirmPassword: e.target.value,
-                  })
-                }
-                required
-                fullWidth
-              />
-
-              <TextField
-                label={`Captcha: ${captcha?.question || "..."}`}
-                value={captchaAnswer}
-                onChange={(e) => setCaptchaAnswer(e.target.value)}
-                required
-                fullWidth
-              />
-
-              <Button type="submit" variant="contained" size="large">
-                Tiếp tục
-              </Button>
-            </Stack>
-          </Box>
-        )}
-
-        {/* ===== STEP 2 ===== */}
-        {step === 2 && (
-          <Box component="form" onSubmit={handleProfileSubmit}>
-            <Stack spacing={2}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                <Avatar
-                  src={avatarPreview || undefined}
-                  sx={{ width: 64, height: 64 }}
+          {/* ===== FORM BƯỚC 1 ===== */}
+          {step === 1 && (
+            <form onSubmit={handleNextStep} className="auth-form slide-in">
+              <div className="form-group">
+                <label>Email</label>
+                <input
+                  type="email"
+                  value={accountForm.email}
+                  onChange={(e) => setAccountForm({ ...accountForm, email: e.target.value })}
+                  required
                 />
-                <IconButton onClick={() => fileInputRef.current.click()}>
-                  <PhotoCamera />
-                </IconButton>
-                {avatarPreview && (
-                  <IconButton onClick={clearAvatar}>
-                    <Close />
-                  </IconButton>
-                )}
-              </Box>
+              </div>
+              <div className="form-group">
+                <label>Tên đăng nhập</label>
+                <input
+                  type="text"
+                  value={accountForm.username}
+                  onChange={(e) => setAccountForm({ ...accountForm, username: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Mật khẩu</label>
+                  <input
+                    type="password"
+                    value={accountForm.password}
+                    onChange={(e) => setAccountForm({ ...accountForm, password: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Nhập lại</label>
+                  <input
+                    type="password"
+                    value={accountForm.confirmPassword}
+                    onChange={(e) => setAccountForm({ ...accountForm, confirmPassword: e.target.value })}
+                    required
+                  />
+                </div>
+              </div>
+              <div className="form-group captcha-group">
+                <label>Mã xác thực: <span className="captcha-question">{captcha?.question || "..."}</span></label>
+                <input
+                  type="text"
+                  placeholder="Nhập kết quả..."
+                  value={captchaAnswer}
+                  onChange={(e) => setCaptchaAnswer(e.target.value)}
+                  required
+                />
+              </div>
 
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                hidden
-                onChange={handleAvatarChange}
-              />
+              <button type="submit" className="btn-primary">
+                Tiếp tục <ArrowRight size={18}/>
+              </button>
+            </form>
+          )}
 
-              <TextField
-                label="Họ và tên"
-                value={profileForm.fullName}
-                onChange={(e) =>
-                  setProfileForm({ ...profileForm, fullName: e.target.value })
-                }
-                required
-                fullWidth
-              />
+          {/* ===== FORM BƯỚC 2 (CÓ NÚT QUAY LẠI) ===== */}
+          {step === 2 && (
+            <form onSubmit={handleFinalSubmit} className="auth-form slide-in">
+              <div className="avatar-upload-section">
+                <div 
+                  className="avatar-preview" 
+                  onClick={() => fileInputRef.current.click()}
+                  style={avatarPreview ? { backgroundImage: `url(${avatarPreview})` } : {}}
+                >
+                  {!avatarPreview && <Camera size={32} color="#49BBBD" />}
+                </div>
+                <input ref={fileInputRef} type="file" accept="image/*" hidden onChange={handleAvatarChange} />
+                <span className="avatar-hint">Nhấn để tải ảnh đại diện</span>
+              </div>
 
-              <TextField
-                label="Ngày sinh"
-                type="date"
-                InputLabelProps={{ shrink: true }}
-                value={profileForm.dob}
-                onChange={(e) =>
-                  setProfileForm({ ...profileForm, dob: e.target.value })
-                }
-                fullWidth
-              />
+              <div className="form-group">
+                <label>Họ và tên</label>
+                <input
+                  type="text"
+                  value={profileForm.fullName}
+                  onChange={(e) => setProfileForm({ ...profileForm, fullName: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Ngày sinh</label>
+                <input
+                  type="date"
+                  value={profileForm.dob}
+                  onChange={(e) => setProfileForm({ ...profileForm, dob: e.target.value })}
+                />
+              </div>
+              <div className="form-group">
+                <label>Địa chỉ</label>
+                <input
+                  type="text"
+                  value={profileForm.address}
+                  onChange={(e) => setProfileForm({ ...profileForm, address: e.target.value })}
+                />
+              </div>
 
-              <TextField
-                label="Địa chỉ"
-                value={profileForm.address}
-                onChange={(e) =>
-                  setProfileForm({ ...profileForm, address: e.target.value })
-                }
-                fullWidth
-              />
+              {/* ACTION BUTTONS: QUAY LẠI & HOÀN TẤT */}
+              <div className="form-actions">
+                <button 
+                  type="button" 
+                  className="btn-secondary" 
+                  onClick={() => setStep(1)} // Quay lại bước 1
+                  disabled={isLoading}
+                >
+                  <ArrowLeft size={18}/> Quay lại
+                </button>
 
-              <Button type="submit" variant="contained" size="large">
-                Hoàn tất
-              </Button>
-            </Stack>
-          </Box>
-        )}
+                <button type="submit" className="btn-primary" disabled={isLoading}>
+                  {isLoading ? <span className="spinner"></span> : <>Hoàn tất <Check size={18}/></>}
+                </button>
+              </div>
+            </form>
+          )}
 
-        <Button
-          onClick={() => navigate("/")}
-          sx={{ mt: 3 }}
-          color="inherit"
-          fullWidth
-        >
-          ← Quay về trang trước
-        </Button>
-      </Paper>
-    </Container>
+          <div className="form-footer">
+            <p>Đã có tài khoản? <span className="link-highlight" onClick={() => navigate("/login")}>Đăng nhập ngay</span></p>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

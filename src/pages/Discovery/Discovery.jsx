@@ -18,14 +18,13 @@ import {
 import { getAllEvents, deleteEvent, updateEvent } from "../../api/Events";
 import placeholderImage from "../../assets/img/event_group.jpg";
 
-export default function Events() {
+export default function Discovery() {
   const navigate = useNavigate();
   const username = localStorage.getItem("username");
   const userId = localStorage.getItem("userId");
   const role = localStorage.getItem("role");
 
   const [events, setEvents] = useState([]);
-  const [joinedEvents, setJoinedEvents] = useState([]);
 
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({
@@ -47,7 +46,7 @@ export default function Events() {
     return `http://localhost:5000${path}`;
   };
 
-  /* ================= FILTER & SORT (JOINED EVENTS ONLY) ================= */
+  /* ================= FILTER & SORT ================= */
 
   const [statusFilter, setStatusFilter] = useState("all");
   const [timeFilter, setTimeFilter] = useState("all");
@@ -58,23 +57,11 @@ export default function Events() {
   useEffect(() => {
     (async () => {
       const data = await getAllEvents();
-      setEvents(data);
-
-      if (!userId) return;
-
-      const joined = data.filter(
-        (event) =>
-          event.status === "approved" &&
-          event.volunteers?.some((v) =>
-            typeof v === "string"
-              ? v === userId
-              : v._id?.toString() === userId
-          )
-      );
-
-      setJoinedEvents(joined);
+      // Hiển thị tất cả sự kiện đã được duyệt
+      const approvedEvents = data.filter(event => event.status === "approved");
+      setEvents(approvedEvents);
     })();
-  }, [userId]);
+  }, []);
 
   /* ================= DERIVED ================= */
 
@@ -106,10 +93,10 @@ export default function Events() {
     return 'completed';
   };
 
-  const filteredAndSortedJoinedEvents = useMemo(() => {
-    let list = [...joinedEvents];
+  const filteredAndSortedEvents = useMemo(() => {
+    let list = [...events];
 
-    /* STATUS FILTER (manager only, mostly redundant but kept) */
+    /* STATUS FILTER (manager only) */
     if (role === "manager" && statusFilter !== "all") {
       list = list.filter((e) => e.status === statusFilter);
     }
@@ -143,7 +130,7 @@ export default function Events() {
     });
 
     return list;
-  }, [joinedEvents, role, statusFilter, timeFilter, sortBy]);
+  }, [events, role, statusFilter, timeFilter, sortBy]);
 
   /* ================= ACTIONS ================= */
 
@@ -152,7 +139,8 @@ export default function Events() {
     if (window.confirm("Bạn có chắc muốn xóa sự kiện này?")) {
       await deleteEvent({ slug, username });
       const data = await getAllEvents();
-      setEvents(data);
+      const approvedEvents = data.filter(event => event.status === "approved");
+      setEvents(approvedEvents);
     }
   };
 
@@ -182,7 +170,8 @@ export default function Events() {
 
     setEditing(null);
     const data = await getAllEvents();
-    setEvents(data);
+    const approvedEvents = data.filter(event => event.status === "approved");
+    setEvents(approvedEvents);
   };
 
   const handleCancelEdit = (e) => {
@@ -228,7 +217,8 @@ export default function Events() {
         <Card
           sx={{ 
             height: "100%",
-            minWidth: '20vw'
+            minWidth: '20vw',
+            cursor: editing !== event.slug ? 'pointer' : 'default'
           }}
           onClick={() =>
             editing !== event.slug && navigate(`/event/${event.slug}`)
@@ -237,10 +227,6 @@ export default function Events() {
           <CardContent>
             <Typography variant="h6" fontWeight="bold">
               {event.name}
-            </Typography>
-
-            <Typography variant="caption" color="primary" display="block">
-              Trạng thái: {statusMap[event.status]}
             </Typography>
 
             <Typography 
@@ -304,6 +290,11 @@ export default function Events() {
               <b>Địa điểm:</b>{" "}
               {event.location || "Chưa xác định"}
             </Typography>
+
+            <Typography variant="body2" sx={{ mt: 1 }}>
+              <b>Tình nguyện viên:</b>{" "}
+              {event.volunteers?.length || 0} người
+            </Typography>
           </CardContent>
 
           {isCreator && (
@@ -328,7 +319,7 @@ export default function Events() {
 
   return (
     <Container maxWidth="lg">
-      {/* FILTERS — JOINED EVENTS ONLY */}
+      {/* FILTERS */}
       <Paper sx={{ p: 3, mb: 4, mt: 12 }}>
         <Stack direction="row" spacing={2} flexWrap="wrap">
           <TextField
@@ -357,18 +348,18 @@ export default function Events() {
         </Stack>
       </Paper>
 
-      {/* JOINED EVENTS */}
+      {/* ALL EVENTS */}
       <Typography variant="h5" fontWeight="bold" mb={3}>
-        Sự kiện bạn đã tham gia
+        Khám phá sự kiện
       </Typography>
 
-      {filteredAndSortedJoinedEvents.length === 0 ? (
+      {filteredAndSortedEvents.length === 0 ? (
         <Typography color="text.secondary">
-          Bạn chưa tham gia sự kiện nào
+          Không có sự kiện nào
         </Typography>
       ) : (
         <Grid container spacing={3}>
-          {filteredAndSortedJoinedEvents.map(renderEventCard)}
+          {filteredAndSortedEvents.map(renderEventCard)}
         </Grid>
       )}
     </Container>

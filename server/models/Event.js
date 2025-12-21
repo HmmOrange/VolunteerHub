@@ -45,6 +45,10 @@ const eventSchema = new mongoose.Schema(
 
     location: String,
     description: String,
+    banner: {
+      type: String,
+      default: null,
+    },
 
     // --- QUYỀN RIÊNG TƯ ---
     privacy: {
@@ -77,7 +81,37 @@ const eventSchema = new mongoose.Schema(
       default: null,
     },
 
+    // --- TRẠNG THÁI SỰ KIỆN ---
+    eventStatus: {
+      type: String,
+      enum: ["upcoming", "ongoing", "completed", "cancelled"],
+      default: "upcoming",
+    },
+
     volunteers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+
+    // --- BADGE FOR EVENT (OPTIONAL) ---
+    // Default badge image path (use default image until owner uploads a custom one)
+    badge: {
+      type: String,
+      default: "/uploads/badges/default.jpg"
+    },
+
+    // --- CONTRIBUTIONS: store contribution level per volunteer ---
+    contributions: [{
+      user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+      value: { type: Number, default: 0 }
+    }],
+
+    // --- TRẠNG THÁI THAM GIA CỦA VOLUNTEERS ---
+    attendance: [{
+      user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+      status: {
+        type: String,
+        enum: ['pending', 'completed', 'absent'],
+        default: 'pending'
+      }
+    }],
 
     // --- TÍNH NĂNG LẶP LẠI ---
     recurrence: {

@@ -10,6 +10,7 @@ const getToken = () => {
   return token;
 };
 
+<<<<<<< HEAD
 // JSON requests
 const jsonAuthHeaders = () => ({
   "Content-Type": "application/json",
@@ -20,6 +21,18 @@ const jsonAuthHeaders = () => ({
 const authOnlyHeaders = () => ({
   Authorization: `Bearer ${getToken()}`,
 });
+=======
+// 3. Helper chỉ lấy Auth (Dùng cho Upload file - quan trọng!)
+const getAuthOnlyHeader = () => {
+  const token = localStorage.getItem("token");
+  if (!token) {
+    throw new Error("Not authenticated");
+  }
+  return {
+    "Authorization": `Bearer ${token}`,
+  };
+};
+>>>>>>> fdf9d341f67f54799accd0efc9559e9e014fea35
 
 /* ================= USERS ================= */
 
@@ -116,9 +129,20 @@ export const uploadAvatar = async (file) => {
   const formData = new FormData();
   formData.append("avatar", file);
 
+<<<<<<< HEAD
   const res = await fetch(`${API_URL}/profile/avatar`, {
     method: "PUT",
     headers: authOnlyHeaders(), // ❗ NO Content-Type
+=======
+  // LƯU Ý QUAN TRỌNG:
+  // Không dùng authHeader() ở đây vì FormData tự động set Content-Type là multipart/form-data kèm boundary.
+  // Nếu set cứng application/json thì upload sẽ lỗi.
+  // Dùng getAuthOnlyHeader() để chỉ gửi Authorization mà KHÔNG set Content-Type.
+  
+  const res = await fetch(`${API_URL}/profile/avatar`, {
+    method: "PUT",
+    headers: getAuthOnlyHeader(), // ❗ Chỉ gửi Authorization, để browser tự set Content-Type
+>>>>>>> fdf9d341f67f54799accd0efc9559e9e014fea35
     body: formData,
   });
 
@@ -130,6 +154,7 @@ export const uploadAvatar = async (file) => {
   return res.json();
 };
 
+<<<<<<< HEAD
 /* ================= CREDENTIALS ================= */
 
 export const updateCredentials = async (payload) => {
@@ -137,10 +162,18 @@ export const updateCredentials = async (payload) => {
     method: "PUT",
     headers: jsonAuthHeaders(),
     body: JSON.stringify(payload),
+=======
+export const setBadgeVisibility = async (eventId, visible) => {
+  const res = await fetch(`${API_URL}/profile/badge-visibility`, {
+    method: 'PUT',
+    headers: authHeader(),
+    body: JSON.stringify({ eventId, visible })
+>>>>>>> fdf9d341f67f54799accd0efc9559e9e014fea35
   });
 
   if (!res.ok) {
     const err = await res.json();
+<<<<<<< HEAD
     throw new Error(err.message || "Failed to update credentials");
   }
 
@@ -161,3 +194,10 @@ export const changePassword = async ({ oldPassword, newPassword }) => {
 
   return res.json();
 };
+=======
+    throw new Error(err.message || 'Failed to update badge visibility');
+  }
+
+  return res.json();
+};
+>>>>>>> fdf9d341f67f54799accd0efc9559e9e014fea35

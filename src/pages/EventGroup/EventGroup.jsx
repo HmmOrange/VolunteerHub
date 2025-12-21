@@ -4,19 +4,25 @@ import {
   Box, Typography, Paper, Divider, Tabs, Tab, Container, Button,
   CircularProgress, List, ListItem, ListItemAvatar, Avatar, ListItemText,
   IconButton, Chip, Stack, Dialog, DialogTitle, DialogContent, DialogActions,
-  TextField, Badge, FormControl, FormLabel, RadioGroup, FormControlLabel, Radio
+  TextField, Badge, FormControl, FormLabel, RadioGroup, FormControlLabel, Radio,
+  Menu, MenuItem,
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow
 } from "@mui/material";
-import { Close as CloseIcon, LockOutlined, Edit as EditIcon } from "@mui/icons-material";
+import { Close as CloseIcon, LockOutlined, Edit as EditIcon, ErrorOutline, MoreVert as MoreVertIcon, Cancel, Stop, AccessTime, CheckCircle, PersonOff } from "@mui/icons-material";
 
 // Import API
 import {
   getEventBySlug, joinEvent, leaveEvent, removeMember,
-  getPendingRequests, respondToJoinRequest, updateEvent
+  getPendingRequests, respondToJoinRequest, updateEvent, updateMemberAttendance, uploadBanner,
+  uploadBadge, saveContributions
 } from "../../api/Events";
 import { getPostsByEvent } from "../../api/Posts";
+import { createPost } from "../../api/Posts";
 
 import CreatePost from "../../components/post/CreatePost";
 import PostCard from "../../components/post/PostCard";
+import PostModal from "../../components/post/PostModal";
+import eventGroupAvatar from "../../assets/img/event_group.jpg";
 
 import "./EventGroup.css";
 
@@ -33,30 +39,100 @@ export default function EventGroup() {
   const [currentTab, setCurrentTab] = useState(0);
   const [isLoadingPosts, setIsLoadingPosts] = useState(true);
   const [isJoined, setIsJoined] = useState(false);
-  const [requestStatus, setRequestStatus] = useState(null); 
+  const [requestStatus, setRequestStatus] = useState(null);
+  const [postsLimit, setPostsLimit] = useState(10); // Giới hạn posts hiển thị
+  const [hasMorePosts, setHasMorePosts] = useState(true); 
   
   const [openJoinModal, setOpenJoinModal] = useState(false);
   const [joinAnswer, setJoinAnswer] = useState("");
   const [pendingRequests, setPendingRequests] = useState([]);
 
+  // Contribution tab state
+  const [contributions, setContributions] = useState({}); // { userId: number }
+  const [badgeFile, setBadgeFile] = useState(null);
+  const [badgePreview, setBadgePreview] = useState(null);
+  const [isEditingContributions, setIsEditingContributions] = useState(false);
+  const [badgeConfirmOpen, setBadgeConfirmOpen] = useState(false);
+  const [pendingBadgeFile, setPendingBadgeFile] = useState(null);
+  const [pendingBadgePreview, setPendingBadgePreview] = useState(null);
+
   const [openEditModal, setOpenEditModal] = useState(false);
   const [editForm, setEditForm] = useState({
     name: "", description: "", location: "", date: "",
+    endDate: "", startTime: "", endTime: "",
     privacy: "Public", question: ""
   });
+  const [bannerFile, setBannerFile] = useState(null);
+  const [bannerPreview, setBannerPreview] = useState(null);
+
+  // State cho action menu
+  const [anchorElActions, setAnchorElActions] = useState(null);
+  const [openExtendDialog, setOpenExtendDialog] = useState(false);
+  const [extendHours, setExtendHours] = useState(1);
+
+  // State cho attendance menu
+  const [anchorElAttendance, setAnchorElAttendance] = useState(null);
+  const [selectedMember, setSelectedMember] = useState(null);
+
+  // State cho countdown timer
+  const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  const [countdownLabel, setCountdownLabel] = useState("");
+  const [autoEventStatus, setAutoEventStatus] = useState("");
+
+  // State cho post modal
+  const [selectedPost, setSelectedPost] = useState(null);
+  const [postModalOpen, setPostModalOpen] = useState(false);
+
+  // 2. THÊM STATE ĐỂ LƯU LỖI (NẾU BỊ CHẶN)
+  const [errorState, setErrorState] = useState(null); 
+  // ==========================================
 
   // === LOGIC PHÂN QUYỀN ===
   const currentUserInEvent = eventData?.volunteers?.find(v => (v._id || v) === currentUserId);
   const currentUserIsCreator = eventData?.createdBy?._id === currentUserId || eventData?.createdBy === currentUserId;
   
-  // Quyền quản trị: Phải là thành viên VÀ (là người tạo HOẶC có role manager)
   const isOwner = currentUserInEvent && currentUserIsCreator && currentUserInEvent.role === 'manager';
 
-  // === 1. HÀM XỬ LÝ AVATAR (Chuẩn hóa giống PostCard) ===
+  // === HÀM TÍNH TRẠNG THÁI TỰ ĐỘNG ===
+  const calculateEventStatus = (event) => {
+    if (!event) return 'upcoming';
+    
+    // Chỉ giữ trạng thái cancelled nếu đã bị hủy
+    if (event.eventStatus === 'cancelled') return 'cancelled';
+    
+    // Còn lại tất cả dựa vào thời gian thực tế
+    const now = new Date();
+    const startDate = new Date(event.date);
+    if (event.startTime) {
+      const [h, m] = event.startTime.split(':');
+      startDate.setHours(parseInt(h), parseInt(m), 0, 0);
+    }
+    
+    const endDate = new Date(event.endDate || event.date);
+    if (event.endTime) {
+      const [h, m] = event.endTime.split(':');
+      endDate.setHours(parseInt(h), parseInt(m), 0, 0);
+    }
+    
+    if (now < startDate) return 'upcoming';
+    if (now >= startDate && now <= endDate) return 'ongoing';
+    return 'completed';
+  };
+
+  // === 1. HÀM XỬ LÝ AVATAR ===
   const getAvatarUrl = (user) => {
     if (!user || !user.avatar) return undefined;
     if (user.avatar.startsWith("http")) return user.avatar;
     const path = user.avatar.startsWith("/") ? user.avatar : `/${user.avatar}`;
+    return `http://localhost:5000${path}`;
+  };
+
+  // === HÀM XỬ LÝ BANNER URL ===
+  const getBannerUrl = (banner) => {
+    if (!banner) return null;
+    if (banner.startsWith("http")) return banner;
+    if (banner.startsWith("data:")) return banner; // base64 cũ (nếu còn)
+    const path = banner.startsWith("/") ? banner : `/${banner}`;
     return `http://localhost:5000${path}`;
   };
 
@@ -79,7 +155,6 @@ export default function EventGroup() {
       sx: { bgcolor: getAvatarColor(user?.role) }
     };
   };
-  // =======================================================
 
   // === FETCH DATA ===
   useEffect(() => {
@@ -88,6 +163,7 @@ export default function EventGroup() {
         try {
           const data = await getEventBySlug({ slug, userId: currentUserId });
           setEventData(data);
+          setErrorState(null); // Reset lỗi nếu thành công
 
           if (data.volunteers) {
             const joined = data.volunteers.some(v => (v._id ? v._id.toString() : v.toString()) === currentUserId);
@@ -106,7 +182,6 @@ export default function EventGroup() {
                 }
             }
 
-            // Check quyền admin cục bộ để fetch requests ngay lập tức nếu cần
             const userIsAdminLocal = joined && (
                 (data.createdBy?._id || data.createdBy) === currentUserId || 
                 data.volunteers.some(v => (v._id === currentUserId || v === currentUserId) && v.role === 'manager')
@@ -117,7 +192,16 @@ export default function EventGroup() {
             }
           }
         } catch (error) {
-          console.error("Failed to fetch event data:", error);
+          let msg = "";
+            
+            // Bây giờ error.response sẽ tồn tại nhờ Bước 1
+            if (error.response?.status === 403) {
+                msg = "Đã có lỗi xảy ra khi tải sự kiện.";
+            } else {
+                msg = "Sự kiện chưa được duyệt hoặc đã bị từ chối.";
+            }
+            
+            setErrorState(msg);
         }
       })();
     }
@@ -135,7 +219,9 @@ export default function EventGroup() {
       (async () => {
         try {
           const data = await getPostsByEvent(eventData._id);
+          // Chỉ load một số posts ban đầu
           setPosts(data);
+          setHasMorePosts(data.length > postsLimit);
         } catch (error) { setPosts([]); }
         setIsLoadingPosts(false);
       })();
@@ -153,16 +239,114 @@ export default function EventGroup() {
     }
   }, [eventData, currentTab, isOwner]);
 
-  // === HANDLERS ===
+  // Initialize contributions and badge preview when event data changes
+  useEffect(() => {
+    if (eventData) {
+      const map = {};
+      // Prefer eventData.contributions if present
+      if (Array.isArray(eventData.contributions) && eventData.contributions.length > 0) {
+        eventData.contributions.forEach(c => {
+          const uid = c.user?._id ? c.user._id : c.user;
+          map[uid] = c.value || 0;
+        });
+      } else if (eventData.volunteers) {
+        eventData.volunteers.forEach(m => {
+          const memberId = m._id || m;
+          map[memberId] = (m.contribution != null ? m.contribution : 0);
+        });
+      }
+      setContributions(map);
+    }
+    if (eventData?.badge) {
+      setBadgePreview(getBannerUrl(eventData.badge));
+    }
+  }, [eventData]);
+
+  // === COUNTDOWN TIMER ===
+  useEffect(() => {
+    if (!eventData) return;
+
+    const calculateCountdown = () => {
+      const now = new Date();
+      
+      // Tính trạng thái tự động
+      const currentStatus = calculateEventStatus(eventData);
+      setAutoEventStatus(currentStatus);
+      
+      // Nếu sự kiện đã hoàn thành hoặc bị hủy
+      if (currentStatus === 'completed' || currentStatus === 'cancelled') {
+        setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+        setCountdownLabel(currentStatus === 'completed' ? 'Sự kiện đã kết thúc' : 'Sự kiện đã bị hủy');
+        return;
+      }
+
+      // Tạo thời gian bắt đầu và kết thúc
+      const startDate = new Date(eventData.date);
+      if (eventData.startTime) {
+        const [h, m] = eventData.startTime.split(':');
+        startDate.setHours(parseInt(h), parseInt(m), 0, 0);
+      }
+
+      const endDate = new Date(eventData.endDate || eventData.date);
+      if (eventData.endTime) {
+        const [h, m] = eventData.endTime.split(':');
+        endDate.setHours(parseInt(h), parseInt(m), 0, 0);
+      }
+
+      let targetDate;
+      let label;
+
+      // Xác định thời gian đích dựa trên trạng thái tự động
+      if (currentStatus === 'upcoming' || now < startDate) {
+        targetDate = startDate;
+        label = 'Thời gian đến khi sự kiện bắt đầu';
+      } else if (currentStatus === 'ongoing' || (now >= startDate && now < endDate)) {
+        targetDate = endDate;
+        label = 'Thời gian đến khi sự kiện kết thúc';
+      } else {
+        setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+        setCountdownLabel('Sự kiện đã kết thúc');
+        return;
+      }
+
+      const diff = targetDate - now;
+
+      if (diff <= 0) {
+        setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+        setCountdownLabel('Sự kiện đã kết thúc');
+        return;
+      }
+
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+      setCountdown({ days, hours, minutes, seconds });
+      setCountdownLabel(label);
+    };
+
+    calculateCountdown();
+    const interval = setInterval(calculateCountdown, 1000);
+
+    return () => clearInterval(interval);
+  }, [eventData]);
+
+  // === HANDLERS (Giữ nguyên không đổi) ===
   const handleEditClick = () => {
     setEditForm({
       name: eventData.name,
       description: eventData.description,
       location: eventData.location,
       date: new Date(eventData.date).toISOString().split('T')[0],
+      endDate: eventData.endDate ? new Date(eventData.endDate).toISOString().split('T')[0] : new Date(eventData.date).toISOString().split('T')[0],
+      startTime: eventData.startTime || "",
+      endTime: eventData.endTime || "",
       privacy: eventData.privacy || "Public",
       question: eventData.question || "Tại sao bạn muốn tham gia sự kiện này?"
     });
+    setBannerFile(null);
+    setBannerPreview(getBannerUrl(eventData.banner) || null);
     setOpenEditModal(true);
   };
 
@@ -174,7 +358,57 @@ export default function EventGroup() {
           questionToSend = "Tại sao bạn muốn tham gia sự kiện này?";
       }
       const updated = await updateEvent({ ...editForm, question: questionToSend, slug: eventData.slug, username: currentUserUsername });
-      setEventData(prev => ({ ...updated, createdBy: prev.createdBy, volunteers: prev.volunteers, requests: prev.requests }));
+      
+      // Upload banner nếu có file mới
+      let finalBanner = updated.banner;
+      let bannerUpdated = false;
+      if (bannerFile) {
+        try {
+          const bannerRes = await uploadBanner(eventData.slug, bannerFile);
+          finalBanner = bannerRes.banner;
+          bannerUpdated = true;
+        } catch (bannerErr) {
+          console.error("Banner upload error:", bannerErr);
+        }
+      }
+      
+      // Cập nhật eventData với thông tin mới
+      setEventData(prev => ({ 
+        ...prev,
+        ...updated,
+        banner: finalBanner,
+        createdBy: prev.createdBy, 
+        volunteers: prev.volunteers, 
+        requests: prev.requests 
+      }));
+      
+      // Tự động tạo bài đăng khi cập nhật banner mới
+      if (bannerUpdated && finalBanner) {
+        try {
+          console.log("Creating post with banner:", finalBanner);
+          const newPost = await createPost({
+            eventId: eventData._id,
+            content: "📸 Banner sự kiện đã được cập nhật!",
+            userId: currentUserId,
+            username: currentUserUsername,
+            imageUrl: finalBanner
+          });
+          console.log("Created post:", newPost);
+          // Thêm post mới vào đầu danh sách
+          setPosts(prev => [newPost, ...prev]);
+        } catch (postErr) {
+          console.error("Auto post creation error:", postErr);
+        }
+      }
+      
+      // Tính toán và cập nhật trạng thái mới ngay lập tức
+      const newStatus = calculateEventStatus(updated);
+      setAutoEventStatus(newStatus);
+      
+      // Reset banner state
+      setBannerFile(null);
+      setBannerPreview(null);
+      
       setOpenEditModal(false);
       alert("Cập nhật thành công!");
       window.location.reload();
@@ -236,6 +470,69 @@ export default function EventGroup() {
     } catch (error) { alert(error.message); }
   };
 
+  const handleSetContribution = (memberId, value) => {
+    if (!isOwner) return;
+    if (!isEditingContributions) return;
+    setContributions(prev => ({ ...prev, [memberId]: value }));
+  };
+
+  // When owner selects a badge file, open confirm dialog before uploading
+  const handleBadgeFileChange = (file) => {
+    if (!file) return;
+    const maxSize = 2 * 1024 * 1024;
+    if (file.size > maxSize) { alert('Ảnh quá lớn! Vui lòng chọn ảnh nhỏ hơn 2MB.'); return; }
+    setPendingBadgeFile(file);
+    setPendingBadgePreview(URL.createObjectURL(file));
+    setBadgeConfirmOpen(true);
+  };
+
+  const handleConfirmBadgeUpload = async () => {
+    if (!pendingBadgeFile) return;
+    try {
+      const res = await uploadBadge(eventData.slug, pendingBadgeFile);
+      // Update eventData badge and preview
+      setEventData(prev => ({ ...prev, badge: res.badge }));
+      setBadgePreview(getBannerUrl(res.badge));
+      setPendingBadgeFile(null);
+      setPendingBadgePreview(null);
+      setBadgeConfirmOpen(false);
+      alert('Badge đã được cập nhật.');
+    } catch (err) {
+      alert(err.message || 'Upload thất bại');
+    }
+  };
+
+  const handleCancelBadgeUpload = () => {
+    setPendingBadgeFile(null);
+    setPendingBadgePreview(null);
+    setBadgeConfirmOpen(false);
+  };
+
+  const handleStartEditContributions = () => { setIsEditingContributions(true); };
+  const handleCancelContributions = () => {
+    // reset to eventData values
+    const map = {};
+    if (Array.isArray(eventData.contributions) && eventData.contributions.length > 0) {
+      eventData.contributions.forEach(c => {
+        const uid = c.user?._id ? c.user._id : c.user;
+        map[uid] = c.value || 0;
+      });
+    }
+    setContributions(map);
+    setIsEditingContributions(false);
+  };
+
+  const handleConfirmContributions = async () => {
+    try {
+      const res = await saveContributions(eventData.slug, contributions);
+      setEventData(res.event || res);
+      setIsEditingContributions(false);
+      alert('Đã lưu mức độ đóng góp.');
+    } catch (err) {
+      alert(err.message || 'Lỗi khi lưu đóng góp');
+    }
+  };
+
   const handleKickMember = async (memberId) => {
     if(window.confirm("Mời thành viên này ra khỏi nhóm?")) {
         try { 
@@ -245,51 +542,606 @@ export default function EventGroup() {
     }
   };
 
+  const handleOpenAttendanceMenu = (event, member) => {
+    setAnchorElAttendance(event.currentTarget);
+    setSelectedMember(member);
+  };
+
+  const handleCloseAttendanceMenu = () => {
+    setAnchorElAttendance(null);
+    setSelectedMember(null);
+  };
+
+  const handleMarkAttendance = async (status) => {
+    if (!selectedMember) return;
+    
+    try {
+      await updateMemberAttendance({
+        slug: eventData.slug,
+        userId: selectedMember._id,
+        attendance: status,
+        requesterId: currentUserId
+      });
+
+      // Cập nhật local state
+      setEventData(prev => ({
+        ...prev,
+        volunteers: prev.volunteers.map(v => 
+          v._id === selectedMember._id ? { ...v, attendance: status } : v
+        )
+      }));
+    } catch (error) {
+      alert(error.message);
+    }
+
+    handleCloseAttendanceMenu();
+  };
+
+  const handleOpenActionsMenu = (event) => {
+    setAnchorElActions(event.currentTarget);
+  };
+
+  const handleCloseActionsMenu = () => {
+    setAnchorElActions(null);
+  };
+
+  const handleCancelEvent = async () => {
+    if (!window.confirm('Bạn có chắc chắn muốn HỦY sự kiện này? Hành động này không thể hoàn tác!')) {
+      return;
+    }
+    
+    try {
+      const updated = await updateEvent({ 
+        slug: eventData.slug,
+        action: 'cancel',
+        username: currentUserUsername 
+      });
+      setEventData(prev => ({ ...prev, eventStatus: updated.eventStatus }));
+      handleCloseActionsMenu();
+      alert('Đã hủy sự kiện!');
+    } catch (error) {
+      alert('Lỗi: ' + error.message);
+    }
+  };
+
+  const handleEndEarly = async () => {
+    if (!window.confirm('Bạn có chắc chắn muốn KẾT THÚC SỚM sự kiện này?')) {
+      return;
+    }
+    
+    try {
+      const updated = await updateEvent({ 
+        slug: eventData.slug,
+        action: 'end_early',
+        username: currentUserUsername 
+      });
+      setEventData(prev => ({ 
+        ...prev, 
+        eventStatus: updated.eventStatus,
+        endDate: updated.endDate,
+        endTime: updated.endTime
+      }));
+      handleCloseActionsMenu();
+      alert('Đã kết thúc sự kiện!');
+    } catch (error) {
+      alert('Lỗi: ' + error.message);
+    }
+  };
+
+  const handleExtendEvent = async () => {
+    if (!extendHours || extendHours <= 0) {
+      return alert('Vui lòng nhập số giờ hợp lệ');
+    }
+    
+    try {
+      const updated = await updateEvent({ 
+        slug: eventData.slug,
+        action: 'extend',
+        extendHours: extendHours,
+        username: currentUserUsername 
+      });
+      setEventData(prev => ({ 
+        ...prev,
+        endDate: updated.endDate,
+        endTime: updated.endTime
+      }));
+      setOpenExtendDialog(false);
+      handleCloseActionsMenu();
+      alert(`Đã gia hạn sự kiện thêm ${extendHours} giờ!`);
+    } catch (error) {
+      alert('Lỗi: ' + error.message);
+    }
+  };
+
+  // 4. KIỂM TRA LỖI VÀ RENDER MÀN HÌNH CHẶN (THÊM ĐOẠN NÀY TRƯỚC LOADING)
+  if (errorState) {
+    return (
+      // Giữ nguyên layout nền xám để đồng bộ với App
+      <Container maxWidth="lg" sx={{ p: 3, minHeight: '100vh', bgcolor: '#f1f4f7' }}>
+          <Paper 
+              elevation={0} 
+              sx={{ 
+                  p: 5, 
+                  mt: 4, 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  alignItems: 'center', 
+                  textAlign: 'center',
+                  borderRadius: 2
+              }}
+          >
+              <ErrorOutline sx={{ fontSize: 80, color: '#ff6b6b', mb: 2 }} /> {/* Icon màu đỏ nhạt cho đẹp */}
+              
+              <Typography variant="h5" fontWeight="bold" gutterBottom>
+                  Truy cập bị từ chối
+              </Typography>
+              
+              <Typography variant="body1" color="text.secondary" sx={{ mb: 4, maxWidth: '500px' }}>
+                  {errorState} 
+                  {/* Ở đây giờ sẽ hiện tiếng Việt mượt mà do Bước 1 */}
+              </Typography>
+
+              <Button 
+                  variant="contained" 
+                  onClick={() => navigate('/dashboard')}
+                  sx={{ 
+                      bgcolor: '#49BBBD', 
+                      px: 4, 
+                      py: 1,
+                      '&:hover': { bgcolor: '#3daeb0' }
+                  }}
+              >
+                  Về trang chủ
+              </Button>
+          </Paper>
+      </Container>
+    );
+  }
+  // =========================================================================
+
   if (!eventData) return <Container sx={{ display: 'flex', justifyContent: 'center', mt: 10 }}><CircularProgress sx={{ color: '#49BBBD' }} /></Container>;
 
   return (
-
+    // ... (Phần render giao diện chính GIỮ NGUYÊN không thay đổi gì cả)
     <Container maxWidth="lg" sx={{ p: 3, minHeight: '100vh', bgcolor: '#f1f4f7' }}>
+      {/* EVENT BANNER COVER */}
+      <Paper
+        elevation={0}
+        sx={{
+          width: '100%',
+          height: '300px',
+          mb: 2,
+          borderRadius: 2,
+          overflow: 'hidden',
+          bgcolor: '#f5f5f5',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
+      >
+        <img
+          src={getBannerUrl(eventData.banner) || eventGroupAvatar}
+          alt={eventData.name}
+          loading="lazy"
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover'
+          }}
+        />
+      </Paper>
+      
       {/* HEADER TABS */}
-      <Paper className="event-group-tabs-paper" elevation={0} variant="outlined">
+      <Paper className="event-group-tabs-paper" elevation={0} variant="outlined" sx={{ mb: 2 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 2 }}>
           <Tabs value={currentTab} onChange={(e, v) => setCurrentTab(v)} sx={{ flexGrow: 1, '& .Mui-selected': { color: '#49BBBD !important' }, '& .MuiTabs-indicator': { backgroundColor: '#49BBBD' } }}>
             <Tab label="Bài đăng" />
             <Tab label="Thông tin" />
             <Tab label="Thành viên" />
             {isOwner && (
-              <Tab label={<Badge badgeContent={pendingRequests.length} color="error">Yêu cầu tham gia</Badge>} />
+                <Tab label={<Badge badgeContent={pendingRequests.length} color="error">Yêu cầu tham gia</Badge>} />
             )}
+              {isOwner && (
+                <Tab label="Đóng góp" />
+              )}
           </Tabs>
 
           {!isJoined ? (
-            <Button variant="contained" size="small" onClick={handleJoinClick} disabled={requestStatus === 'pending'} sx={{ ml: 2, bgcolor: '#49BBBD' }}>
-              {requestStatus === 'pending' ? "Đang chờ duyệt" : "Tham gia"}
+            <Button 
+              variant="contained" 
+              size="small" 
+              onClick={handleJoinClick} 
+              // Chỉ disable khi đang chờ duyệt, 'rejected' hoặc null đều bấm được
+              disabled={requestStatus === 'pending'} 
+              sx={{ ml: 2, bgcolor: '#49BBBD' }}
+            >
+              {/* Logic hiển thị chữ trên nút */}
+              {requestStatus === 'pending' 
+                ? "Đang chờ duyệt" 
+                : "Tham gia"
+              }
             </Button>
           ) : (
-            <Button variant="outlined" color="inherit" size="small" onClick={handleLeaveEvent} sx={{ ml: 2, color: 'gray', borderColor: 'gray' }}>
-              Rời khỏi
-            </Button>
+            // Người tổ chức thấy menu actions, người khác thấy nút rời khỏi
+            currentUserIsCreator ? (
+              <>
+                <IconButton 
+                  size="small" 
+                  onClick={handleOpenActionsMenu} 
+                  sx={{ ml: 2, color: '#49BBBD' }}
+                >
+                  <MoreVertIcon />
+                </IconButton>
+                <Menu
+                  anchorEl={anchorElActions}
+                  open={Boolean(anchorElActions)}
+                  onClose={handleCloseActionsMenu}
+                >
+                  <MenuItem onClick={handleCancelEvent}>
+                    <Cancel sx={{ mr: 1}} />
+                    <Typography color="error">Hủy sự kiện</Typography>
+                  </MenuItem>
+                  <MenuItem onClick={handleEndEarly}>
+                    <Stop sx={{ mr: 1}} />
+                    <Typography color="warning.main">Kết thúc sớm</Typography>
+                  </MenuItem>
+                  <MenuItem onClick={() => { handleCloseActionsMenu(); setOpenExtendDialog(true); }}>
+                    <AccessTime sx={{ mr: 1}} />
+                    <Typography color="primary">Gia hạn sự kiện</Typography>
+                  </MenuItem>
+                </Menu>
+              </>
+            ) : (
+              <Button variant="outlined" color="inherit" size="small" onClick={handleLeaveEvent} sx={{ ml: 2, color: 'gray', borderColor: 'gray' }}>
+                Rời khỏi
+              </Button>
+            )
           )}
         </Box>
       </Paper>
 
-      <Box className="event-group-content-area">
+      <Box className="event-group-content-area" sx={{ mt: 0 }}>
         {/* TAB 0: POSTS */}
         {currentTab === 0 && (
           (eventData.privacy === 'Private' && !isJoined) ? (
             <Paper sx={{ py: 8, mt: 2, textAlign: 'center' }} variant="outlined">
               <LockOutlined sx={{ fontSize: 60, color: '#ccc', mb: 2 }} />
               <Typography variant="h6" color="text.secondary">Nhóm riêng tư</Typography>
+              <Typography variant="body2" color="text.secondary">Bạn cần tham gia sự kiện để xem bài đăng</Typography>
               {requestStatus !== 'pending' && <Button variant="contained" onClick={handleJoinClick} sx={{ mt: 2, bgcolor: '#49BBBD' }}>Tham gia ngay</Button>}
             </Paper>
           ) : (
-            <>
-              {isJoined && <CreatePost eventId={eventData._id} onPostCreated={(p) => setPosts([p, ...posts])} />}
-              {isLoadingPosts ? <Box sx={{ p: 5, textAlign: 'center' }}><CircularProgress sx={{ color: '#49BBBD' }}/></Box> : 
-               posts.map(post => <PostCard key={post._id} post={post} eventOwnerId={eventData.createdBy?._id || eventData.createdBy} onPostDeleted={(id) => setPosts(posts.filter(p => p._id !== id))} onPostUpdated={(updated) => setPosts(posts.map(p => p._id === updated._id ? updated : p))} />)
-              }
-            </>
+            <Box sx={{ display: 'flex', gap: 3 }}>
+              {/* PHẦN BÀI ĐĂNG BÊN TRÁI */}
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                {isJoined && <CreatePost eventId={eventData._id} onPostCreated={(p) => setPosts([p, ...posts])} />}
+                {isLoadingPosts ? <Box sx={{ p: 5, textAlign: 'center' }}><CircularProgress sx={{ color: '#49BBBD' }}/></Box> : 
+                 posts.length === 0 ? <Typography textAlign="center" sx={{ mt: 2 }}>Chưa có bài đăng nào.</Typography> :
+                 posts.map(post => (
+                   <PostCard 
+                     key={post._id} 
+                     post={post} 
+                     eventOwnerId={eventData.createdBy?._id || eventData.createdBy} 
+                     onPostDeleted={(id) => setPosts(posts.filter(p => p._id !== id))} 
+                     onPostUpdated={(updated) => setPosts(posts.map(p => p._id === updated._id ? updated : p))}
+                     onPostClick={(post) => {
+                       setSelectedPost(post);
+                       setPostModalOpen(true);
+                     }}
+                   />
+                 ))
+                }
+              </Box>
+
+              {/* COUNTDOWN TIMER BÊN PHẢI */}
+              <Paper 
+                elevation={3}
+                sx={{ 
+                  width: '320px',
+                  flexShrink: 0,
+                  height: 'fit-content',
+                  position: 'sticky',
+                  top: '85px',
+                  overflow: 'hidden',
+                  background: 'linear-gradient(135deg, #49BBBD 0%, #3daeb0 100%)',
+                  borderRadius: 3
+                }}
+              >
+                {/* HEADER */}
+                <Box sx={{ 
+                  bgcolor: 'rgba(255,255,255,0.15)', 
+                  backdropFilter: 'blur(10px)',
+                  p: 2.5,
+                  textAlign: 'center',
+                  borderBottom: '1px solid rgba(255,255,255,0.2)'
+                }}>
+                  <Typography 
+                    variant="h6" 
+                    fontWeight="bold" 
+                    sx={{ 
+                      color: 'white',
+                      textShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                      letterSpacing: '0.5px'
+                    }}
+                  >
+                    Đồng hồ sự kiện
+                  </Typography>
+                </Box>
+                
+                {/* COUNTDOWN DISPLAY */}
+                <Box sx={{ p: 3, bgcolor: 'rgba(255,255,255,0.1)' }}>
+                  <Box sx={{ 
+                    display: 'grid',
+                    gridTemplateColumns: countdown.days > 0 ? 'repeat(4, 1fr)' : 'repeat(3, 1fr)',
+                    gap: 1.5,
+                    mb: 2
+                  }}>
+                    {/* Days */}
+                    {countdown.days > 0 && (
+                      <Box sx={{ textAlign: 'center' }}>
+                        <Box sx={{ 
+                          bgcolor: 'white',
+                          borderRadius: 2,
+                          p: 1.5,
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                          minHeight: '64px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          justifyContent: 'center'
+                        }}>
+                          <Typography 
+                            variant="h5" 
+                            fontWeight="bold"
+                            sx={{ 
+                              color: '#49BBBD',
+                              lineHeight: 1,
+                              fontFamily: 'monospace'
+                            }}
+                          >
+                            {String(countdown.days).padStart(2, '0')}
+                          </Typography>
+                        </Box>
+                        <Typography 
+                          variant="caption" 
+                          sx={{ 
+                            mt: 0.5, 
+                            display: 'block',
+                            color: 'white',
+                            fontWeight: 600,
+                            fontSize: '0.7rem',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.5px'
+                          }}
+                        >
+                          Ngày
+                        </Typography>
+                      </Box>
+                    )}
+                    
+                    {/* Hours */}
+                    <Box sx={{ textAlign: 'center' }}>
+                      <Box sx={{ 
+                        bgcolor: 'white',
+                        borderRadius: 2,
+                        p: 1.5,
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                        minHeight: '64px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center'
+                      }}>
+                        <Typography 
+                          variant="h5" 
+                          fontWeight="bold"
+                          sx={{ 
+                            color: '#49BBBD',
+                            lineHeight: 1,
+                            fontFamily: 'monospace'
+                          }}
+                        >
+                          {String(countdown.hours).padStart(2, '0')}
+                        </Typography>
+                      </Box>
+                      <Typography 
+                        variant="caption" 
+                        sx={{ 
+                          mt: 0.5, 
+                          display: 'block',
+                          color: 'white',
+                          fontWeight: 600,
+                          fontSize: '0.7rem',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px'
+                        }}
+                      >
+                        Giờ
+                      </Typography>
+                    </Box>
+                    
+                    {/* Minutes */}
+                    <Box sx={{ textAlign: 'center' }}>
+                      <Box sx={{ 
+                        bgcolor: 'white',
+                        borderRadius: 2,
+                        p: 1.5,
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                        minHeight: '64px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center'
+                      }}>
+                        <Typography 
+                          variant="h5" 
+                          fontWeight="bold"
+                          sx={{ 
+                            color: '#49BBBD',
+                            lineHeight: 1,
+                            fontFamily: 'monospace'
+                          }}
+                        >
+                          {String(countdown.minutes).padStart(2, '0')}
+                        </Typography>
+                      </Box>
+                      <Typography 
+                        variant="caption" 
+                        sx={{ 
+                          mt: 0.5, 
+                          display: 'block',
+                          color: 'white',
+                          fontWeight: 600,
+                          fontSize: '0.7rem',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px'
+                        }}
+                      >
+                        Phút
+                      </Typography>
+                    </Box>
+                    
+                    {/* Seconds */}
+                    <Box sx={{ textAlign: 'center' }}>
+                      <Box sx={{ 
+                        bgcolor: 'white',
+                        borderRadius: 2,
+                        p: 1.5,
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                        minHeight: '64px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center'
+                      }}>
+                        <Typography 
+                          variant="h5" 
+                          fontWeight="bold"
+                          sx={{ 
+                            color: '#49BBBD',
+                            lineHeight: 1,
+                            fontFamily: 'monospace'
+                          }}
+                        >
+                          {String(countdown.seconds).padStart(2, '0')}
+                        </Typography>
+                      </Box>
+                      <Typography 
+                        variant="caption" 
+                        sx={{ 
+                          mt: 0.5, 
+                          display: 'block',
+                          color: 'white',
+                          fontWeight: 600,
+                          fontSize: '0.7rem',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px'
+                        }}
+                      >
+                        Giây
+                      </Typography>
+                    </Box>
+                  </Box>
+
+                  {/* COUNTDOWN LABEL */}
+                  <Box sx={{ 
+                    bgcolor: 'rgba(255,255,255,0.2)',
+                    borderRadius: 2,
+                    p: 1.5,
+                    mt: 2
+                  }}>
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        color: 'white',
+                        fontWeight: 500,
+                        fontSize: '0.85rem',
+                        textAlign: 'center'
+                      }}
+                    >
+                      {countdownLabel}
+                    </Typography>
+                  </Box>
+                </Box>
+
+                {/* TRẠNG THÁI SỰ KIỆN */}
+                <Box sx={{ 
+                  p: 2.5, 
+                  bgcolor: 'rgba(255,255,255,0.1)',
+                  borderTop: '1px solid rgba(255,255,255,0.2)'
+                }}>
+                  <Typography 
+                    variant="subtitle2" 
+                    fontWeight="bold" 
+                    sx={{ mb: 1.5, color: 'white', textAlign: 'center' }}
+                  >
+                    Trạng thái sự kiện
+                  </Typography>
+                  <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                    <Chip
+                      label={
+                        autoEventStatus === 'upcoming' ? 'Sắp diễn ra' :
+                        autoEventStatus === 'ongoing' ? 'Đang diễn ra' :
+                        autoEventStatus === 'completed' ? 'Đã hoàn thành' :
+                        autoEventStatus === 'cancelled' ? 'Đã bị hủy' :
+                        'Sắp diễn ra'
+                      }
+                      sx={{ 
+                        fontWeight: 'bold', 
+                        fontSize: '0.85rem',
+                        bgcolor: 'white',
+                        color: autoEventStatus === 'upcoming' ? '#1976d2' :
+                               autoEventStatus === 'ongoing' ? '#2e7d32' :
+                               autoEventStatus === 'completed' ? '#757575' :
+                               autoEventStatus === 'cancelled' ? '#d32f2f' :
+                               '#1976d2',
+                        px: 2,
+                        py: 1.5,
+                        '& .MuiChip-label': {
+                          px: 1
+                        }
+                      }}
+                    />
+                  </Box>
+                </Box>
+
+                {/* THÔNG TIN THỜI GIAN */}
+                <Box sx={{ 
+                  p: 2.5, 
+                  bgcolor: 'rgba(0,0,0,0.2)',
+                  borderTop: '1px solid rgba(255,255,255,0.1)'
+                }}>
+                  <Stack spacing={1}>
+                    <Box sx={{ 
+                      display: 'flex', 
+                      alignItems: 'center',
+                      bgcolor: 'rgba(255,255,255,0.1)',
+                      borderRadius: 1.5,
+                      p: 1.5
+                    }}>
+                      <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.9)', flex: 1 }}>
+                        <b>Bắt đầu:</b>
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: 'white', fontWeight: 600 }}>
+                        {new Date(eventData.date).toLocaleDateString('vi-VN')}
+                        {eventData.startTime && ` ${eventData.startTime}`}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ 
+                      display: 'flex', 
+                      alignItems: 'center',
+                      bgcolor: 'rgba(255,255,255,0.1)',
+                      borderRadius: 1.5,
+                      p: 1.5
+                    }}>
+                      <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.9)', flex: 1 }}>
+                        <b>Kết thúc:</b>
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: 'white', fontWeight: 600 }}>
+                        {new Date(eventData.endDate || eventData.date).toLocaleDateString('vi-VN')}
+                        {eventData.endTime && ` ${eventData.endTime}`}
+                      </Typography>
+                    </Box>
+                  </Stack>
+                </Box>
+              </Paper>
+            </Box>
           )
         )}
 
@@ -305,12 +1157,56 @@ export default function EventGroup() {
                 )}
             </Box>
             <Divider sx={{ my: 2 }} />
+            
+            {/* Event Banner */}
+            <Box
+              sx={{
+                width: '20vw',
+                height: '15vh',
+                mb: 2,
+                borderRadius: 1,
+                overflow: 'hidden',
+                bgcolor: '#f5f5f5',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              {eventData.banner ? (
+                <img
+                  src={getBannerUrl(eventData.banner)}
+                  alt={eventData.name}
+                  loading="lazy"
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover'
+                  }}
+                />
+              ) : (
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ textAlign: 'center', p: 1 }}
+                >
+                  No banner
+                </Typography>
+              )}
+            </Box>
+
             <Typography sx={{ whiteSpace: 'pre-wrap', mb: 2 }}>{eventData.description}</Typography>
             <Divider sx={{ my: 2 }} />
             <Stack spacing={1}>
                 <Typography><b>Địa điểm:</b> {eventData.location}</Typography>
                 <Typography><b>Ngày tổ chức:</b> {new Date(eventData.date).toLocaleDateString('vi-VN')}</Typography>
                 <Typography><b>Quyền riêng tư:</b> {eventData.privacy === 'Private' ? 'Riêng tư' : 'Công khai'}</Typography>
+                <Typography><b>Trạng thái:</b> {
+                  autoEventStatus === 'upcoming' ? 'Sắp diễn ra' :
+                  autoEventStatus === 'ongoing' ? 'Đang diễn ra' :
+                  autoEventStatus === 'completed' ? 'Đã hoàn thành' :
+                  autoEventStatus === 'cancelled' ? 'Đã bị hủy' :
+                  'Sắp diễn ra'
+                }</Typography>
                 <Typography><b>Người tạo:</b> {eventData.createdBy?.username || "Không xác định"}</Typography>
                 {isOwner && eventData.privacy === 'Private' && eventData.question && (
                     <Typography sx={{ mt: 1 }}><b>Câu hỏi tham gia:</b> {eventData.question}</Typography>
@@ -319,7 +1215,7 @@ export default function EventGroup() {
           </Paper>
         )}
 
-        {/* TAB 2: THÀNH VIÊN (ĐÃ SỬA AVATAR) */}
+        {/* TAB 2: THÀNH VIÊN */}
         {currentTab === 2 && (
           <Paper sx={{ mt: 2, p: 2 }} variant="outlined">
             <Typography variant="h6">Thành viên ({eventData?.volunteers?.length || 0})</Typography>
@@ -330,14 +1226,52 @@ export default function EventGroup() {
                     const role = member.role?.toLowerCase() || 'volunteer';
                     const memberIsCreator = memberId === (eventData.createdBy?._id || eventData.createdBy);
                     
-                    // Sử dụng hàm renderAvatarProps thay vì code thủ công cũ
                     const avatarProps = renderAvatarProps(member);
+                    
+                    // Kiểm tra trạng thái sự kiện để hiển thị attendance options
+                    const currentEventStatus = autoEventStatus || calculateEventStatus(eventData);
+                    const canMarkAttendance = isOwner && memberId !== currentUserId && 
+                                             (currentEventStatus === 'completed' || currentEventStatus === 'ongoing');
 
                     return (
                         <ListItem key={memberId} secondaryAction={
-                            isOwner && memberId !== currentUserId && (
-                                <IconButton onClick={() => handleKickMember(memberId)}><CloseIcon fontSize="small" /></IconButton>
-                            )
+                            <Stack direction="row" spacing={1} alignItems="center">
+                              {/* Hiển thị trạng thái attendance */}
+                              {member.attendance && member.attendance !== 'pending' && (
+                                <Chip 
+                                  icon={member.attendance === 'completed' ? <CheckCircle /> : <PersonOff />}
+                                  label={member.attendance === 'completed' ? 'Đã tham gia' : 'Không tham gia'} 
+                                  size="small"
+                                  color={member.attendance === 'completed' ? 'success' : 'error'}
+                                  variant="outlined"
+                                  sx={{ height: 24, fontSize: '0.75rem' }}
+                                />
+                              )}
+                              
+                              {/* Menu attendance cho quản lý (khi sự kiện ongoing hoặc completed) */}
+                              {isOwner && memberId !== currentUserId && 
+                               (currentEventStatus === 'completed' || currentEventStatus === 'ongoing') && (
+                                <IconButton 
+                                  size="small"
+                                  onClick={(e) => handleOpenAttendanceMenu(e, member)}
+                                  sx={{ color: '#49BBBD' }}
+                                  title="Đánh dấu tham gia"
+                                >
+                                  <MoreVertIcon fontSize="small" />
+                                </IconButton>
+                              )}
+                              
+                              {/* Nút kick member - luôn hiển thị cho owner */}
+                              {isOwner && memberId !== currentUserId && (
+                                <IconButton 
+                                  onClick={() => handleKickMember(memberId)}
+                                  title="Xóa khỏi sự kiện"
+                                  size="small"
+                                >
+                                  <CloseIcon fontSize="small" />
+                                </IconButton>
+                              )}
+                            </Stack>
                         }>
                             <ListItemAvatar>
                                 <Avatar {...avatarProps} />
@@ -362,10 +1296,26 @@ export default function EventGroup() {
                     );
                 })}
             </List>
+            
+            {/* Menu attendance */}
+            <Menu
+              anchorEl={anchorElAttendance}
+              open={Boolean(anchorElAttendance)}
+              onClose={handleCloseAttendanceMenu}
+            >
+              <MenuItem onClick={() => handleMarkAttendance('completed')}>
+                <CheckCircle sx={{ mr: 1, color: 'success.main' }} fontSize="small" />
+                Đánh dấu hoàn thành
+              </MenuItem>
+              <MenuItem onClick={() => handleMarkAttendance('absent')}>
+                <PersonOff sx={{ mr: 1, color: 'error.main' }} fontSize="small" />
+                Đánh dấu không tham gia
+              </MenuItem>
+            </Menu>
           </Paper>
         )}
 
-        {/* TAB 3: YÊU CẦU THAM GIA (ĐÃ SỬA AVATAR) */}
+        {/* TAB 3: YÊU CẦU THAM GIA */}
         {currentTab === 3 && isOwner && (
           <Paper sx={{ mt: 2 }} variant="outlined">
             <Typography variant="h6" sx={{ p: 2 }}>Yêu cầu ({pendingRequests.length})</Typography>
@@ -379,7 +1329,6 @@ export default function EventGroup() {
                   </Stack>
                 }>
                    <ListItemAvatar>
-                      {/* Sử dụng hàm renderAvatarProps */}
                       <Avatar {...renderAvatarProps(req.user)} />
                    </ListItemAvatar>
                    <ListItemText primary={req.user?.username} secondary={req.answer} />
@@ -389,6 +1338,107 @@ export default function EventGroup() {
                   <Typography textAlign="center" sx={{p: 2, color: 'text.secondary'}}>Không có yêu cầu nào.</Typography>
               )}
             </List>
+          </Paper>
+        )}
+
+        {/* TAB 4: ĐÓNG GÓP - Owner only */}
+        {currentTab === 4 && isOwner && (
+          <Paper sx={{ mt: 2 }} variant="outlined">
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2 }}>
+              <Typography variant="h6">Đóng góp</Typography>
+              {isOwner && (
+                isEditingContributions ? (
+                  <Stack direction="row" spacing={1}>
+                    <Button size="small" onClick={handleCancelContributions}>Hủy</Button>
+                    <Button size="small" variant="contained" onClick={handleConfirmContributions} sx={{ bgcolor: '#49BBBD' }}>Xác nhận</Button>
+                  </Stack>
+                ) : (
+                  <Button size="small" variant="contained" onClick={handleStartEditContributions} sx={{ bgcolor: '#49BBBD' }}>Chỉnh sửa</Button>
+                )
+              )}
+            </Box>
+              <Divider />
+            <Box sx={{ display: 'flex', gap: 3, p: 2 }}>
+              {/* Left: contributions table (width like posts area) */}
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <TableContainer component={Paper} variant="outlined">
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Thành viên</TableCell>
+                        <TableCell align="center">Mức độ hoàn thành</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {eventData.volunteers?.map(member => {
+                        const memberId = member._id || member;
+                        const val = contributions[memberId] ?? 0;
+                        return (
+                          <TableRow key={memberId}>
+                            <TableCell>
+                              <Stack direction="row" spacing={1} alignItems="center">
+                                <Avatar {...renderAvatarProps(member)} sx={{ width: 36, height: 36 }} />
+                                <Typography>{member.username}</Typography>
+                              </Stack>
+                            </TableCell>
+                            <TableCell align="center">
+                              <Stack direction="row" spacing={1} justifyContent="center">
+                                {[0,1,2,3,4,5].map(n => (
+                                  <Button
+                                    key={n}
+                                    size="small"
+                                    variant={val === n ? 'contained' : 'outlined'}
+                                    onClick={() => handleSetContribution(memberId, n)}
+                                    disabled={!isEditingContributions}
+                                    sx={val === n ? { bgcolor: '#49BBBD', '&:hover': { bgcolor: '#3daeb0' } } : {}}
+                                  >
+                                    {n}
+                                  </Button>
+                                ))}
+                              </Stack>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </Box>
+
+              {/* Right: badge panel (width like countdown) */}
+              <Paper
+                elevation={3}
+                sx={{
+                  width: '320px',
+                  flexShrink: 0,
+                  p: 2,
+                  borderRadius: 3,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'stretch'
+                }}
+              >
+                <Typography variant="subtitle1" fontWeight="bold">Badge sự kiện</Typography>
+                <Box sx={{ mt: 2, mb: 2, width: '100%', height: 220, bgcolor: '#f5f5f5', borderRadius: 1, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {badgePreview ? (
+                    <img src={badgePreview} alt="Badge" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <Typography color="text.secondary">Chưa có badge</Typography>
+                  )}
+                </Box>
+                {isOwner && (
+                  <Button variant="outlined" component="label" fullWidth>
+                    Thay đổi ảnh
+                    <input
+                      type="file"
+                      hidden
+                      accept="image/*"
+                      onChange={(e) => { const file = e.target.files[0]; handleBadgeFileChange(file); e.target.value = ''; }}
+                    />
+                  </Button>
+                )}
+              </Paper>
+            </Box>
           </Paper>
         )}
       </Box>
@@ -406,6 +1456,24 @@ export default function EventGroup() {
         </DialogActions>
       </Dialog>
 
+      {/* DIALOG XÁC NHẬN THAY ĐỔI BADGE */}
+      <Dialog open={badgeConfirmOpen} onClose={handleCancelBadgeUpload} maxWidth="sm" fullWidth>
+        <DialogTitle>Bạn có chắc chắn muốn thay đổi Badge sự kiện?</DialogTitle>
+        <DialogContent>
+          <Box sx={{ textAlign: 'center', py: 2 }}>
+            {pendingBadgePreview ? (
+              <img src={pendingBadgePreview} alt="Preview" style={{ maxWidth: '100%', maxHeight: 300 }} />
+            ) : (
+              <Typography>Không có ảnh để xem trước</Typography>
+            )}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancelBadgeUpload}>Hủy</Button>
+          <Button variant="contained" onClick={handleConfirmBadgeUpload} sx={{ bgcolor: '#49BBBD' }}>Xác nhận</Button>
+        </DialogActions>
+      </Dialog>
+
       {/* MODAL EDIT */}
       <Dialog open={openEditModal} onClose={() => setOpenEditModal(false)} maxWidth="md" fullWidth>
         <DialogTitle>Chỉnh sửa sự kiện</DialogTitle>
@@ -414,7 +1482,106 @@ export default function EventGroup() {
             <TextField label="Tên" fullWidth value={editForm.name} onChange={(e) => setEditForm({...editForm, name: e.target.value})} />
             <TextField label="Mô tả" fullWidth multiline rows={4} value={editForm.description} onChange={(e) => setEditForm({...editForm, description: e.target.value})} />
             <TextField label="Địa điểm" fullWidth value={editForm.location} onChange={(e) => setEditForm({...editForm, location: e.target.value})} />
-            <TextField label="Ngày" type="date" fullWidth InputLabelProps={{ shrink: true }} value={editForm.date} onChange={(e) => setEditForm({...editForm, date: e.target.value})} />
+            
+            {/* Banner Upload */}
+            <Box>
+              <Typography variant="subtitle2" gutterBottom>
+                Banner sự kiện
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                Ảnh phải nhỏ hơn 2MB
+              </Typography>
+              <Button
+                variant="outlined"
+                component="label"
+                fullWidth
+                sx={{ mb: bannerPreview ? 2 : 0 }}
+              >
+                {bannerFile ? "Thay đổi banner" : (bannerPreview ? "Cập nhật banner" : "Chọn banner")}
+                <input
+                  type="file"
+                  hidden
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      // Kiểm tra kích thước file (2MB = 2 * 1024 * 1024 bytes)
+                      const maxSize = 2 * 1024 * 1024;
+                      if (file.size > maxSize) {
+                        alert('Ảnh quá lớn! Vui lòng chọn ảnh nhỏ hưn 2MB.');
+                        e.target.value = ''; // Reset input
+                        return;
+                      }
+                      setBannerFile(file);
+                      setBannerPreview(URL.createObjectURL(file)); // Preview file mới từ browser
+                    }
+                  }}
+                />
+              </Button>
+              {bannerPreview && (
+                <Box
+                  sx={{
+                    width: '100%',
+                    height: '150px',
+                    borderRadius: 1,
+                    overflow: 'hidden',
+                    bgcolor: '#f5f5f5',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <img
+                    src={bannerPreview}
+                    alt="Banner preview"
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover'
+                    }}
+                  />
+                </Box>
+              )}
+            </Box>
+            
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+              <TextField 
+                label="Ngày bắt đầu" 
+                type="date" 
+                fullWidth 
+                InputLabelProps={{ shrink: true }} 
+                value={editForm.date} 
+                onChange={(e) => setEditForm({...editForm, date: e.target.value})} 
+              />
+              <TextField 
+                label="Giờ bắt đầu" 
+                type="time" 
+                fullWidth 
+                InputLabelProps={{ shrink: true }} 
+                value={editForm.startTime} 
+                onChange={(e) => setEditForm({...editForm, startTime: e.target.value})} 
+              />
+            </Box>
+
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+              <TextField 
+                label="Ngày kết thúc" 
+                type="date" 
+                fullWidth 
+                InputLabelProps={{ shrink: true }} 
+                value={editForm.endDate} 
+                onChange={(e) => setEditForm({...editForm, endDate: e.target.value})} 
+              />
+              <TextField 
+                label="Giờ kết thúc" 
+                type="time" 
+                fullWidth 
+                InputLabelProps={{ shrink: true }} 
+                value={editForm.endTime} 
+                onChange={(e) => setEditForm({...editForm, endTime: e.target.value})} 
+              />
+            </Box>
+
             <FormControl>
               <FormLabel>Quyền riêng tư</FormLabel>
               <RadioGroup row value={editForm.privacy} onChange={(e) => setEditForm({...editForm, privacy: e.target.value})}>
@@ -432,6 +1599,51 @@ export default function EventGroup() {
           <Button onClick={handleUpdateEvent} variant="contained" sx={{ bgcolor: '#49BBBD' }}>Lưu</Button>
         </DialogActions>
       </Dialog>
+
+      {/* DIALOG GIA HẠN SỰ KIỆN */}
+      <Dialog open={openExtendDialog} onClose={() => setOpenExtendDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Gia hạn sự kiện</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2, mt: 1 }}>
+            Nhập số giờ bạn muốn gia hạn thêm cho sự kiện
+          </Typography>
+          <TextField
+            label="Số giờ gia hạn"
+            type="number"
+            fullWidth
+            value={extendHours}
+            onChange={(e) => setExtendHours(parseInt(e.target.value) || 1)}
+            inputProps={{ min: 1, max: 72 }}
+            helperText="Tối đa 72 giờ"
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenExtendDialog(false)}>Hủy</Button>
+          <Button onClick={handleExtendEvent} variant="contained" sx={{ bgcolor: '#49BBBD' }}>Xác nhận</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* POST MODAL */}
+      {selectedPost && (
+        <PostModal
+          open={postModalOpen}
+          onClose={() => {
+            setPostModalOpen(false);
+            setSelectedPost(null);
+          }}
+          post={selectedPost}
+          onPostDeleted={(id) => {
+            setPosts(posts.filter(p => p._id !== id));
+            setPostModalOpen(false);
+            setSelectedPost(null);
+          }}
+          onPostUpdated={(updated) => {
+            setPosts(posts.map(p => p._id === updated._id ? updated : p));
+            setSelectedPost(updated);
+          }}
+          eventOwnerId={eventData?.createdBy?._id || eventData?.createdBy}
+        />
+      )}
     </Container>
   );
 }

@@ -10,7 +10,9 @@ import {
   uploadImage,
   updatePost, // 1. Import hàm mới
   deletePost,
-  getPostById  // 2. Import hàm mới
+  getPostById,  // 2. Import hàm mới
+  getPostsByEvents, // 3. Import hàm pagination
+  getAllPublicPosts // 4. Import hàm lấy tất cả posts công khai
 } from "../controllers/postController.js";
 
 const router = express.Router();
@@ -29,6 +31,8 @@ const upload = multer({ storage: storage });
 
 // Routes
 router.post("/upload", upload.single('image'), uploadImage);
+router.get("/public", getAllPublicPosts); // Route mới cho tất cả posts công khai
+router.get("/by-events", getPostsByEvents); // Route mới cho pagination
 router.get("/event/:eventId", getPostsByEvent);
 router.post("/create", createPost);
 router.post("/:postId/like", likePost);

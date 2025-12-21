@@ -202,13 +202,19 @@ export const updateAvatar = async (req, res) => {
       return res.status(400).json({ message: "Không có file được upload" });
     }
 
-    const user = await User.findById(req.user._id);
+    const avatarPath = `/uploads/avatars/${req.file.filename}`;
+
+    // Sử dụng findByIdAndUpdate với validateBeforeSave: false
+    // để tránh validate các field required khác (như fullName)
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { avatar: avatarPath },
+      { new: true, runValidators: false } // runValidators: false để bỏ qua validation
+    );
+
     if (!user) {
       return res.status(404).json({ message: "Người dùng không tồn tại" });
     }
-
-    user.avatar = `/uploads/avatars/${req.file.filename}`;
-    await user.save();
 
     res.json({
       message: "Cập nhật ảnh đại diện thành công",
@@ -320,6 +326,7 @@ export const importUsers = async (req, res) => {
 };
 
 /* ======================================================
+<<<<<<< HEAD
    UPDATE CREDENTIALS (USERNAME / EMAIL)
 ====================================================== */
 export const updateCredentials = async (req, res) => {
@@ -390,3 +397,28 @@ export const changePassword = async (req, res) => {
 };
 
 
+=======
+   SET BADGE VISIBILITY (AUTHENTICATED USER)
+   Body: { eventId: string, visible: boolean }
+====================================================== */
+export const setBadgeVisibility = async (req, res) => {
+  try {
+    const { eventId, visible } = req.body;
+    if (!eventId) return res.status(400).json({ message: 'eventId is required' });
+
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    user.badges = user.badges || [];
+    const idx = user.badges.findIndex(b => b.eventId && b.eventId.toString() === eventId);
+    if (idx === -1) return res.status(404).json({ message: 'Badge not found' });
+
+    user.badges[idx].visible = !!visible;
+    await user.save();
+
+    res.json({ message: 'Badge visibility updated', badge: user.badges[idx] });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+>>>>>>> fdf9d341f67f54799accd0efc9559e9e014fea35

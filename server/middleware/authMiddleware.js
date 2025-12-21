@@ -36,3 +36,24 @@ export const adminOnly = (req, res, next) => {
 
   next();
 };
+// ================= OPTIONAL AUTH =================
+// Middleware cho phép cả authenticated và unauthenticated requests
+export const optionalAuth = async (req, res, next) => {
+  const token = req.headers.authorization?.split(" ")[1];
+
+  if (!token) {
+    // Không có token thì tiếp tục nhưng req.user = null
+    req.user = null;
+    return next();
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = await User.findById(decoded.id).select("-password");
+  } catch (err) {
+    // Token không hợp lệ thì cũng tiếp tục nhưng req.user = null
+    req.user = null;
+  }
+  
+  next();
+};
