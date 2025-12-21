@@ -4,12 +4,16 @@ import JoinRequest from "../models/JoinRequest.js";
 import Post from "../models/Post.js";
 import slugify from "slugify";
 import mongoose from "mongoose";
-import { createNotificationInternal } from "../controllers/notificationController.js"; // Import Notification
+import { createNotificationInternal } from "../controllers/notificationController.js";
 
-// ---------------------- HELPER: TỰ ĐỘNG TẠO BÀI ĐĂNG CHO SỰ KIỆN ----------------------
+/**
+ * Automatically create a public announcement post for an event
+ * if it does not already exist.
+ * @param {Object} event Event document
+ * @returns {Object|undefined} Created or existing post
+ */
 const createEventPost = async (event) => {
   try {
-    // Kiểm tra xem đã có bài announcement cho event này chưa
     const existingAnnouncement = await Post.findOne({
       eventId: event._id,
       isEventAnnouncement: true
@@ -20,7 +24,6 @@ const createEventPost = async (event) => {
       return existingAnnouncement;
     }
     
-    // Tạo nội dung bài đăng từ thông tin sự kiện
     const startDate = new Date(event.date);
     const endDate = new Date(event.endDate);
     
@@ -52,12 +55,11 @@ const createEventPost = async (event) => {
     
     content += `Hãy tham gia cùng chúng tôi! 💪`;
     
-    // Tạo bài đăng công khai
     const newPost = new Post({
       content,
       imageUrl: event.banner || null,
       isAnonymous: false,
-      isEventAnnouncement: true, // Đánh dấu là bài đăng tự động
+      isEventAnnouncement: true, // Bài đăng tự động
       eventId: event._id,
       createdBy: event.createdBy,
       likes: []
@@ -69,14 +71,17 @@ const createEventPost = async (event) => {
     return newPost;
   } catch (error) {
     console.error("Lỗi khi tạo bài đăng tự động:", error);
-    // Không throw error để không làm gián đoạn việc tạo event
   }
 };
 
-// ---------------------- CREATE EVENT (CÓ THÔNG BÁO CHO ADMIN) ----------------------
+/**
+ * Create a new event and notify admins for approval.
+ * Automatically creates an announcement post.
+ * @route POST /api/events
+ * @access Authenticated
+ */
 export const createEvent = async (req, res) => {
   try {
-    // 1. Lấy dữ liệu từ Client
     const {
       name, date, endDate, startTime, endTime, location,
       description, username, recurrence, privacy, question, banner,
@@ -84,13 +89,12 @@ export const createEvent = async (req, res) => {
 
     console.log("Create Request Body:", req.body);
 
-    // --- VALIDATION INPUT ---
     if (!startTime || !endTime) {
       return res.status(400).json({ message: "Giờ bắt đầu và giờ kết thúc là bắt buộc" });
     }
 
     const startDateTime = new Date(`${date}T${startTime}`);
-    const effectiveEndDate = endDate || date; // Nếu không chọn ngày kết thúc thì lấy ngày bắt đầu
+    const effectiveEndDate = endDate || date;
     const endDateTime = new Date(`${effectiveEndDate}T${endTime}`);
 
     if (isNaN(startDateTime) || isNaN(endDateTime)) {
@@ -105,23 +109,19 @@ export const createEvent = async (req, res) => {
         return res.status(400).json({ message: "Thiếu thông tin người tạo (username)" });
     }
 
-    // --- TÌM NGƯỜI DÙNG ---
     const user = await User.findOne({ username });
     if (!user) {
       return res.status(400).json({ message: `Không tìm thấy người dùng có username: ${username}` });
     }
 
-    // --- XỬ LÝ LẶP LẠI (RECURRENCE) ---
     let recurrenceData = null;
     if (recurrence && recurrence.enabled) {
       recurrenceData = recurrence;
     }
 
-    // --- TẠO SLUG ---
     const baseSlug = slugify(name || "event", { lower: true, strict: true, locale: 'vi' });
     const finalSlug = `${baseSlug}-${Date.now()}`;
 
-    // 2. Tạo đối tượng Event mới
     const newEvent = new Event({
       name,
       slug: finalSlug,
@@ -131,58 +131,44 @@ export const createEvent = async (req, res) => {
       endTime,
       location,
       description,
-      banner: null, // Banner sẽ được upload riêng sau khi tạo event
+      banner: null,
       createdBy: user._id,
       volunteers: [user._id],
       recurrence: recurrenceData,
       privacy: privacy || "Public",
       question: privacy === "Private" ? question : "",
-      status: "pending" // Mặc định là chờ duyệt
+      status: "pending"
     });
 
-    // 3. Lưu vào DB
     await newEvent.save();
 
-    // ============================================================
-    // 🎉 TỰ ĐỘNG TẠO BÀI ĐĂNG CÔNG KHAI CHO SỰ KIỆN (MỚI THÊM)
-    // ============================================================
     try {
       await createEventPost(newEvent);
     } catch (postError) {
       console.error("Lỗi tạo bài đăng cho sự kiện:", postError);
-      // Không làm gián đoạn việc tạo event
     }
 
-    // ============================================================
-    // 🔔 GỬI THÔNG BÁO CHO ADMIN (MỚI THÊM)
-    // ============================================================
     try {
-      // a. Tìm tất cả user là admin
       const admins = await User.find({ role: "admin" });
 
       if (admins.length > 0) {
-        // b. Tạo thông báo cho từng admin
         const notiPromises = admins.map(admin => {
           return createNotificationInternal({
             recipientId: admin._id,
-            type: "EVENT_PENDING_APPROVAL", // Loại thông báo mới
+            type: "EVENT_PENDING_APPROVAL",
             message: `Sự kiện mới "${name}" đang chờ bạn phê duyệt.`,
             relatedId: newEvent._id,
             relatedModel: "Event"
           });
         });
 
-        // c. Chạy song song để không làm chậm response
         await Promise.all(notiPromises);
         console.log(`Đã gửi thông báo cho ${admins.length} admin.`);
       }
     } catch (notiError) {
-      // Nếu lỗi gửi thông báo thì chỉ log ra, không làm lỗi việc tạo event
       console.error("Lỗi gửi thông báo cho Admin:", notiError);
     }
-    // ============================================================
 
-    // 4. Phản hồi Client
     res.status(201).json({
       message: "Tạo Event thành công, đang chờ Admin duyệt.",
       slug: newEvent.slug,
@@ -196,24 +182,24 @@ export const createEvent = async (req, res) => {
   }
 };
 
-// ---------------------- GET ALL EVENTS ----------------------
-// Sửa lại để hỗ trợ lọc theo status cho Admin
+/**
+ * Get all events.
+ * Admins can filter by status, normal users only see approved events.
+ * @route GET /api/events
+ * @access Public / Admin
+ */
 export const getAllEvents = async (req, res) => {
   try {
     const { status } = req.query;
     let filter = {};
     
-    // Kiểm tra user role từ req.user (được set bởi protect middleware)
     const isAdmin = req.user && req.user.role === "admin";
     
-    // Nếu có status (ví dụ admin truyền "pending") thì lọc
     if (status) {
       filter.status = status;
     } else if (!isAdmin) {
-      // Nếu không phải admin và không chỉ định status, chỉ lấy approved
       filter.status = "approved";
     }
-    // Nếu là admin và không có status, lấy tất cả
 
     const events = await Event.find(filter)
       .populate("createdBy", "username role avatar")
@@ -226,7 +212,12 @@ export const getAllEvents = async (req, res) => {
   }
 };
 
-// ---------------------- GET EVENT BY SLUG ----------------------
+/**
+ * Get event details by slug or ID.
+ * Adds user-specific metadata such as join status and permissions.
+ * @route GET /api/events/:slug
+ * @access Public
+ */
 export const getEventBySlug = async (req, res) => {
   try {
     const { slug } = req.params;
@@ -252,7 +243,7 @@ export const getEventBySlug = async (req, res) => {
     if (event.status !== "approved") {
         return res.status(403).json({ 
             message: "Sự kiện này đang chờ duyệt hoặc đã bị từ chối.",
-            status: event.status // Trả về status để frontend biết mà hiển thị
+            status: event.status
         });
     }
 
@@ -305,7 +296,6 @@ export const getEventBySlug = async (req, res) => {
       }
     }
 
-    // Lấy thông tin attendance từ Event model
     const attendanceMap = {};
     if (event.attendance && Array.isArray(event.attendance)) {
       event.attendance.forEach(att => {
@@ -313,7 +303,6 @@ export const getEventBySlug = async (req, res) => {
       });
     }
 
-    // Thêm attendance vào từng volunteer
     if (result.volunteers && Array.isArray(result.volunteers)) {
       result.volunteers = result.volunteers.map(vol => {
         const volId = vol._id.toString();
@@ -331,23 +320,32 @@ export const getEventBySlug = async (req, res) => {
   }
 };
 
-// ---------------------- JOIN EVENT ----------------------
+/**
+ * Join an event.
+ * - Public events: user is added directly to volunteers.
+ * - Private events: create or reuse a join request with status "pending".
+ * Sends notifications to the event creator accordingly.
+ *
+ * @route POST /api/events/join
+ * @access Authenticated
+ * @param {Object} req.body
+ * @param {string} req.body.slug Event slug
+ * @param {string} req.body.userId ID of the user requesting to join
+ * @param {string} [req.body.answer] Optional answer for private event join question
+ * @returns {Object} Join result status
+ */
 export const joinEvent = async (req, res) => {
   try {
     const { slug, userId, answer } = req.body;
 
-    // 1. Tìm sự kiện
     const event = await Event.findOne({ slug });
     if (!event)
       return res.status(404).json({ message: "Sự kiện không tồn tại" });
 
-    // 2. Tìm thông tin người đang request (để lấy tên cho thông báo)
     const userSender = await User.findById(userId);
     if (!userSender) 
       return res.status(404).json({ message: "Người dùng không tồn tại" });
 
-    // 3. Kiểm tra xem user đã nằm trong list volunteers chưa
-    // (Lưu ý: check kỹ cả trường hợp volunteer là object hoặc string ID)
     const isAlreadyMember = event.volunteers.some(
           v => (v._id || v).toString() === userId
     );
@@ -356,14 +354,12 @@ export const joinEvent = async (req, res) => {
       return res.status(400).json({ message: "Bạn đã tham gia sự kiện này rồi" });
     }
 
-    // --- LOGIC PUBLIC (Vào thẳng không cần duyệt) ---
     if (event.privacy === "Public") {
       await Event.updateOne(
         { _id: event._id },
         { $addToSet: { volunteers: userId } }
       );
       
-      // (Tuỳ chọn) Vẫn có thể thông báo cho Creator biết có người mới
       await createNotificationInternal({
         recipientId: event.createdBy,
         type: "NEW_MEMBER_JOINED",
@@ -375,33 +371,25 @@ export const joinEvent = async (req, res) => {
       return res.json({ message: "Tham gia thành công", status: "joined" });
     }
 
-    // --- LOGIC PRIVATE (Cần duyệt) ---
-
-    // Tìm request cũ của user này tại event này (bất kể status là gì)
     const existingRequest = await JoinRequest.findOne({
       event: event._id,
       user: userId,
     });
 
-    // Biến để xác định request cuối cùng sẽ được lưu
     let finalRequest;
 
     if (existingRequest) {
-      // A. Nếu đang chờ duyệt -> CHẶN
       if (existingRequest.status === "pending") {
          return res.status(400).json({ message: "Bạn đã gửi yêu cầu, vui lòng chờ duyệt." });
       }
 
-      // B. Nếu status KHÁC pending (rejected, approved cũ, left...) -> TÁI SỬ DỤNG
-      // Logic: Update lại thành pending để Creator duyệt lại
       existingRequest.status = "pending";
       existingRequest.answer = answer || ""; 
-      existingRequest.createdAt = Date.now(); // Làm mới thời gian
+      existingRequest.createdAt = Date.now();
       
       finalRequest = await existingRequest.save();
       
     } else {
-      // C. Chưa từng có request -> TẠO MỚI
       const newRequest = new JoinRequest({
         event: event._id,
         user: userId,
@@ -411,14 +399,12 @@ export const joinEvent = async (req, res) => {
       finalRequest = await newRequest.save();
     }
 
-    // --- GỬI THÔNG BÁO CHO CREATOR ---
-    // Chỉ gửi thông báo khi request thành công (case B hoặc C)
     if (finalRequest) {
       await createNotificationInternal({
-        recipientId: event.createdBy, // Người nhận là chủ event
-        type: "JOIN_REQUEST",         // Loại thông báo
+        recipientId: event.createdBy,
+        type: "JOIN_REQUEST",         
         message: `${userSender.username} đã gửi yêu cầu tham gia sự kiện "${event.name}".`,
-        relatedId: event._id,         // Link tới sự kiện
+        relatedId: event._id,         
         relatedModel: "Event"
       });
     }
@@ -431,7 +417,18 @@ export const joinEvent = async (req, res) => {
   }
 };
 
-// ---------------------- LEAVE EVENT ----------------------
+/**
+ * Leave an event.
+ * Removes the user from the event's volunteers list
+ * and deletes any existing join requests for that event.
+ *
+ * @route POST /api/events/leave
+ * @access Authenticated
+ * @param {Object} req.body
+ * @param {string} req.body.slug Event slug
+ * @param {string} req.body.userId ID of the user leaving the event
+ * @returns {Object} Operation result message
+ */
 export const leaveEvent = async (req, res) => {
   try {
     const { slug, userId } = req.body;
@@ -455,7 +452,20 @@ export const leaveEvent = async (req, res) => {
   }
 };
 
-// ---------------------- REMOVE MEMBER ----------------------
+/**
+ * Remove a member from an event.
+ * Only the event creator or a manager can perform this action.
+ * Also removes any existing join requests of the removed member
+ * and sends a notification to the affected user.
+ *
+ * @route POST /api/events/remove-member
+ * @access Authenticated (Manager / Creator)
+ * @param {Object} req.body
+ * @param {string} req.body.slug Event slug
+ * @param {string} req.body.memberId ID of the member to be removed
+ * @param {string} req.body.managerId ID of the requester (manager or creator)
+ * @returns {Object} Operation result message
+ */
 export const removeMember = async (req, res) => {
   try {
     const { slug, memberId, managerId } = req.body;
@@ -463,7 +473,7 @@ export const removeMember = async (req, res) => {
     const event = await Event.findOne({ slug });
     if (!event) return res.status(404).json({ message: "Sự kiện không tồn tại" });
 
-    // Kiểm tra quyền (Owner hoặc Manager)
+
     const isOwner = event.createdBy.toString() === managerId;
     if (!isOwner) {
       const manager = await User.findById(managerId);
@@ -475,16 +485,13 @@ export const removeMember = async (req, res) => {
       }
     }
 
-    // Thực hiện xóa khỏi mảng volunteers
     await Event.findOneAndUpdate(
       { slug: slug },
       { $pull: { volunteers: memberId } }
     );
     
-    // Xóa yêu cầu tham gia cũ để user có thể gửi lại yêu cầu nếu muốn
     await JoinRequest.deleteMany({ event: event._id, user: memberId });
 
-    // --- THÔNG BÁO: Gửi đến thành viên bị xóa ---
     await createNotificationInternal({
       recipientId: memberId,
       type: "MEMBER_REMOVED",
@@ -499,7 +506,31 @@ export const removeMember = async (req, res) => {
   }
 };
 
-// ---------------------- UPDATE EVENT ----------------------
+/**
+ * Update an event.
+ * Allows the event creator or a manager to modify event details,
+ * perform special actions (cancel, end early, extend),
+ * and automatically award a badge to the event owner when completed.
+ *
+ * @route PUT /api/events
+ * @access Authenticated (Manager / Creator)
+ * @param {Object} req.body
+ * @param {string} req.body.slug Event slug
+ * @param {string} req.body.username Username of the requester
+ * @param {string} [req.body.name] Event name
+ * @param {string|Date} [req.body.date] Start date
+ * @param {string|Date} [req.body.endDate] End date
+ * @param {string} [req.body.startTime] Start time (HH:mm)
+ * @param {string} [req.body.endTime] End time (HH:mm)
+ * @param {string} [req.body.location] Event location
+ * @param {string} [req.body.description] Event description
+ * @param {string} [req.body.privacy] Event privacy (Public / Private)
+ * @param {string} [req.body.question] Join question for private events
+ * @param {string|null} [req.body.banner] Event banner path
+ * @param {string} [req.body.action] Special action (cancel | end_early | extend)
+ * @param {number} [req.body.extendHours] Number of hours to extend the event
+ * @returns {Object} Updated event document
+ */
 export const updateEvent = async (req, res) => {
   try {
     const { slug, username, name, date, endDate, startTime, endTime, location, description, privacy, question, banner, action, extendHours } = req.body;
@@ -516,18 +547,15 @@ export const updateEvent = async (req, res) => {
 
     const updateFields = {};
     
-    // Xử lý các actions đặc biệt
     if (action) {
       const now = new Date();
       
       switch(action) {
         case 'cancel':
-          // Hủy sự kiện
           updateFields.eventStatus = 'cancelled';
           break;
           
         case 'end_early':
-          // Kết thúc sớm - cập nhật endDate và endTime về hiện tại
           updateFields.eventStatus = 'completed';
           updateFields.endDate = now;
           const hours = String(now.getHours()).padStart(2, '0');
@@ -536,7 +564,6 @@ export const updateEvent = async (req, res) => {
           break;
           
         case 'extend':
-          // Extend thời gian - chỉ cho phép khi đang diễn ra
           if (!extendHours || extendHours <= 0) {
             return res.status(400).json({ message: "Số giờ extend phải lớn hơn 0" });
           }
@@ -547,7 +574,6 @@ export const updateEvent = async (req, res) => {
             currentEndDate.setHours(parseInt(h), parseInt(m), 0, 0);
           }
           
-          // Thêm số giờ
           currentEndDate.setHours(currentEndDate.getHours() + parseInt(extendHours));
           
           updateFields.endDate = currentEndDate;
@@ -561,7 +587,6 @@ export const updateEvent = async (req, res) => {
       }
     }
     
-    // Các trường thông thường
     if (name) updateFields.name = name;
     if (date) updateFields.date = date;
     if (endDate) updateFields.endDate = endDate;
@@ -588,7 +613,7 @@ export const updateEvent = async (req, res) => {
         { new: true } 
     );
 
-    // Nếu sự kiện được chuyển sang trạng thái 'completed', tự động trao badge cho chủ sự kiện
+    // Từ trạng thái 'completed' --> trao badge cho chủ sự kiện
     try {
       const becameCompleted = (updateFields.eventStatus && updateFields.eventStatus === 'completed') || (updatedEvent.eventStatus === 'completed');
       if (becameCompleted) {
@@ -614,7 +639,6 @@ export const updateEvent = async (req, res) => {
           }
           await owner.save();
 
-          // Tạo thông báo cho owner
           try {
             await createNotificationInternal({
               recipientId: owner._id,
@@ -638,7 +662,19 @@ export const updateEvent = async (req, res) => {
   }
 };
 
-// ---------------------- DELETE EVENT ----------------------
+/**
+ * Delete an event.
+ * Only the event creator can delete the event.
+ * Notifies all current members before removing the event
+ * and cleans up related join requests.
+ *
+ * @route DELETE /api/events
+ * @access Authenticated (Manager / Creator)
+ * @param {Object} req.body
+ * @param {string} req.body.slug Event slug
+ * @param {string} req.body.username Username of the requester
+ * @returns {Object} Operation result message
+ */
 export const deleteEvent = async (req, res) => {
   try {
     const { slug, username } = req.body;
@@ -649,15 +685,12 @@ export const deleteEvent = async (req, res) => {
     const event = await Event.findOne({ slug }).populate("volunteers");
     if (!event) return res.status(404).json({ message: "Không tìm thấy sự kiện" });
 
-    // Kiểm tra quyền xóa
     if (user.role !== "manager" && event.createdBy.toString() !== user._id.toString()) {
       return res.status(403).json({ message: "Bạn không có quyền xóa sự kiện này" });
     }
 
-    // Danh sách ID tất cả thành viên (không bao gồm chính người xóa nếu cần lọc)
     const memberIds = event.volunteers.map(v => (v._id || v).toString());
 
-    // --- THÔNG BÁO: Gửi cho tất cả thành viên trước khi xóa bản ghi Event ---
     if (memberIds.length > 0) {
       await Promise.all(
         memberIds.map(id => 
@@ -665,8 +698,6 @@ export const deleteEvent = async (req, res) => {
             recipientId: id,
             type: "EVENT_DELETED",
             message: `Sự kiện "${event.name}" mà bạn tham gia đã bị hủy bỏ bởi ban tổ chức.`,
-            // Lưu ý: relatedId có thể không còn truy cập được sau khi xóa Event, 
-            // nhưng vẫn nên gửi để hệ thống lưu vết.
             relatedId: event._id,
             relatedModel: "Event"
           })
@@ -674,10 +705,8 @@ export const deleteEvent = async (req, res) => {
       );
     }
 
-    // Xóa tất cả các yêu cầu tham gia liên quan
     await JoinRequest.deleteMany({ event: event._id });
     
-    // Xóa sự kiện
     await Event.findOneAndDelete({ slug });
 
     res.json({ message: "Xóa sự kiện thành công và đã thông báo đến tất cả thành viên!" });
@@ -686,7 +715,16 @@ export const deleteEvent = async (req, res) => {
   }
 };
 
-// ---------------------- GET PENDING REQUESTS ----------------------
+/**
+ * Get all pending join requests for an event.
+ * Only returns requests with status "pending".
+ *
+ * @route GET /api/events/:slug/pending-requests
+ * @access Authenticated (Manager / Creator)
+ * @param {Object} req.params
+ * @param {string} req.params.slug Event slug
+ * @returns {Array} List of pending join requests with user info
+ */
 export const getPendingRequests = async (req, res) => {
   try {
     const { slug } = req.params;
@@ -704,7 +742,20 @@ export const getPendingRequests = async (req, res) => {
   }
 };
 
-// ---------------------- RESPOND TO JOIN REQUEST (MANAGER) ----------------------
+/**
+ * Respond to a join request for an event.
+ * Allows a manager or event creator to approve or reject
+ * a user's request to join a private event.
+ * Sends a notification to the requester with the result.
+ *
+ * @route POST /api/events/respond-join-request
+ * @access Authenticated (Manager / Creator)
+ * @param {Object} req.body
+ * @param {string} req.body.requestId Join request ID
+ * @param {string} req.body.action Action to take ("approve" | "reject")
+ * @param {string} req.body.managerId ID of the manager/creator handling the request
+ * @returns {Object} Operation result with updated request status
+ */
 export const respondToJoinRequest = async (req, res) => {
   try {
     const { requestId, action, managerId } = req.body;
@@ -723,7 +774,7 @@ export const respondToJoinRequest = async (req, res) => {
           { $addToSet: { volunteers: request.user } }
       );
       
-      // --- THÔNG BÁO: Duyệt thành viên ---
+      // Thông báo duyệt thành viên
       await createNotificationInternal({
         recipientId: request.user,
         type: "VOLUNTEER_ACCEPTED",
@@ -735,7 +786,7 @@ export const respondToJoinRequest = async (req, res) => {
     } else {
       request.status = "rejected";
       
-      // --- THÔNG BÁO: Từ chối thành viên ---
+      // Thông báo từ chối thành viên
       await createNotificationInternal({
         recipientId: request.user,
         type: "VOLUNTEER_REJECTED",
@@ -752,13 +803,20 @@ export const respondToJoinRequest = async (req, res) => {
   }
 };
 
-// ======================= ADMIN DUYỆT / TỪ CHỐI EVENT =======================
-
-// 1. Duyệt sự kiện (Approve)
+/**
+ * Approve an event.
+ * Admin-only action that marks an event as approved,
+ * records the approval time, and notifies the event creator.
+ *
+ * @route PUT /api/admin/events/:id/approve
+ * @access Admin
+ * @param {Object} req.params
+ * @param {string} req.params.id Event ID
+ * @returns {Object} Approval result and updated event
+ */
 export const approveEvent = async (req, res) => {
   try {
-    const { id } = req.params; // Lấy ID từ URL
-    
+    const { id } = req.params;
     const event = await Event.findById(id);
     if (!event) return res.status(404).json({ message: "Sự kiện không tồn tại" });
 
@@ -766,7 +824,7 @@ export const approveEvent = async (req, res) => {
     event.approvedAt = new Date();
     await event.save();
 
-    // Gửi thông báo cho người tạo
+    // Thông báo cho người tạo sự kiện
     await createNotificationInternal({
       recipientId: event.createdBy, 
       type: "EVENT_APPROVED",       
@@ -780,7 +838,19 @@ export const approveEvent = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
-// ---------------------- BATCH REMOVE MEMBERS ----------------------
+
+/**
+ * Remove multiple members from an event in a single operation.
+ * Only the event creator or a manager can perform this action.
+ *
+ * @route POST /api/events/batch-remove-members
+ * @access Authenticated (Manager / Creator)
+ * @param {Object} req.body
+ * @param {string} req.body.slug Event slug
+ * @param {string[]} req.body.memberIds Array of member user IDs to remove
+ * @param {string} req.body.username Username of the requester
+ * @returns {Object} Updated event document
+ */
 export const batchRemoveMembers = async (req, res) => {
   try {
     const { slug, memberIds, username } = req.body;
@@ -799,7 +869,7 @@ export const batchRemoveMembers = async (req, res) => {
       return res.status(404).json({ message: "Sự kiện không tồn tại" });
     }
 
-    // Kiểm tra quyền (phải là manager hoặc creator)
+    // Kiểm tra quyền manager và người tạo event
     const userVolunteer = event.volunteers.find(v => v.user._id.toString() === user._id.toString());
     const isCreator = event.createdBy.toString() === user._id.toString();
     const isManager = userVolunteer && userVolunteer.role === "manager";
@@ -808,7 +878,6 @@ export const batchRemoveMembers = async (req, res) => {
       return res.status(403).json({ message: "Bạn không có quyền thực hiện hành động này" });
     }
 
-    // Loại bỏ các thành viên
     event.volunteers = event.volunteers.filter(v => !memberIds.includes(v.user._id.toString()));
     await event.save();
 
@@ -822,7 +891,18 @@ export const batchRemoveMembers = async (req, res) => {
   }
 };
 
-// ---------------------- BATCH GRANT MANAGER ROLE ----------------------
+/**
+ * Grant manager role to multiple event members in a single operation.
+ * Only the event creator or an existing manager can perform this action.
+ *
+ * @route POST /api/events/batch-grant-manager
+ * @access Authenticated (Manager / Creator)
+ * @param {Object} req.body
+ * @param {string} req.body.slug Event slug
+ * @param {string[]} req.body.memberIds Array of member user IDs to promote
+ * @param {string} req.body.username Username of the requester
+ * @returns {Object} Updated event document
+ */
 export const batchGrantManager = async (req, res) => {
   try {
     const { slug, memberIds, username } = req.body;
@@ -841,7 +921,7 @@ export const batchGrantManager = async (req, res) => {
       return res.status(404).json({ message: "Sự kiện không tồn tại" });
     }
 
-    // Kiểm tra quyền (phải là manager hoặc creator)
+
     const userVolunteer = event.volunteers.find(v => v.user._id.toString() === user._id.toString());
     const isCreator = event.createdBy.toString() === user._id.toString();
     const isManager = userVolunteer && userVolunteer.role === "manager";
@@ -850,7 +930,6 @@ export const batchGrantManager = async (req, res) => {
       return res.status(403).json({ message: "Bạn không có quyền thực hiện hành động này" });
     }
 
-    // Cập nhật role
     event.volunteers.forEach(v => {
       if (memberIds.includes(v.user._id.toString())) {
         v.role = "manager";
@@ -869,7 +948,19 @@ export const batchGrantManager = async (req, res) => {
   }
 };
 
-// ---------------------- BATCH MARK ATTENDANCE ----------------------
+/**
+ * Mark attendance for multiple event members in a single operation.
+ * Only the event creator or a manager can perform this action.
+ *
+ * @route POST /api/events/batch-mark-attendance
+ * @access Authenticated (Manager / Creator)
+ * @param {Object} req.body
+ * @param {string} req.body.slug Event slug
+ * @param {string[]} req.body.memberIds Array of member user IDs
+ * @param {string} req.body.attended Attendance status ("yes" | "no")
+ * @param {string} req.body.username Username of the requester
+ * @returns {Object} Updated event document
+ */
 export const batchMarkAttendance = async (req, res) => {
   try {
     const { slug, memberIds, attended, username } = req.body;
@@ -892,7 +983,6 @@ export const batchMarkAttendance = async (req, res) => {
       return res.status(404).json({ message: "Sự kiện không tồn tại" });
     }
 
-    // Kiểm tra quyền (phải là manager hoặc creator)
     const userVolunteer = event.volunteers.find(v => v.user._id.toString() === user._id.toString());
     const isCreator = event.createdBy.toString() === user._id.toString();
     const isManager = userVolunteer && userVolunteer.role === "manager";
@@ -901,7 +991,6 @@ export const batchMarkAttendance = async (req, res) => {
       return res.status(403).json({ message: "Bạn không có quyền thực hiện hành động này" });
     }
 
-    // Cập nhật trạng thái tham gia
     event.volunteers.forEach(v => {
       if (memberIds.includes(v.user._id.toString())) {
         v.attended = attended;
@@ -919,7 +1008,18 @@ export const batchMarkAttendance = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
-// 2. Từ chối sự kiện (Reject)
+
+/**
+ * Reject an event.
+ * Admin-only action that marks an event as rejected
+ * and notifies the event creator about the decision.
+ *
+ * @route PUT /api/admin/events/:id/reject
+ * @access Admin
+ * @param {Object} req.params
+ * @param {string} req.params.id Event ID
+ * @returns {Object} Rejection result and updated event
+ */
 export const rejectEvent = async (req, res) => {
   try {
     const { id } = req.params;
@@ -930,7 +1030,6 @@ export const rejectEvent = async (req, res) => {
     event.status = "rejected";
     await event.save();
 
-    // Gửi thông báo cho người tạo
     await createNotificationInternal({
       recipientId: event.createdBy,
       type: "EVENT_REJECTED",
@@ -945,14 +1044,27 @@ export const rejectEvent = async (req, res) => {
   }
 };
 
-// ---------------------- CẬP NHẬT TRẠNG THÁI THAM GIA (ATTENDANCE) ----------------------
+/**
+ * Update attendance status for a specific event member.
+ * Only the event creator or a manager can perform this action.
+ * Automatically awards or removes event badges based on attendance status.
+ *
+ * @route PUT /api/events/:slug/attendance
+ * @access Authenticated (Manager / Creator)
+ * @param {Object} req.params
+ * @param {string} req.params.slug Event slug
+ * @param {Object} req.body
+ * @param {string} req.body.userId ID of the member
+ * @param {string} req.body.attendance Attendance status ("completed" | "absent" | "pending")
+ * @param {string} [req.body.requesterId] Fallback requester ID if req.user is not present
+ * @returns {Object} Operation result with updated attendance status
+ */
 export const updateMemberAttendance = async (req, res) => {
   try {
     const { slug } = req.params;
-    const { userId, attendance } = req.body; // attendance: 'completed' hoặc 'absent'
+    const { userId, attendance } = req.body;
     const requesterId = req.user?.id || req.body.requesterId;
 
-    // Kiểm tra input
     if (!userId || !attendance) {
       return res.status(400).json({ message: "Thiếu userId hoặc attendance" });
     }
@@ -961,7 +1073,6 @@ export const updateMemberAttendance = async (req, res) => {
       return res.status(400).json({ message: "Trạng thái attendance không hợp lệ" });
     }
 
-    // Tìm event
     const event = await Event.findOne({ slug })
       .populate("createdBy", "_id username")
       .populate("volunteers", "_id username role");
@@ -970,7 +1081,6 @@ export const updateMemberAttendance = async (req, res) => {
       return res.status(404).json({ message: "Không tìm thấy sự kiện" });
     }
 
-    // Kiểm tra quyền: chỉ creator hoặc manager được phép
     const isCreator = event.createdBy._id.toString() === requesterId;
     const requesterInEvent = event.volunteers?.find(
       v => v._id.toString() === requesterId
@@ -983,7 +1093,6 @@ export const updateMemberAttendance = async (req, res) => {
       });
     }
 
-    // Kiểm tra user có trong volunteers không
     const userInVolunteers = event.volunteers?.some(
       v => v._id.toString() === userId
     );
@@ -994,12 +1103,10 @@ export const updateMemberAttendance = async (req, res) => {
       });
     }
 
-    // Khởi tạo attendance array nếu chưa có
     if (!event.attendance) {
       event.attendance = [];
     }
 
-    // Tìm hoặc tạo attendance record cho user
     const existingAttendance = event.attendance.find(
       a => a.user.toString() === userId
     );
@@ -1015,7 +1122,6 @@ export const updateMemberAttendance = async (req, res) => {
 
     await event.save();
 
-    // If marked completed, award badge and notify user; if marked absent, remove badge
     try {
       if (attendance === 'completed') {
         const user = await User.findById(userId);
@@ -1033,7 +1139,6 @@ export const updateMemberAttendance = async (req, res) => {
           }
           await user.save();
 
-          // Send notification
           try {
             await createNotificationInternal({
               recipientId: user._id,
@@ -1047,7 +1152,6 @@ export const updateMemberAttendance = async (req, res) => {
           }
         }
       } else if (attendance === 'absent') {
-        // remove badge if exists
         const user = await User.findById(userId);
         if (user) {
           user.badges = (user.badges || []).filter(b => !(b.eventId && b.eventId.toString() === event._id.toString()));
@@ -1069,18 +1173,26 @@ export const updateMemberAttendance = async (req, res) => {
   }
 };
 
-// ===================== SEARCH EVENTS =====================
+/**
+ * Search events.
+ * Returns all approved events with basic information
+ * and includes the number of volunteers for each event.
+ *
+ * @route GET /api/events/search
+ * @access Public
+ * @param {Object} req.query
+ * @param {string} [req.query.query] Search keyword (currently unused)
+ * @returns {Array} List of approved events with volunteer count
+ */
 export const searchEvents = async (req, res) => {
   try {
     const { query } = req.query;
     
-    // Tìm tất cả events đã được approved với đầy đủ thông tin
     const events = await Event.find({ status: "approved" })
       .populate("createdBy", "username role avatar")
       .select("name slug date endDate startTime endTime location description banner createdAt status volunteers")
       .lean();
 
-    // Thêm số lượng volunteers vào mỗi event
     const eventsWithCount = events.map(event => ({
       ...event,
       volunteersCount: event.volunteers ? event.volunteers.length : 0
@@ -1094,7 +1206,19 @@ export const searchEvents = async (req, res) => {
   }
 };
 
-// ===================== UPLOAD EVENT BANNER =====================
+/**
+ * Upload or update an event banner.
+ * Only the event creator, manager, or admin can perform this action.
+ * Replaces the old banner file if it exists and updates
+ * the automatic announcement post image if available.
+ *
+ * @route POST /api/events/:slug/banner
+ * @access Authenticated (Creator / Manager / Admin)
+ * @param {Object} req.params
+ * @param {string} req.params.slug Event slug
+ * @param {Object} req.file Uploaded banner file (via multer)
+ * @returns {Object} Operation result with updated banner path
+ */
 export const uploadEventBanner = async (req, res) => {
   try {
     const { slug } = req.params;
@@ -1104,7 +1228,6 @@ export const uploadEventBanner = async (req, res) => {
       return res.status(404).json({ message: "Không tìm thấy sự kiện" });
     }
 
-    // Kiểm tra quyền (chỉ creator hoặc manager)
     const isCreator = event.createdBy.toString() === req.user._id.toString();
     const isManager = req.user.role === "manager" || req.user.role === "admin";
 
@@ -1114,12 +1237,10 @@ export const uploadEventBanner = async (req, res) => {
       });
     }
 
-    // Lấy path của file đã upload (từ multer middleware)
     if (!req.file) {
       return res.status(400).json({ message: "Không có file banner được upload" });
     }
 
-    // Xóa banner cũ nếu có
     if (event.banner) {
       const fs = await import("fs");
       const oldPath = event.banner.startsWith("/") ? `.${event.banner}` : event.banner;
@@ -1128,16 +1249,11 @@ export const uploadEventBanner = async (req, res) => {
       }
     }
 
-    // Lưu path mới
     const bannerPath = `/uploads/banners/${req.file.filename}`;
     event.banner = bannerPath;
     await event.save();
 
-    // ============================================================
-    // 🎉 CẬP NHẬT BÀI ĐĂNG TỰ ĐỘNG VỚI BANNER MỚI
-    // ============================================================
     try {
-      // Tìm bài đăng tự động (announcement) của sự kiện
       const eventPost = await Post.findOne({
         eventId: event._id,
         isEventAnnouncement: true
@@ -1150,7 +1266,6 @@ export const uploadEventBanner = async (req, res) => {
       }
     } catch (postUpdateError) {
       console.error("Lỗi cập nhật bài đăng với banner:", postUpdateError);
-      // Không làm gián đoạn việc upload banner
     }
 
     res.json({
@@ -1162,7 +1277,18 @@ export const uploadEventBanner = async (req, res) => {
   }
 };
 
-// -------------------- UPLOAD EVENT BADGE --------------------
+/**
+ * Upload or update an event badge.
+ * Only the event creator, manager, or admin can perform this action.
+ * Replaces the old badge file if it exists.
+ *
+ * @route POST /api/events/:slug/badge
+ * @access Authenticated (Creator / Manager / Admin)
+ * @param {Object} req.params
+ * @param {string} req.params.slug Event slug
+ * @param {Object} req.file Uploaded badge file (via multer)
+ * @returns {Object} Operation result with updated badge path
+ */
 export const uploadEventBadge = async (req, res) => {
   try {
     const { slug } = req.params;
@@ -1170,7 +1296,6 @@ export const uploadEventBadge = async (req, res) => {
 
     if (!event) return res.status(404).json({ message: "Không tìm thấy sự kiện" });
 
-    // Kiểm tra quyền
     const isCreator = event.createdBy.toString() === req.user._id.toString();
     const isManager = req.user.role === "manager" || req.user.role === "admin";
     if (!isCreator && !isManager) {
@@ -1179,7 +1304,6 @@ export const uploadEventBadge = async (req, res) => {
 
     if (!req.file) return res.status(400).json({ message: "Không có file badge được upload" });
 
-    // Xóa badge cũ nếu có
     if (event.badge) {
       const fs = await import("fs");
       const oldPath = event.badge.startsWith("/") ? `.${event.badge}` : event.badge;
@@ -1199,11 +1323,25 @@ export const uploadEventBadge = async (req, res) => {
   }
 };
 
-// -------------------- SAVE CONTRIBUTIONS --------------------
+/**
+ * Save member contributions for an event.
+ * Only the event creator can perform this action.
+ * Updates contribution completion status and
+ * automatically awards or removes event badges for members.
+ *
+ * @route PUT /api/events/:slug/contributions
+ * @access Authenticated (Creator)
+ * @param {Object} req.params
+ * @param {string} req.params.slug Event slug
+ * @param {Object} req.body
+ * @param {Object.<string, boolean>} req.body.contributions
+ *        Key-value map of userId => completion status
+ * @returns {Object} Operation result with updated event data
+ */
 export const saveContributions = async (req, res) => {
   try {
     const { slug } = req.params;
-    const { contributions } = req.body; // expected object: { userId: value }
+    const { contributions } = req.body;
 
     if (!contributions || typeof contributions !== 'object') {
       return res.status(400).json({ message: 'Contributions invalid' });
@@ -1212,12 +1350,11 @@ export const saveContributions = async (req, res) => {
     const event = await Event.findOne({ slug });
     if (!event) return res.status(404).json({ message: 'Sự kiện không tồn tại' });
 
-    // Kiểm tra quyền: chỉ creator
+    // Kiểm tra quyền người tạo sự kiện
     const requesterId = req.user._id.toString();
     const isCreator = event.createdBy.toString() === requesterId;
     if (!isCreator) return res.status(403).json({ message: 'Bạn không có quyền cập nhật đóng góp' });
 
-    // Update event.contributions array (completed boolean)
     event.contributions = event.contributions || [];
     for (const [userId, value] of Object.entries(contributions)) {
       const completed = !!value;
@@ -1231,7 +1368,7 @@ export const saveContributions = async (req, res) => {
 
     await event.save();
 
-    // Gắn/loại bỏ badge cho từng user dựa trên completed === true
+    // Gắn/loại bỏ badge cho từng user dựa trên đóng góp
     const eventBadge = event.badge || null;
     const updates = [];
     for (const c of event.contributions) {
@@ -1244,7 +1381,6 @@ export const saveContributions = async (req, res) => {
       const existing = user.badges.find(b => b.eventId && b.eventId.toString() === event._id.toString());
 
       if (completed) {
-        // Add or update badge (keep existing.visible if present)
         if (existing) {
           existing.level = existing.level || 1;
           existing.image = eventBadge;
@@ -1254,7 +1390,6 @@ export const saveContributions = async (req, res) => {
           user.badges.push({ eventId: event._id, eventName: event.name, level: 1, image: eventBadge, visible: true, eventEndDate: event.endDate || event.date });
         }
 
-        // Send notification to user about badge
         try {
           await createNotificationInternal({
             recipientId: user._id,
@@ -1267,7 +1402,6 @@ export const saveContributions = async (req, res) => {
           console.warn('Failed to create notification for badge:', e);
         }
       } else {
-        // Remove badge if exists
         if (existing) {
           user.badges = user.badges.filter(b => !(b.eventId && b.eventId.toString() === event._id.toString()));
         }
@@ -1288,7 +1422,16 @@ export const saveContributions = async (req, res) => {
   }
 };
 
-// ---------------------- GET USER'S JOINED EVENTS ----------------------
+/**
+ * Get all events that a user has joined.
+ * Only returns events that have been approved.
+ *
+ * @route GET /api/users/:userId/events
+ * @access Authenticated / Public (depends on route protection)
+ * @param {Object} req.params
+ * @param {string} req.params.userId User ID
+ * @returns {Object} List of approved events the user has joined
+ */
 export const getUserEvents = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -1297,13 +1440,12 @@ export const getUserEvents = async (req, res) => {
       return res.status(400).json({ message: "User ID is required" });
     }
 
-    // Tìm tất cả events mà user đã join (có trong volunteers array)
     const events = await Event.find({
       volunteers: userId,
-      status: "approved" // Chỉ lấy events đã được duyệt
+      status: "approved" 
     })
       .populate("createdBy", "username email avatar role")
-      .sort({ date: 1 }); // Sắp xếp theo ngày tăng dần
+      .sort({ date: 1 }); 
 
     res.json({
       message: "Lấy danh sách sự kiện thành công",

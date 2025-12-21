@@ -2,7 +2,18 @@ import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
-// ---------------------- REGISTER ----------------------
+/**
+ * Register a new user account.
+ * @route POST /api/auth/register
+ * @access Public
+ * @param {Object} req.body
+ * @param {string} req.body.email
+ * @param {string} req.body.username
+ * @param {string} req.body.password
+ * @param {string|number} req.body.captchaAnswer
+ * @param {string} req.body.captchaToken
+ * @returns {Object} JWT token and user info
+ */
 export const register = async (req, res) => {
   try {
     let {
@@ -13,7 +24,6 @@ export const register = async (req, res) => {
       captchaToken,
     } = req.body;
 
-    // ===== BASIC VALIDATION =====
     if (!email || !username || !password) {
       return res.status(400).json({ message: "Thiếu thông tin đăng ký" });
     }
@@ -22,7 +32,6 @@ export const register = async (req, res) => {
       return res.status(400).json({ message: "Thiếu captcha" });
     }
 
-    // ===== CAPTCHA VERIFY =====
     try {
       const decoded = jwt.verify(
         captchaToken,
@@ -36,11 +45,9 @@ export const register = async (req, res) => {
       return res.status(400).json({ message: "Captcha đã hết hạn" });
     }
 
-    // ===== NORMALIZE =====
     email = email.toLowerCase().trim();
     username = username.trim();
 
-    // ===== UNIQUE CHECK =====
     if (await User.findOne({ email })) {
       return res.status(400).json({ message: "Email đã được sử dụng" });
     }
@@ -49,27 +56,21 @@ export const register = async (req, res) => {
       return res.status(400).json({ message: "Tên đăng nhập đã được sử dụng" });
     }
 
-    // ===== HASH PASSWORD =====
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // ===== CREATE USER =====
     const user = await User.create({
       email,
       username,
       password: hashedPassword,
-
-      // required by schema
-      fullName: username, // temporary default, updated in step 2
+      fullName: username,
     });
 
-    // ===== ISSUE TOKEN (IMPORTANT) =====
     const token = jwt.sign(
       { id: user._id },
       process.env.JWT_SECRET,
       { expiresIn: "1d" }
     );
 
-    // ===== RESPONSE =====
     res.status(201).json({
       token,
       user: {
@@ -86,7 +87,15 @@ export const register = async (req, res) => {
   }
 };
 
-// ---------------------- LOGIN ----------------------
+/**
+ * Authenticate user and issue JWT.
+ * @route POST /api/auth/login
+ * @access Public
+ * @param {Object} req.body
+ * @param {string} req.body.identifier
+ * @param {string} req.body.password
+ * @returns {Object} JWT token and user info
+ */
 export const login = async (req, res) => {
   try {
     const { identifier, password } = req.body;
