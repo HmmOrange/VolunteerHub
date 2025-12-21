@@ -21,6 +21,7 @@ import {
   Divider
 } from "@mui/material";
 
+// Import các Icon đẹp mắt
 import { 
   Email, 
   Person, 
@@ -30,6 +31,7 @@ import {
   AdminPanelSettings,
   Badge
 } from "@mui/icons-material";
+// Removed IconButton/MoreVert imports; using a centered Button for badge editing
 
 import { getProfile, uploadAvatar, setBadgeVisibility } from "../../api/Users";
 
@@ -38,11 +40,13 @@ import { getProfile, uploadAvatar, setBadgeVisibility } from "../../api/Users";
 
   Mô tả:
   - Hiển thị trang hồ sơ người dùng, bao gồm avatar, thông tin cơ bản và danh sách badge.
+  - Hỗ trợ upload avatar (preview -> confirm -> upload), quản lý hiển thị badge (`setBadgeVisibility`).
+  - Các hành vi chính: `getProfile`, `handleFileSelect`, `handleConfirmUpload`, `handleToggleBadge`.
 */
 
 export default function Profile() {
 	const navigate = useNavigate();
-
+  // Label và màu sắc cho các Role
   const roleLabel = {
     manager: "Quản lý",
     admin: "Quản trị viên",
@@ -52,7 +56,7 @@ export default function Profile() {
   const roleColor = {
     manager: "warning",
     admin: "error",
-    volunteer: "success",
+    volunteer: "success", // Màu xanh lá cho tình nguyện viên
   };
 
   const [profile, setProfile] = useState(null);
@@ -60,9 +64,9 @@ export default function Profile() {
   const [uploading, setUploading] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   
-
+  // State xử lý file
   const [pendingFile, setPendingFile] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null); // URL ảnh xem trước
 
   const [snackbar, setSnackbar] = useState({
     open: false,
@@ -78,6 +82,7 @@ export default function Profile() {
       const eventId = badge.eventId && badge.eventId._id ? badge.eventId._id : (badge.eventId || badge.eventId);
       const visible = !badge.visible;
       await setBadgeVisibility(eventId, visible);
+      // update local state
       setProfile(prev => ({
         ...prev,
         badges: prev.badges.map(b => (
@@ -91,35 +96,41 @@ export default function Profile() {
     }
   };
 
-
+  // --- 1. LẤY THÔNG TIN PROFILE ---
   useEffect(() => {
     getProfile()
       .then(setProfile)
       .catch((err) => setError(err.message));
   }, []);
 
-
+  // --- 2. KHI CHỌN FILE (CHƯA UPLOAD) ---
   const handleFileSelect = (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-
+    // Tạo preview để hiện lên UI ngay lập tức
     const objectUrl = URL.createObjectURL(file);
     setPreviewUrl(objectUrl);
     setPendingFile(file);
     setConfirmOpen(true);
   };
 
-
+  // --- 3. XÁC NHẬN UPLOAD (GỌI API) ---
   const handleConfirmUpload = async () => {
     setConfirmOpen(false);
     setUploading(true);
 
     try {
       console.log("Uploading file:", pendingFile);
+      
+      // Gọi API upload
       const res = await uploadAvatar(pendingFile);
       console.log("Upload response:", res);
+
+      // Cập nhật LocalStorage
       localStorage.setItem("avatar", res.avatar);
+
+      // QUAN TRỌNG: Cập nhật State ngay lập tức (Không cần reload trang)
       setProfile((prev) => ({ ...prev, avatar: res.avatar }));
       
       setSnackbar({
@@ -132,6 +143,7 @@ export default function Profile() {
     } catch (err) {
       console.error("Upload error:", err);
       
+      // Nếu lỗi, reset preview về null để hiện lại ảnh cũ
       setPreviewUrl(null);
       setSnackbar({
         open: true,
@@ -144,10 +156,11 @@ export default function Profile() {
     }
   };
 
+  // Hủy bỏ chọn ảnh
   const handleCloseDialog = () => {
     setConfirmOpen(false);
     setPendingFile(null);
-    setPreviewUrl(null);
+    setPreviewUrl(null); // Xóa preview
   };
 
   if (error) {
@@ -166,16 +179,23 @@ export default function Profile() {
     );
   }
 
+  // Logic hiển thị ảnh: Ưu tiên ảnh Preview -> Ảnh từ Server -> Mặc định
   const displayAvatar = previewUrl || (profile.avatar ? `http://localhost:5000${profile.avatar}` : "");
 
   const getBadgeUrl = (badgePath) => {
     if (!badgePath) return null;
+    // Trường hợp 1: Link ảnh online (firebase, cloudinary...)
     if (badgePath.startsWith("http")) return badgePath;
+    // Trường hợp 2: Ảnh dạng base64
     if (badgePath.startsWith("data:")) return badgePath;
+    // Trường hợp 3: Ảnh lưu local server -> nối thêm host
     const path = badgePath.startsWith("/") ? badgePath : `/${badgePath}`;
     return `http://localhost:5000${path}`;
   };
 
+  // Prepare badges per rules:
+  // - manage mode: show all badges earned (contribution completed)
+  // - otherwise: show badges with visible !== false; if user hasn't customized and >4, show 4 most recent
   const allBadges = Array.isArray(profile.badges) ? profile.badges : [];
   const visibleBadges = allBadges.filter(b => b.visible !== false);
   let badgesToShow = [];
@@ -196,9 +216,10 @@ export default function Profile() {
         sx={{ 
           borderRadius: 4, 
           overflow: "hidden",
-          boxShadow: "0 10px 30px rgba(73, 187, 189, 0.15)"
+          boxShadow: "0 10px 30px rgba(73, 187, 189, 0.15)" // Bóng màu xanh ngọc nhạt
         }}
       >
+        {/* --- COVER IMAGE (MÀU CHỦ ĐẠO) --- */}
         <Box 
           sx={{ 
             height: 160, 
@@ -208,6 +229,7 @@ export default function Profile() {
         />
 
         <Box sx={{ px: 4, pb: 6 }}>
+          {/* --- AVATAR SECTION (ĐÈ LÊN COVER) --- */}
           <Box 
             sx={{ 
               marginTop: "-60px", 
@@ -231,6 +253,7 @@ export default function Profile() {
                 {!displayAvatar && <Person sx={{ fontSize: 60 }} />}
               </Avatar>
 
+              {/* Nút Camera nhỏ để đổi ảnh */}
               <Button
                 component="label"
                 disabled={uploading}
@@ -264,6 +287,7 @@ export default function Profile() {
               icon={<AdminPanelSettings />}
               sx={{ mt: 1, fontWeight: 600 }}
             />
+            {/* Badges: allow managing visibility */}
             {badgesToShow.length > 0 && (
               <Box sx={{ mt: 4, position: 'relative', px: 1 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -272,6 +296,7 @@ export default function Profile() {
                     {badgesToShow.map((b, idx) => {
                       const visible = b.visible !== undefined ? b.visible : true;
                       
+                      // Nếu không ở chế độ quản lý thì ẩn các badge bị tắt
                       if (!manageBadges && !visible) return null;
 
                       return (
@@ -280,6 +305,7 @@ export default function Profile() {
                           elevation={1} 
                           sx={{ width: 181, p: 1, textAlign: 'center', position: 'relative' }}
                         >
+                          {/* Checkbox chỉ hiện khi ở chế độ chỉnh sửa */}
                           {manageBadges && (
                             <Checkbox
                               checked={visible}
@@ -288,6 +314,7 @@ export default function Profile() {
                             />
                           )}
 
+                          {/* Khung ảnh Badge */}
                           <Box 
                             sx={{ 
                               width: '100%', 
@@ -305,11 +332,13 @@ export default function Profile() {
                               <img
                                 src={getBadgeUrl(b.image)}
                                 alt={b.eventName}
-                                style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                                style={{ width: '100%', height: '100%', objectFit: 'cover' }} // Dùng 'contain' để nhìn rõ toàn bộ badge
                                 onError={(e) => {
+                                  // Xử lý khi ảnh bị lỗi (404)
                                   e.target.onerror = null; 
-                                  e.target.style.display = 'none';
-    
+                                  e.target.style.display = 'none'; // Ẩn ảnh lỗi đi
+                                  // Hoặc bạn có thể set src về ảnh mặc định:
+                                  // e.target.src = 'https://via.placeholder.com/150?text=No+Badge';
                                 }}
                               />
                             ) : (
@@ -317,6 +346,7 @@ export default function Profile() {
                             )}
                           </Box>
 
+                          {/* Tên và ngày sự kiện */}
                           <Typography variant="caption" sx={{ display: 'block', fontWeight: 700, lineHeight: 1.2, mb: 0.5 }}>
                             {b.eventName}
                           </Typography>
@@ -330,6 +360,7 @@ export default function Profile() {
                   </Box>
                 </Box>
 
+                {/* Nút chỉnh sửa Badge */}
                 <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
                   <Button
                     size="small"
@@ -357,6 +388,7 @@ export default function Profile() {
 
           <Divider sx={{ my: 4 }} />
 
+          {/* --- THÔNG TIN CHI TIẾT --- */}
           <Grid container spacing={3}>
             <Grid item xs={12} sm={6}>
               <Stack direction="row" spacing={2} alignItems="center">
@@ -408,6 +440,7 @@ export default function Profile() {
         </Box>
       </Paper>
 
+      {/* --- DIALOG XÁC NHẬN --- */}
       <Dialog open={confirmOpen} onClose={handleCloseDialog}>
         <DialogTitle sx={{ color: "#49BBBD", fontWeight: "bold" }}>Thay đổi ảnh đại diện?</DialogTitle>
         <DialogContent>
@@ -431,6 +464,7 @@ export default function Profile() {
         </DialogActions>
       </Dialog>
 
+      {/* --- SNACKBAR --- */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={3000}

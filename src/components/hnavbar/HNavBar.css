@@ -1,15 +1,15 @@
-
+/* === 1. Khung chính (AppBar) === */
 .hnavbar-appbar {
-  
+  /* Ghi đè style của MUI */
   background-color: white !important;
   color: #000000 !important;
   border-bottom: 1px solid #e0e0e0;
   box-shadow: none !important;
 
-  
+  /* THÊM MỚI (Rất quan trọng) */
   position: fixed !important;
   width: 100% !important;
-  
+  /* z-index phải cao hơn VNavBar (thường là 1200) */
   z-index: 1201 !important; 
 }
 
@@ -18,10 +18,12 @@
   justify-content: space-between;
 }
 
+/* === 2. Bên trái (Logo & Nút Menu) === */
 .hnavbar-icon-btn {
   color: #000000 !important;
 }
 
+/* Hover / active: icons adopt accent color for interaction only */
 .hnavbar-icon-btn:hover,
 .hnavbar-icon-btn:active,
 .hnavbar-icon-btn.Mui-focusVisible {
@@ -42,6 +44,7 @@
   color: #49BBBD;
 }
 
+/* === 3. Giữa (Thanh Search) === */
 .hnavbar-search {
   flex-grow: 1;
   max-width: min(37.5vw, 37.5rem);
@@ -49,7 +52,7 @@
   margin-right: 1rem;
   display: flex;
   align-items: center;
-  background-color: #f1f4f7; 
+  background-color: #f1f4f7; /* Màu thứ cấp */
   border-radius: 1.25rem;
   padding: 0.25rem 0.75rem;
 }
@@ -67,6 +70,7 @@
   flex: 1;
 }
 
+/* === 4. Bên phải (Nút & Avatar) === */
 .hnavbar-add-btn {
   color: inherit !important;
 }
@@ -83,6 +87,7 @@
   font-size: 0.9rem;
 }
 
+/* === 5. Menu xổ xuống === */
 .hnavbar-menu-paper {
   box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.1);
   border: 0.0625rem solid #e0e0e0;
@@ -104,12 +109,14 @@
   color: #333 !important;
 }
 
+/* === 6. Responsive === */
 @media (max-width: 600px) {
   .hnavbar-logo {
     display: none;
   }
 }
 
+/* Tùy chỉnh thanh cuộn cho menu thông báo */
 .MuiMenu-paper::-webkit-scrollbar {
   width: 6px;
 }

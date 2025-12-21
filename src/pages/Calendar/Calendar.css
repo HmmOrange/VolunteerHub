@@ -1,22 +1,26 @@
+/* Custom styles for React Big Calendar */
 
-
+/* Override default calendar styles */
 .rbc-calendar {
   font-family: 'Roboto', sans-serif;
 }
 
+/* Header styling */
 .rbc-header {
   padding: 0.75rem 0.375rem;
   font-weight: 600;
   font-size: clamp(0.75rem, 1.5vw, 0.875rem);
   color: #333;
-  border-bottom: 0.125rem solid #49BBBD; 
-  background-color: #f1f4f7; 
+  border-bottom: 0.125rem solid #49BBBD; /* Màu nhấn */
+  background-color: #f1f4f7; /* Màu thứ cấp */
 }
 
+/* Today highlighting */
 .rbc-today {
-  background-color: rgba(73, 187, 189, 0.1); 
+  background-color: rgba(73, 187, 189, 0.1); /* Màu nhấn nhạt */
 }
 
+/* Event styling */
 .rbc-event {
   padding: 0.25rem 0.375rem;
   font-size: clamp(0.6875rem, 1.5vw, 0.75rem);
@@ -35,10 +39,12 @@
   z-index: 4;
 }
 
+/* Selected event */
 .rbc-event.rbc-selected {
-  background-color: #359698 !important; 
+  background-color: #359698 !important; /* Màu nhấn đậm */
 }
 
+/* Month view */
 .rbc-month-view {
   border: 0.0625rem solid #ddd;
   border-radius: 0.25rem;
@@ -65,6 +71,7 @@
   background-color: #fafafa;
 }
 
+/* Toolbar */
 .rbc-toolbar {
   padding: 1rem;
   margin-bottom: 1rem;
@@ -97,8 +104,8 @@
 
 .rbc-toolbar button:hover:not(:disabled) {
   background-color: #f5f5f5;
-  border-color: #49BBBD; 
-  color: #49BBBD; 
+  border-color: #49BBBD; /* Màu nhấn */
+  color: #49BBBD; /* Màu nhấn */
 }
 
 .rbc-toolbar button:active:not(:disabled) {
@@ -111,14 +118,14 @@
 }
 
 .rbc-toolbar button.rbc-active {
-  background-color: #49BBBD; 
+  background-color: #49BBBD; /* Màu nhấn */
   color: white;
-  border-color: #49BBBD; 
+  border-color: #49BBBD; /* Màu nhấn */
   font-weight: 600;
 }
 
 .rbc-toolbar button.rbc-active:hover {
-  background-color: #359698; 
+  background-color: #359698; /* Màu nhấn đậm */
 }
 
 .rbc-toolbar-label {
@@ -129,6 +136,7 @@
   flex-grow: 1;
 }
 
+/* Week and Day views */
 .rbc-time-view {
   border: 0.0625rem solid #ddd;
   border-radius: 0.25rem;
@@ -177,6 +185,7 @@
   z-index: 3;
 }
 
+/* Week view specific */
 .rbc-time-header-content > .rbc-row {
   min-height: clamp(2.5rem, 5vh, 3.75rem);
 }
@@ -199,6 +208,7 @@
   padding: 0 0.0625rem;
 }
 
+/* Event in time grid */
 .rbc-event.rbc-event-continues-after,
 .rbc-event.rbc-event-continues-prior {
   border-radius: 0;
@@ -230,6 +240,7 @@
   white-space: normal;
 }
 
+/* Agenda view */
 .rbc-agenda-view {
   border: 0.0625rem solid #ddd;
   border-radius: 0.25rem;
@@ -250,6 +261,7 @@
   color: #1976d2;
 }
 
+/* Show more popup */
 .rbc-overlay {
   background-color: white;
   border: 0.0625rem solid #ddd;
@@ -282,6 +294,7 @@
   text-align: center !important;
 }
 
+/* Responsive adjustments */
 @media (max-width: 48rem) {
   .rbc-toolbar {
     flex-direction: column;

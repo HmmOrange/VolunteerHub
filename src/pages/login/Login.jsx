@@ -5,13 +5,16 @@ import { ArrowLeft } from "lucide-react";
 import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism';
 import "./Login.css";
 
+// Bạn có thể thay link ảnh này bằng ảnh thật của dự án
 const heroImage = "https://images.unsplash.com/photo-1559027615-cd4628902d4a?q=80&w=2074&auto=format&fit=crop";
 
 /*
   Page: `Login`
 
   Mô tả:
-  - Trang đăng nhập.
+  - Trang đăng nhập cơ bản với form `identifier` và `password`.
+  - Gọi API `loginUser` từ `src/api/Auth` để nhận token và lưu vào `localStorage`.
+  - Sau khi đăng nhập thành công sẽ chuyển hướng về `/dashboard`.
 */
 
 export default function Login() {
@@ -78,6 +81,7 @@ export default function Login() {
 
   return (
     <div className="login-wrapper">
+      {/* CỘT HÌNH ẢNH (LEFT) */}
       <div className="login-visual" style={{ backgroundImage: `url(${heroImage})` }}>
         <div className="visual-overlay">
           <div className="brand-header">
@@ -96,6 +100,7 @@ export default function Login() {
         </div>
       </div>
 
+      {/* CỘT FORM (RIGHT) */}
       <div className="login-content">
         <div className="form-box" style={{ border: '2px solid #49BBBD', borderRadius: '1rem', padding: '2rem' }}>
           <div className="form-header">

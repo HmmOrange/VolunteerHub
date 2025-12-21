@@ -16,6 +16,7 @@ import {
   Paper
 } from "@mui/material";
 
+// Import Icons
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import GroupsIcon from '@mui/icons-material/Groups';
 import AddReactionIcon from '@mui/icons-material/AddReaction';
@@ -24,6 +25,7 @@ import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism';
 import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 
+// --- CẤU HÌNH THEME ---
 const theme = createTheme({
   palette: {
     primary: {
@@ -55,6 +57,7 @@ const theme = createTheme({
   },
 });
 
+// --- DỮ LIỆU TÍNH NĂNG (Gom lại để render vòng lặp cho đều nhau) ---
 const features = [
   {
     title: "Tạo Sự Kiện",
@@ -82,7 +85,9 @@ const features = [
   Page: `Landing`
 
   Mô tả:
-  - Trang landing trình bày tính năng chính của ứng dụng và đăng ký/đăng nhập.
+  - Trang landing marketing trình bày tính năng chính của ứng dụng và kêu gọi đăng ký/đăng nhập.
+  - Sử dụng `ThemeProvider` cục bộ để tùy chỉnh theme cho phần landing.
+  - Không chứa logic API nặng, chủ yếu render UI tĩnh và điều hướng.
 */
 
 export default function Landing() {
@@ -92,6 +97,7 @@ export default function Landing() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       
+      {/* --- NAVBAR --- */}
       <AppBar position="fixed" elevation={1} sx={{ bgcolor: '#ffffff', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
         <Container maxWidth="xl">
           <Toolbar sx={{ height: { xs: 56, sm: 64 }, justifyContent: 'space-between', px: { xs: 1, sm: 2 } }}>
@@ -152,6 +158,7 @@ export default function Landing() {
         </Container>
       </AppBar>
 
+      {/* --- HERO SECTION --- */}
       <Box sx={{ 
         pt: { xs: 12, sm: 16, md: 20 }, 
         pb: { xs: 6, sm: 8, md: 10 }, 
@@ -216,6 +223,7 @@ export default function Landing() {
         </Container>
       </Box>
 
+      {/* --- FEATURES SECTION --- */}
       <Box sx={{ pb: { xs: 8, sm: 12, md: 15 }, bgcolor: '#ffffff', px: { xs: 2, sm: 3 } }}>
         <Container maxWidth="xl">
           <Box textAlign="center" mb={{ xs: 5, sm: 6, md: 8 }}>
@@ -227,6 +235,7 @@ export default function Landing() {
             </Typography>
           </Box>
 
+          {/* SỬ DỤNG VÒNG LẶP ĐỂ ĐẢM BẢO CÁC Ô ĐỀU NHAU TUYỆT ĐỐI */}
           <Grid container spacing={{ xs: 3, sm: 3, md: 4 }} justifyContent="center">
             {features.map((feature, index) => (
               <Grid item xs={12} sm={6} md={3} key={index} sx={{ display: 'flex' }}>
@@ -236,6 +245,7 @@ export default function Landing() {
                     p: { xs: 3, sm: 3.5, md: 4 }, 
                     textAlign: 'center', 
                     width: '100%',
+                    // Flex column và flex: 1 giúp card tự giãn đều theo chiều cao của hàng
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'flex-start',
@@ -277,6 +287,7 @@ export default function Landing() {
         </Container>
       </Box>
 
+      {/* --- FOOTER --- */}
       <Box sx={{ bgcolor: '#f1f4f7', py: 4, textAlign: 'center', borderTop: '2px solid #49BBBD' }}>
         <Container>
           <Typography variant="body2" color="text.secondary">

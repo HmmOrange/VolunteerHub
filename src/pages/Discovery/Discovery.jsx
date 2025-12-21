@@ -23,7 +23,8 @@ import ConfirmDialog from "../../components/common/ConfirmDialog";
   Page: `Discovery`
 
   Mô tả:
-  - Trang khám phá sự kiện: hiển thị tất cả sự kiện đã được duyệt, hỗ trợ lọc.
+  - Trang khám phá sự kiện: hiển thị tất cả sự kiện đã được duyệt, hỗ trợ lọc, sắp xếp và các thao tác (nếu có quyền).
+  - Hàm lớn: tải dữ liệu `getAllEvents`, tính trạng thái sự kiện và các handler cho edit/delete.
 */
 
 export default function Discovery() {
@@ -47,6 +48,7 @@ export default function Discovery() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmOptions, setConfirmOptions] = useState({ title: '', description: '', onConfirm: null });
 
+  // Helper function để render banner URL
   const getBannerUrl = (banner) => {
     if (!banner) return placeholderImage;
     if (banner.startsWith("http")) return banner;
@@ -55,27 +57,35 @@ export default function Discovery() {
     return `http://localhost:5000${path}`;
   };
 
+  /* ================= FILTER & SORT ================= */
 
   const [statusFilter, setStatusFilter] = useState("all");
   const [timeFilter, setTimeFilter] = useState("all");
   const [sortBy, setSortBy] = useState("time-asc");
 
+  /* ================= FETCH ================= */
 
   useEffect(() => {
     (async () => {
       const data = await getAllEvents();
+      // Hiển thị tất cả sự kiện đã được duyệt
       const approvedEvents = data.filter(event => event.status === "approved");
       setEvents(approvedEvents);
     })();
   }, []);
 
+  /* ================= DERIVED ================= */
+
   const now = new Date();
 
+  // === HÀM TÍNH TRẠNG THÁI TỰ ĐỘNG ===
   const calculateEventStatus = (event) => {
     if (!event) return 'upcoming';
     
+    // Chỉ giữ trạng thái cancelled nếu đã bị hủy
     if (event.eventStatus === 'cancelled') return 'cancelled';
     
+    // Còn lại tất cả dựa vào thời gian thực tế
     const now = new Date();
     const startDate = new Date(event.date);
     if (event.startTime) {
@@ -97,10 +107,12 @@ export default function Discovery() {
   const filteredAndSortedEvents = useMemo(() => {
     let list = [...events];
 
+    /* STATUS FILTER (manager only) */
     if (role === "manager" && statusFilter !== "all") {
       list = list.filter((e) => e.status === statusFilter);
     }
 
+    /* TIME FILTER */
     if (timeFilter !== "all") {
       list = list.filter((e) => {
         const start = new Date(e.date);
@@ -117,6 +129,7 @@ export default function Discovery() {
       });
     }
 
+    /* SORT */
     list.sort((a, b) => {
       if (sortBy === "name-asc")
         return a.name.localeCompare(b.name);
@@ -130,6 +143,7 @@ export default function Discovery() {
     return list;
   }, [events, role, statusFilter, timeFilter, sortBy]);
 
+  /* ================= ACTIONS ================= */
 
   const handleDelete = async (e, slug) => {
     e.stopPropagation();
@@ -181,6 +195,7 @@ export default function Discovery() {
     setEditing(null);
   };
 
+  /* ================= RENDER HELPERS ================= */
 
   const renderDateRange = (start, end) => {
     const s = new Date(start).toLocaleDateString();

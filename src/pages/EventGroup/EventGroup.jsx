@@ -10,6 +10,7 @@ import {
 } from "@mui/material";
 import { Close as CloseIcon, LockOutlined, Edit as EditIcon, ErrorOutline, MoreVert as MoreVertIcon, Cancel, Stop, AccessTime, CheckCircle, PersonOff } from "@mui/icons-material";
 
+// Import API
 import {
   getEventBySlug, joinEvent, leaveEvent, removeMember,
   getPendingRequests, respondToJoinRequest, updateEvent, updateMemberAttendance, uploadBanner,
@@ -32,6 +33,9 @@ import ConfirmDialog from "../../components/common/ConfirmDialog";
 
   Mô tả:
   - Trang chi tiết cho một sự kiện, bao gồm các tab: Bài đăng, Thông tin, Thành viên, Đóng góp, v.v.
+  - Tải dữ liệu event qua `getEventBySlug`, quản lý trạng thái join/leave, xử lý yêu cầu tham gia, quản lý badge/banner, và CRUD bài đăng liên quan.
+  - Hàm lớn/quan trọng: nhiều useEffect để tải event/posts, `joinEvent`, `leaveEvent`, `respondToJoinRequest`, `updateEvent`, `saveContributions`, `uploadBadge`, `uploadBanner`.
+  - File này có logic phức tạp liên quan đến phân quyền (creator/manager/volunteer) và tính trạng thái tự động của event.
 */
 
 export default function EventGroup() {
@@ -43,20 +47,22 @@ export default function EventGroup() {
   const currentUserUsername = localStorage.getItem("username"); 
   const [searchParams, setSearchParams] = useSearchParams();
 
+  // === STATE ===
   const [eventData, setEventData] = useState(null);
   const [posts, setPosts] = useState([]);
   const [currentTab, setCurrentTab] = useState(0);
   const [isLoadingPosts, setIsLoadingPosts] = useState(true);
   const [isJoined, setIsJoined] = useState(false);
   const [requestStatus, setRequestStatus] = useState(null);
-  const [postsLimit, setPostsLimit] = useState(10);
+  const [postsLimit, setPostsLimit] = useState(10); // Giới hạn posts hiển thị
   const [hasMorePosts, setHasMorePosts] = useState(true); 
   
   const [openJoinModal, setOpenJoinModal] = useState(false);
   const [joinAnswer, setJoinAnswer] = useState("");
   const [pendingRequests, setPendingRequests] = useState([]);
 
-  const [contributions, setContributions] = useState({}); 
+  // Contribution tab state
+  const [contributions, setContributions] = useState({}); // { userId: number }
   const [badgeFile, setBadgeFile] = useState(null);
   const [badgePreview, setBadgePreview] = useState(null);
   const [isEditingContributions, setIsEditingContributions] = useState(false);
@@ -73,34 +79,44 @@ export default function EventGroup() {
   const [bannerFile, setBannerFile] = useState(null);
   const [bannerPreview, setBannerPreview] = useState(null);
 
+  // State cho action menu
   const [anchorElActions, setAnchorElActions] = useState(null);
   const [openExtendDialog, setOpenExtendDialog] = useState(false);
   const [extendHours, setExtendHours] = useState(1);
 
+  // State cho attendance menu
   const [anchorElAttendance, setAnchorElAttendance] = useState(null);
   const [selectedMember, setSelectedMember] = useState(null);
 
+  // State cho countdown timer
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [countdownLabel, setCountdownLabel] = useState("");
   const [autoEventStatus, setAutoEventStatus] = useState("");
 
+  // State cho post modal
   const [selectedPost, setSelectedPost] = useState(null);
   const [postModalOpen, setPostModalOpen] = useState(false);
 
+  // 2. THÊM STATE ĐỂ LƯU LỖI (NẾU BỊ CHẶN)
   const [errorState, setErrorState] = useState(null); 
+  // ==========================================
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmOptions, setConfirmOptions] = useState({ title: '', description: '', onConfirm: null });
 
+  // === LOGIC PHÂN QUYỀN ===
   const currentUserInEvent = eventData?.volunteers?.find(v => (v._id || v) === currentUserId);
   const currentUserIsCreator = eventData?.createdBy?._id === currentUserId || eventData?.createdBy === currentUserId;
   
   const isOwner = currentUserInEvent && currentUserIsCreator && currentUserInEvent.role === 'manager';
 
+  // === HÀM TÍNH TRẠNG THÁI TỰ ĐỘNG ===
   const calculateEventStatus = (event) => {
     if (!event) return 'upcoming';
     
+    // Chỉ giữ trạng thái cancelled nếu đã bị hủy
     if (event.eventStatus === 'cancelled') return 'cancelled';
     
+    // Còn lại tất cả dựa vào thời gian thực tế
     const now = new Date();
     const startDate = new Date(event.date);
     if (event.startTime) {
@@ -119,6 +135,7 @@ export default function EventGroup() {
     return 'completed';
   };
 
+  // === 1. HÀM XỬ LÝ AVATAR ===
   const getAvatarUrl = (user) => {
     if (!user || !user.avatar) return undefined;
     if (user.avatar.startsWith("http")) return user.avatar;
@@ -126,10 +143,11 @@ export default function EventGroup() {
     return `http://localhost:5000${path}`;
   };
 
+  // === HÀM XỬ LÝ BANNER URL ===
   const getBannerUrl = (banner) => {
     if (!banner) return null;
     if (banner.startsWith("http")) return banner;
-    if (banner.startsWith("data:")) return banner;
+    if (banner.startsWith("data:")) return banner; // base64 cũ (nếu còn)
     const path = banner.startsWith("/") ? banner : `/${banner}`;
     return `http://localhost:5000${path}`;
   };
@@ -154,13 +172,14 @@ export default function EventGroup() {
     };
   };
 
+  // === FETCH DATA ===
   useEffect(() => {
     if (slug && slug !== "undefined") {
       (async () => {
         try {
           const data = await getEventBySlug({ slug, userId: currentUserId });
           setEventData(data);
-          setErrorState(null);
+          setErrorState(null); // Reset lỗi nếu thành công
 
           if (data.volunteers) {
             const joined = data.volunteers.some(v => (v._id ? v._id.toString() : v.toString()) === currentUserId);
@@ -190,7 +209,8 @@ export default function EventGroup() {
           }
         } catch (error) {
           let msg = "";
-          
+            
+            // Bây giờ error.response sẽ tồn tại nhờ Bước 1
             if (error.response?.status === 403) {
                 msg = "Đã có lỗi xảy ra khi tải sự kiện.";
             } else {
@@ -215,6 +235,7 @@ export default function EventGroup() {
       (async () => {
         try {
           const data = await getPostsByEvent(eventData._id);
+          // Chỉ load một số posts ban đầu
           setPosts(data);
           setHasMorePosts(data.length > postsLimit);
         } catch (error) { setPosts([]); }
@@ -223,9 +244,11 @@ export default function EventGroup() {
     }
   }, [eventData, currentTab, isJoined]);
 
+  // Sync tab from query param (?tab=)
   useEffect(() => {
     const t = parseInt(searchParams.get('tab') || '0', 10);
     if (!isNaN(t) && t !== currentTab) setCurrentTab(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
   useEffect(() => {
@@ -239,9 +262,11 @@ export default function EventGroup() {
     }
   }, [eventData, currentTab, isOwner]);
 
+  // Initialize contributions and badge preview when event data changes
   useEffect(() => {
     if (eventData) {
       const map = {};
+      // Prefer eventData.contributions if present
       if (Array.isArray(eventData.contributions) && eventData.contributions.length > 0) {
         eventData.contributions.forEach(c => {
           const uid = c.user?._id ? c.user._id : c.user;
@@ -260,21 +285,25 @@ export default function EventGroup() {
     }
   }, [eventData]);
 
+  // === COUNTDOWN TIMER ===
   useEffect(() => {
     if (!eventData) return;
 
     const calculateCountdown = () => {
       const now = new Date();
       
+      // Tính trạng thái tự động
       const currentStatus = calculateEventStatus(eventData);
       setAutoEventStatus(currentStatus);
       
+      // Nếu sự kiện đã hoàn thành hoặc bị hủy
       if (currentStatus === 'completed' || currentStatus === 'cancelled') {
         setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
         setCountdownLabel(currentStatus === 'completed' ? 'Sự kiện đã kết thúc' : 'Sự kiện đã bị hủy');
         return;
       }
 
+      // Tạo thời gian bắt đầu và kết thúc
       const startDate = new Date(eventData.date);
       if (eventData.startTime) {
         const [h, m] = eventData.startTime.split(':');
@@ -290,6 +319,7 @@ export default function EventGroup() {
       let targetDate;
       let label;
 
+      // Xác định thời gian đích dựa trên trạng thái tự động
       if (currentStatus === 'upcoming' || now < startDate) {
         targetDate = startDate;
         label = 'Thời gian đến khi sự kiện bắt đầu';
@@ -325,6 +355,7 @@ export default function EventGroup() {
     return () => clearInterval(interval);
   }, [eventData]);
 
+  // === HANDLERS (Giữ nguyên không đổi) ===
   const handleEditClick = () => {
     setEditForm({
       name: eventData.name,
@@ -351,6 +382,7 @@ export default function EventGroup() {
       }
       const updated = await updateEvent({ ...editForm, question: questionToSend, slug: eventData.slug, username: currentUserUsername });
       
+      // Upload banner nếu có file mới
       let finalBanner = updated.banner;
       let bannerUpdated = false;
       if (bannerFile) {
@@ -362,7 +394,7 @@ export default function EventGroup() {
           console.error("Banner upload error:", bannerErr);
         }
       }
-
+      // Upload badge nếu có file mới (badge upload moved into edit modal)
       let finalBadge = updated.badge;
       let badgeUpdated = false;
       if (badgeFile) {
@@ -375,6 +407,7 @@ export default function EventGroup() {
         }
       }
       
+      // Cập nhật eventData với thông tin mới
       setEventData(prev => ({ 
         ...prev,
         ...updated,
@@ -385,6 +418,7 @@ export default function EventGroup() {
         requests: prev.requests 
       }));
       
+      // Tự động tạo bài đăng khi cập nhật banner mới
       if (bannerUpdated && finalBanner) {
         try {
           console.log("Creating post with banner:", finalBanner);
@@ -396,12 +430,14 @@ export default function EventGroup() {
             imageUrl: finalBanner
           });
           console.log("Created post:", newPost);
+          // Thêm post mới vào đầu danh sách
           setPosts(prev => [newPost, ...prev]);
         } catch (postErr) {
           console.error("Auto post creation error:", postErr);
         }
       }
 
+      // Tạo post khi badge được cập nhật (tùy chọn)
       if (badgeUpdated && finalBadge) {
         try {
           const newPost = await createPost({
@@ -417,9 +453,11 @@ export default function EventGroup() {
         }
       }
       
+      // Tính toán và cập nhật trạng thái mới ngay lập tức
       const newStatus = calculateEventStatus(updated);
       setAutoEventStatus(newStatus);
       
+      // Reset banner state
       setBannerFile(null);
       setBannerPreview(null);
       
@@ -501,6 +539,7 @@ export default function EventGroup() {
     setContributions(prev => ({ ...prev, [memberId]: value }));
   };
 
+  // When owner selects a badge file, open confirm dialog before uploading
   const handleBadgeFileChange = (file) => {
     if (!file) return;
     const maxSize = 2 * 1024 * 1024;
@@ -514,6 +553,7 @@ export default function EventGroup() {
     if (!pendingBadgeFile) return;
     try {
       const res = await uploadBadge(eventData.slug, pendingBadgeFile);
+      // Update eventData badge and preview
       setEventData(prev => ({ ...prev, badge: res.badge }));
       setBadgePreview(getBannerUrl(res.badge));
       setPendingBadgeFile(null);
@@ -533,6 +573,7 @@ export default function EventGroup() {
 
   const handleStartEditContributions = () => { setIsEditingContributions(true); };
   const handleCancelContributions = () => {
+    // reset to eventData values
     const map = {};
     if (Array.isArray(eventData.contributions) && eventData.contributions.length > 0) {
       eventData.contributions.forEach(c => {
@@ -590,6 +631,7 @@ export default function EventGroup() {
         requesterId: currentUserId
       });
 
+      // Cập nhật local state
       setEventData(prev => ({
         ...prev,
         volunteers: prev.volunteers.map(v => 
@@ -686,8 +728,10 @@ export default function EventGroup() {
     }
   };
 
+  // 4. KIỂM TRA LỖI VÀ RENDER MÀN HÌNH CHẶN (THÊM ĐOẠN NÀY TRƯỚC LOADING)
   if (errorState) {
     return (
+      // Giữ nguyên layout nền xám để đồng bộ với App
       <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3, md: 4 }, py: 3, minHeight: '100vh', bgcolor: '#f1f4f7' }}>
           <Paper 
               elevation={0} 
@@ -728,11 +772,13 @@ export default function EventGroup() {
       </Container>
     );
   }
+  // =========================================================================
 
   if (!eventData) return <Container sx={{ display: 'flex', justifyContent: 'center', mt: '5rem' }}><CircularProgress sx={{ color: '#49BBBD' }} /></Container>;
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#f1f4f7' }}>
+      {/* EVENT BANNER COVER - Full width */}
       <Box
         sx={{
           width: '100%',
@@ -757,8 +803,10 @@ export default function EventGroup() {
         />
       </Box>
       
+      {/* Main content container */}
       <Container maxWidth="xl" sx={{ px: { xs: 2, sm: 3, md: 4 }, py: 3 }}>
       
+        {/* HEADER TABS */}
         <Paper className="event-group-tabs-paper" elevation={0} variant="outlined" sx={{ mb: { xs: 1.5, md: 2 }, border: '2px solid #49BBBD' }}>
           <Box sx={{ 
             display: 'flex', 
@@ -819,6 +867,7 @@ export default function EventGroup() {
                 variant="contained" 
                 size="small" 
                 onClick={handleJoinClick} 
+                // Chỉ disable khi đang chờ duyệt, 'rejected' hoặc null đều bấm được
                 disabled={requestStatus === 'pending'} 
                 sx={{ 
                   ml: { xs: 0, sm: 2 },
@@ -829,12 +878,14 @@ export default function EventGroup() {
                   fontSize: { xs: '0.8rem', sm: '0.875rem' }
                 }}
               >
+              {/* Logic hiển thị chữ trên nút */}
               {requestStatus === 'pending' 
                 ? "Đang chờ duyệt" 
                 : "Tham gia"
               }
             </Button>
           ) : (
+              // Người tổ chức thấy menu actions, người khác thấy nút rời khỏi
               currentUserIsCreator ? (
                 <>
                   <IconButton 
@@ -914,6 +965,7 @@ export default function EventGroup() {
             </Paper>
           ) : (
             <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: { xs: 2, md: 3 }, mt: { xs: 1.5, md: 2 } }}>
+              {/* PHẦN BÀI ĐĂNG BÊN TRÁI */}
               <Box sx={{ flex: 1, minWidth: 0, order: { xs: 2, lg: 1 } }}>
                 {isJoined && <CreatePost eventId={eventData._id} onPostCreated={(p) => setPosts([p, ...posts])} />}
                 {isLoadingPosts ? <Box sx={{ p: { xs: 3, md: 5 }, textAlign: 'center' }}><CircularProgress sx={{ color: '#49BBBD' }}/></Box> : 
@@ -934,6 +986,7 @@ export default function EventGroup() {
                 }
               </Box>
 
+              {/* COUNTDOWN TIMER BÊN PHẢI */}
               <Paper 
                 elevation={3}
                 sx={{ 
@@ -949,6 +1002,7 @@ export default function EventGroup() {
                   mb: { xs: 2, lg: 0 }
                 }}
               >
+                {/* HEADER */}
                 <Box sx={{ 
                   bgcolor: 'rgba(255,255,255,0.15)', 
                   backdropFilter: 'blur(10px)',
@@ -970,6 +1024,7 @@ export default function EventGroup() {
                   </Typography>
                 </Box>
                 
+                {/* COUNTDOWN DISPLAY */}
                 <Box sx={{ p: { xs: 2, md: 3 }, bgcolor: 'rgba(255,255,255,0.1)' }}>
                   <Box sx={{ 
                     display: 'grid',
@@ -977,6 +1032,7 @@ export default function EventGroup() {
                     gap: { xs: 1, md: 1.5 },
                     mb: { xs: 1.5, md: 2 }
                   }}>
+                    {/* Days */}
                     {countdown.days > 0 && (
                       <Box sx={{ textAlign: 'center' }}>
                         <Box sx={{ 
@@ -1019,6 +1075,7 @@ export default function EventGroup() {
                       </Box>
                     )}
                     
+                    {/* Hours */}
                     <Box sx={{ textAlign: 'center' }}>
                       <Box sx={{ 
                         bgcolor: 'white',
@@ -1059,6 +1116,7 @@ export default function EventGroup() {
                       </Typography>
                     </Box>
                     
+                    {/* Minutes */}
                     <Box sx={{ textAlign: 'center' }}>
                       <Box sx={{ 
                         bgcolor: 'white',
@@ -1099,6 +1157,7 @@ export default function EventGroup() {
                       </Typography>
                     </Box>
                     
+                    {/* Seconds */}
                     <Box sx={{ textAlign: 'center' }}>
                       <Box sx={{ 
                         bgcolor: 'white',
@@ -1140,6 +1199,7 @@ export default function EventGroup() {
                     </Box>
                   </Box>
 
+                  {/* COUNTDOWN LABEL */}
                   <Box sx={{ 
                     bgcolor: 'rgba(255,255,255,0.2)',
                     borderRadius: { xs: 1, md: 2 },
@@ -1160,6 +1220,7 @@ export default function EventGroup() {
                   </Box>
                 </Box>
 
+                {/* TRẠNG THÁI SỰ KIỆN */}
                 <Box sx={{ 
                   p: { xs: 2, md: 2.5 }, 
                   bgcolor: 'rgba(255,255,255,0.1)',
@@ -1200,6 +1261,7 @@ export default function EventGroup() {
                   </Box>
                 </Box>
 
+                {/* THÔNG TIN THỜI GIAN */}
                 <Box sx={{ 
                   p: { xs: 2, md: 2.5 }, 
                   bgcolor: 'rgba(0,0,0,0.2)',
@@ -1243,9 +1305,10 @@ export default function EventGroup() {
           )
         )}
 
-        {/* TAB THÔNG TIN */}
+        {/* TAB 1: THÔNG TIN */}
         {currentTab === 1 && (
           <Paper sx={{ mt: { xs: 1.5, md: 2 }, p: { xs: 2, md: 3 }, border: '2px solid #49BBBD' }} variant="outlined">
+            {/* Header & Edit Button */}
             <Box sx={{ 
               display: 'flex', 
               flexDirection: { xs: 'column', sm: 'row' },
@@ -1273,6 +1336,7 @@ export default function EventGroup() {
             
             <Divider sx={{ my: { xs: 1.5, md: 2 } }} />
 
+            {/* --- BANNER SECTION --- */}
             <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold', fontSize: { xs: '0.9rem', md: '1rem' } }}>Banner sự kiện</Typography>
             <Box
               sx={{
@@ -1300,6 +1364,7 @@ export default function EventGroup() {
               )}
             </Box>
 
+            {/* --- BADGE SECTION (Moved Here) --- */}
             <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold', fontSize: { xs: '0.9rem', md: '1rem' } }}>Badge sự kiện</Typography>
             <Box 
               sx={{ 
@@ -1324,6 +1389,7 @@ export default function EventGroup() {
             
             <Divider sx={{ my: { xs: 1.5, md: 2 } }} />
             
+            {/* --- DETAILS SECTION --- */}
             <Stack spacing={{ xs: 1, md: 1.5 }}>
                 <Typography sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}><b>Tên sự kiện:</b> {eventData.name}</Typography>
                 <Typography sx={{ whiteSpace: 'pre-wrap', mb: { xs: 1.5, md: 2 }, fontSize: { xs: '0.875rem', md: '1rem' } }}><b>Mô tả:</b> {eventData.description}</Typography>
@@ -1346,7 +1412,7 @@ export default function EventGroup() {
           </Paper>
         )}
 
-        {/* TAB THÀNH VIÊN */}
+        {/* TAB 2: THÀNH VIÊN */}
         {currentTab === 2 && (
           <Paper sx={{ mt: { xs: 1.5, md: 2 }, p: { xs: 2, md: 3 }, border: '2px solid #49BBBD' }} variant="outlined">
             <Typography variant="h6" sx={{ fontSize: { xs: '1.125rem', md: '1.25rem' } }}>Thành viên ({eventData?.volunteers?.length || 0})</Typography>
@@ -1359,11 +1425,13 @@ export default function EventGroup() {
                     
                     const avatarProps = renderAvatarProps(member);
                     
+                    // Kiểm tra trạng thái sự kiện để hiển thị attendance options
                     const currentEventStatus = autoEventStatus || calculateEventStatus(eventData);
 
                     return (
                         <ListItem key={memberId} secondaryAction={
                             <Stack direction="row" spacing={1} alignItems="center">
+                              {/* Hiển thị trạng thái attendance */}
                               {member.attendance && member.attendance !== 'pending' && (
                                 <Chip 
                                   icon={member.attendance === 'completed' ? <CheckCircle /> : <PersonOff />}
@@ -1375,6 +1443,7 @@ export default function EventGroup() {
                                 />
                               )}
                               
+                              {/* Menu attendance cho quản lý (khi sự kiện ongoing hoặc completed) */}
                               {isOwner && memberId !== currentUserId && 
                                (currentEventStatus === 'completed') && (
                                 <IconButton 
@@ -1387,6 +1456,7 @@ export default function EventGroup() {
                                 </IconButton>
                               )}
                               
+                              {/* Nút kick member - luôn hiển thị cho owner */}
                               {isOwner && memberId !== currentUserId && (
                                 <IconButton 
                                   onClick={() => handleKickMember(memberId)}
@@ -1422,6 +1492,7 @@ export default function EventGroup() {
                 })}
             </List>
             
+            {/* Menu attendance */}
             <Menu
               anchorEl={anchorElAttendance}
               open={Boolean(anchorElAttendance)}
@@ -1439,7 +1510,7 @@ export default function EventGroup() {
           </Paper>
         )}
 
-        {/* TAB YÊU CẦU THAM GIA */}
+        {/* TAB 3: YÊU CẦU THAM GIA */}
         {currentTab === 3 && isOwner && (
           <Paper sx={{ mt: { xs: 1.5, md: 2 }, p: { xs: 2, md: 3 }, border: '2px solid #49BBBD' }} variant="outlined">
             <Typography variant="h6" sx={{ fontSize: { xs: '1.125rem', md: '1.25rem' } }}>Yêu cầu ({pendingRequests.length})</Typography>
@@ -1487,6 +1558,7 @@ export default function EventGroup() {
           </Paper>
         )}
 
+      {/* MODAL JOIN */}
       <Dialog open={openJoinModal} onClose={() => setOpenJoinModal(false)} maxWidth="sm" fullWidth>
         <DialogTitle>Trả lời câu hỏi</DialogTitle>
         <DialogContent>
@@ -1499,6 +1571,7 @@ export default function EventGroup() {
         </DialogActions>
       </Dialog>
 
+      {/* DIALOG XÁC NHẬN THAY ĐỔI BADGE */}
       <Dialog open={badgeConfirmOpen} onClose={handleCancelBadgeUpload} maxWidth="sm" fullWidth>
         <DialogTitle sx={{ fontSize: { xs: '1rem', md: '1.25rem' } }}>Bạn có chắc chắn muốn thay đổi Badge sự kiện?</DialogTitle>
         <DialogContent>
@@ -1516,6 +1589,7 @@ export default function EventGroup() {
         </DialogActions>
       </Dialog>
 
+      {/* MODAL EDIT */}
       <Dialog open={openEditModal} onClose={() => setOpenEditModal(false)} maxWidth="md" fullWidth>
         <DialogTitle>Chỉnh sửa sự kiện</DialogTitle>
         <DialogContent dividers>
@@ -1524,6 +1598,7 @@ export default function EventGroup() {
             <TextField label="Mô tả" fullWidth multiline rows={4} value={editForm.description} onChange={(e) => setEditForm({...editForm, description: e.target.value})} />
             <TextField label="Địa điểm" fullWidth value={editForm.location} onChange={(e) => setEditForm({...editForm, location: e.target.value})} />
             
+            {/* Banner Upload */}
             <Box>
               <Typography variant="subtitle2" gutterBottom>
                 Banner sự kiện
@@ -1545,14 +1620,15 @@ export default function EventGroup() {
                   onChange={(e) => {
                     const file = e.target.files[0];
                     if (file) {
+                      // Kiểm tra kích thước file (2MB = 2 * 1024 * 1024 bytes)
                       const maxSize = 2 * 1024 * 1024;
                       if (file.size > maxSize) {
                         showToast('Ảnh quá lớn! Vui lòng chọn ảnh nhỏ hưn 2MB.', 'error');
-                        e.target.value = '';
+                        e.target.value = ''; // Reset input
                         return;
                       }
                       setBannerFile(file);
-                      setBannerPreview(URL.createObjectURL(file));
+                      setBannerPreview(URL.createObjectURL(file)); // Preview file mới từ browser
                     }
                   }}
                 />
@@ -1582,6 +1658,7 @@ export default function EventGroup() {
                 </Box>
               )}
             
+            {/* Badge Upload (moved into Edit modal) */}
             <Box>
               <Typography variant="subtitle2" gutterBottom sx={{ mt: 1 }}>Badge sự kiện</Typography>
               <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
@@ -1696,6 +1773,7 @@ export default function EventGroup() {
         </DialogActions>
       </Dialog>
 
+      {/* DIALOG GIA HẠN SỰ KIỆN */}
       <Dialog open={openExtendDialog} onClose={() => setOpenExtendDialog(false)} maxWidth="sm" fullWidth>
         <DialogTitle>Gia hạn sự kiện</DialogTitle>
         <DialogContent>
@@ -1718,6 +1796,7 @@ export default function EventGroup() {
         </DialogActions>
       </Dialog>
 
+      {/* POST MODAL */}
       {selectedPost && (
         <PostModal
           open={postModalOpen}

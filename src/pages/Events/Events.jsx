@@ -27,6 +27,7 @@ import ConfirmDialog from "../../components/common/ConfirmDialog";
   - Hỗ trợ lọc theo thời gian/trạng thái, sắp xếp và thao tác quản lý (chỉnh sửa, xóa) cho người tạo/sự kiện.
   - Tải dữ liệu sự kiện từ API khi component mount, tính toán trạng thái sự kiện (sắp diễn ra, đang diễn ra, đã hoàn thành).
   - Chứa các hàm lớn: lấy dữ liệu (`useEffect` tải `getAllEvents`), tính trạng thái (`calculateEventStatus`), lọc/sắp xếp (`filteredAndSortedJoinedEvents`), và các hành động (xóa, chỉnh sửa, cập nhật).
+  - Lưu ý: chỉ thêm comment, không thay đổi logic hoặc side-effect hiện tại.
 */
 
 export default function Events() {
@@ -51,6 +52,7 @@ export default function Events() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmOptions, setConfirmOptions] = useState({ title: '', description: '', onConfirm: null });
 
+  // Helper function để render banner URL
   const getBannerUrl = (banner) => {
     if (!banner) return placeholderImage;
     if (banner.startsWith("http")) return banner;
@@ -59,11 +61,13 @@ export default function Events() {
     return `http://localhost:5000${path}`;
   };
 
+  /* ================= FILTER & SORT (JOINED EVENTS ONLY) ================= */
 
   const [statusFilter, setStatusFilter] = useState("all");
   const [timeFilter, setTimeFilter] = useState("all");
   const [sortBy, setSortBy] = useState("time-asc");
 
+  /* ================= FETCH ================= */
 
   useEffect(() => {
     (async () => {
@@ -86,14 +90,18 @@ export default function Events() {
     })();
   }, [userId]);
 
+  /* ================= DERIVED ================= */
 
   const now = new Date();
 
+  // === HÀM TÍNH TRẠNG THÁI TỰ ĐỘNG ===
   const calculateEventStatus = (event) => {
     if (!event) return 'upcoming';
     
+    // Chỉ giữ trạng thái cancelled nếu đã bị hủy
     if (event.eventStatus === 'cancelled') return 'cancelled';
     
+    // Còn lại tất cả dựa vào thời gian thực tế
     const now = new Date();
     const startDate = new Date(event.date);
     if (event.startTime) {
@@ -115,7 +123,7 @@ export default function Events() {
   const filteredAndSortedJoinedEvents = useMemo(() => {
     let list = [...joinedEvents];
 
-    /* manager */
+    /* STATUS FILTER (manager only, mostly redundant but kept) */
     if (role === "manager" && statusFilter !== "all") {
       list = list.filter((e) => e.status === statusFilter);
     }
@@ -151,6 +159,7 @@ export default function Events() {
     return list;
   }, [joinedEvents, role, statusFilter, timeFilter, sortBy]);
 
+  /* ================= ACTIONS ================= */
 
   const handleDelete = async (e, slug) => {
     e.stopPropagation();
@@ -199,6 +208,8 @@ export default function Events() {
     e.stopPropagation();
     setEditing(null);
   };
+
+  /* ================= RENDER HELPERS ================= */
 
   const renderDateRange = (start, end) => {
     const s = new Date(start).toLocaleDateString();
@@ -286,6 +297,7 @@ export default function Events() {
               {event.name}
             </Typography>
 
+            {/* Event Banner */}
             <Box sx={{ width: '100%', height: 160, mb: 2, borderRadius: 1, overflow: 'hidden', bgcolor: '#f1f4f7', position: 'relative' }}>
               <img
                 src={getBannerUrl(event.banner)}
@@ -325,10 +337,13 @@ export default function Events() {
     );
   };
 
+  /* ================= UI ================= */
+
   return (
     <>
     <Container maxWidth="xl" sx={{ px: { xs: 2, sm: 3, md: 4 }, py: 2 }}>
 
+      {/* JOINED EVENTS Heading */}
       <Typography 
         variant="h5" 
         fontWeight="bold" 
@@ -340,6 +355,7 @@ export default function Events() {
         Sự kiện bạn đã tham gia
       </Typography>
 
+      {/* FILTERS — moved below heading and right-aligned */}
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: { xs: 2, md: 3 } }}>
         <Paper sx={{ p: { xs: 1.5, sm: 2 }, borderRadius: 2, bgcolor: 'transparent' }} elevation={0}>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
@@ -398,6 +414,7 @@ export default function Events() {
         </Paper>
       </Box>
 
+      {/* Events list or empty state */}
       {filteredAndSortedJoinedEvents.length === 0 ? (
         <Typography color="text.secondary">Bạn chưa tham gia sự kiện nào</Typography>
       ) : (
