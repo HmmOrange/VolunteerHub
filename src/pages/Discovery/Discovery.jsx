@@ -213,19 +213,45 @@ export default function Discovery() {
     };
 
     return (
-      <Grid item xs={12} sm={6} md={4} key={event._id}>
+      <Box 
+        key={event._id}
+        sx={{
+          width: { 
+            xs: '100%', 
+            sm: 'calc(50% - 0.75rem)', 
+            md: 'calc(33.333% - 1.35rem)' 
+          },
+          flexShrink: 0
+        }}
+      >
         <Card
           sx={{ 
             height: "100%",
-            minWidth: '20vw',
-            cursor: editing !== event.slug ? 'pointer' : 'default'
+            display: 'flex',
+            flexDirection: 'column',
+            cursor: editing !== event.slug ? 'pointer' : 'default',
+            transition: 'all 0.2s ease',
+            border: '0.0625rem solid #e0e0e0',
+            boxShadow: '0 0.125rem 0.25rem rgba(0,0,0,0.1)',
+            '&:hover': editing !== event.slug ? {
+              transform: 'translateY(-0.25rem)',
+              boxShadow: '0 0.375rem 0.75rem rgba(0,0,0,0.15)'
+            } : {}
           }}
           onClick={() =>
             editing !== event.slug && navigate(`/event/${event.slug}`)
           }
         >
-          <CardContent>
-            <Typography variant="h6" fontWeight="bold">
+          <CardContent sx={{ flexGrow: 1, p: { xs: 1.5, sm: 2 } }}>
+            <Typography 
+              variant="h6" 
+              fontWeight="bold"
+              sx={{ 
+                fontSize: { xs: '1rem', sm: '1.1rem', md: '1.25rem' },
+                mb: 0.5,
+                lineHeight: 1.3
+              }}
+            >
               {event.name}
             </Typography>
 
@@ -235,6 +261,7 @@ export default function Discovery() {
               sx={{ 
                 color: eventStatusColor[calculateEventStatus(event)],
                 fontWeight: 'bold',
+                fontSize: { xs: '0.7rem', sm: '0.75rem' },
                 mb: 1
               }}
             >
@@ -245,9 +272,7 @@ export default function Discovery() {
             <Box
               sx={{
                 width: '100%',
-                maxWidth: '20vw',
-                height: '15vh',
-                minHeight: '150px',
+                height: { xs: '150px', sm: '180px', md: '200px' },
                 mb: 2,
                 borderRadius: 1,
                 overflow: 'hidden',
@@ -276,57 +301,73 @@ export default function Discovery() {
               />
             </Box>
 
-            <Typography variant="body2">
+            <Typography 
+              variant="body2"
+              sx={{ 
+                fontSize: { xs: '0.8125rem', sm: '0.875rem' },
+                mb: 0.5
+              }}
+            >
               <b>Ngày:</b>{" "}
               {renderDateRange(event.date, event.endDate)}
             </Typography>
 
-            <Typography variant="body2">
+            <Typography 
+              variant="body2"
+              sx={{ 
+                fontSize: { xs: '0.8125rem', sm: '0.875rem' },
+                mb: 0.5
+              }}
+            >
               <b>Thời gian:</b>{" "}
               {renderTime(event.startTime, event.endTime)}
             </Typography>
 
-            <Typography variant="body2">
+            <Typography 
+              variant="body2"
+              sx={{ 
+                fontSize: { xs: '0.8125rem', sm: '0.875rem' },
+                mb: 0.5
+              }}
+            >
               <b>Địa điểm:</b>{" "}
               {event.location || "Chưa xác định"}
             </Typography>
 
-            <Typography variant="body2">
+            <Typography 
+              variant="body2"
+              sx={{ 
+                fontSize: { xs: '0.8125rem', sm: '0.875rem' }
+              }}
+            >
               <b>Tình nguyện viên:</b>{" "}
               {event.volunteers?.length || 0} người
             </Typography>
           </CardContent>
-
-          {isCreator && (
-            <CardActions>
-              <Button onClick={(e) => handleEdit(e, event)}>
-                Chỉnh sửa
-              </Button>
-              <Button
-                color="error"
-                onClick={(e) => handleDelete(e, event.slug)}
-              >
-                Xóa
-              </Button>
-            </CardActions>
-          )}
         </Card>
-      </Grid>
+      </Box>
     );
   };
 
   /* ================= UI ================= */
 
   return (
-    <Container maxWidth="lg">
+    <Container maxWidth="xl" sx={{ px: { xs: 2, sm: 3, md: 4 }, py: 2 }}>
       {/* FILTERS */}
-      <Paper sx={{ p: 3, mb: 4, mt: 12 }}>
-        <Stack direction="row" spacing={2} flexWrap="wrap">
+      <Paper sx={{ p: { xs: 2, sm: 2.5, md: 3 }, mb: { xs: 3, md: 4 }, mt: { xs: 6, sm: 7, md: 8 } }}>
+        <Stack 
+          direction={{ xs: 'column', sm: 'row' }} 
+          spacing={2}
+        >
           <TextField
             select
             label="Thời gian"
             value={timeFilter}
             onChange={(e) => setTimeFilter(e.target.value)}
+            sx={{ 
+              width: { xs: '100%', sm: '45%', md: '20vw' },
+              maxWidth: '20rem'
+            }}
           >
             <MenuItem value="all">Tất cả</MenuItem>
             <MenuItem value="ongoing">Đang diễn ra</MenuItem>
@@ -339,6 +380,10 @@ export default function Discovery() {
             label="Sắp xếp"
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
+            sx={{ 
+              width: { xs: '100%', sm: '45%', md: '20vw' },
+              maxWidth: '20rem'
+            }}
           >
             <MenuItem value="time-asc">Thời gian ↑</MenuItem>
             <MenuItem value="time-desc">Thời gian ↓</MenuItem>
@@ -349,7 +394,14 @@ export default function Discovery() {
       </Paper>
 
       {/* ALL EVENTS */}
-      <Typography variant="h5" fontWeight="bold" mb={3}>
+      <Typography 
+        variant="h5" 
+        fontWeight="bold" 
+        mb={3}
+        sx={{ 
+          fontSize: { xs: '1.25rem', sm: '1.375rem', md: '1.5rem' }
+        }}
+      >
         Khám phá sự kiện
       </Typography>
 
@@ -358,9 +410,15 @@ export default function Discovery() {
           Không có sự kiện nào
         </Typography>
       ) : (
-        <Grid container spacing={3}>
-          {filteredAndSortedEvents.map(renderEventCard)}
-        </Grid>
+        <Box sx={{ bgcolor: 'white', p: { xs: 2, sm: 3, md: 4 }, borderRadius: 2 }}>
+          <Box sx={{ 
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: { xs: '1rem', sm: '1.5rem', md: '2rem' }
+          }}>
+            {filteredAndSortedEvents.map(renderEventCard)}
+          </Box>
+        </Box>
       )}
     </Container>
   );
