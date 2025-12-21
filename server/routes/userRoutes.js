@@ -8,6 +8,8 @@ import {
   getProfile,
   createManager,
   importUsers,
+  updateCredentials,
+  changePassword,
   setBadgeVisibility,
 } from "../controllers/userController.js";
 
@@ -64,6 +66,20 @@ router.put(
   uploadAvatar.single("avatar"),
   updateAvatar
 );
+// PUT /api/users/profile/credentials
+router.put(
+  "/profile/credentials",
+  protect,
+  updateCredentials
+);
+
+// PUT /api/users/profile/password
+router.put(
+  "/profile/password",
+  protect,
+  changePassword
+);
+
 
 // PUT /api/users/profile/badge-visibility
 router.put('/profile/badge-visibility', protect, setBadgeVisibility);

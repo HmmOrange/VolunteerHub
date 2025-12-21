@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Container,
   Paper,
@@ -35,6 +36,7 @@ import {
 import { getProfile, uploadAvatar, setBadgeVisibility } from "../../api/Users";
 
 export default function Profile() {
+	const navigate = useNavigate();
   // Label và màu sắc cho các Role
   const roleLabel = {
     manager: "Quản lý",
