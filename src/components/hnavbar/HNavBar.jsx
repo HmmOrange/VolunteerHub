@@ -145,6 +145,11 @@ export default function HNavbar({ onToggleVNavBar }) {
     navigate("/profile");
   };
 
+  const handleEditSettings = () => {
+    handleProfileMenuClose();
+    navigate("/profile/edit");
+  }
+
   const handleAddEvent = () => navigate("/event/create");
 
   // === HANDLERS SEARCH ===
@@ -498,9 +503,22 @@ export default function HNavbar({ onToggleVNavBar }) {
           <MenuItem disabled className="hnavbar-menu-user">
             Xin chào, {username}
           </MenuItem>
-          <MenuItem onClick={handleProfile}>Thông tin cá nhân</MenuItem>
-          <MenuItem onClick={handleLogout}>Đăng xuất</MenuItem>
+
+          <MenuItem onClick={handleProfile}>
+            Thông tin cá nhân
+          </MenuItem>
+
+          <MenuItem onClick={handleEditSettings}>
+            Cài đặt tài khoản
+          </MenuItem>
+
+          <Divider />
+
+          <MenuItem onClick={handleLogout}>
+            Đăng xuất
+          </MenuItem>
         </Menu>
+
 
       </Toolbar>
     </AppBar>

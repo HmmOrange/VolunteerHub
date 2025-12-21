@@ -2,19 +2,24 @@ const API_URL = "http://localhost:5000/api/users";
 
 /* ================= HELPERS ================= */
 
-const authHeader = () => {
+const getToken = () => {
   const token = localStorage.getItem("token");
-
   if (!token) {
     throw new Error("Not authenticated");
   }
-
-  return {
-    "Content-Type": "application/json",
-    "Authorization": token ? `Bearer ${token}` : "",
-  };
+  return token;
 };
 
+// JSON requests
+const jsonAuthHeaders = () => ({
+  "Content-Type": "application/json",
+  Authorization: `Bearer ${getToken()}`,
+});
+
+// Auth only (for FormData)
+const authOnlyHeaders = () => ({
+  Authorization: `Bearer ${getToken()}`,
+});
 // 3. Helper chỉ lấy Auth (Dùng cho Upload file - quan trọng!)
 const getAuthOnlyHeader = () => {
   const token = localStorage.getItem("token");
@@ -30,11 +35,10 @@ const getAuthOnlyHeader = () => {
 
 export const getAllUsers = async () => {
   const res = await fetch(`${API_URL}/all`, {
-    headers: authHeader(),
+    headers: jsonAuthHeaders(),
   });
 
   if (!res.ok) {
-    // Giữ xử lý lỗi chi tiết của orange
     const err = await res.json();
     throw new Error(err.message || "Failed to fetch users");
   }
@@ -45,7 +49,7 @@ export const getAllUsers = async () => {
 export const updateUserRole = async (userId, newRole) => {
   const res = await fetch(`${API_URL}/${userId}/role`, {
     method: "PUT",
-    headers: getJsonHeaders(),
+    headers: jsonAuthHeaders(),
     body: JSON.stringify({ newRole }),
   });
 
@@ -60,7 +64,7 @@ export const updateUserRole = async (userId, newRole) => {
 export const toggleUserLock = async (userId) => {
   const res = await fetch(`${API_URL}/${userId}/lock`, {
     method: "PUT",
-    headers: authHeader(),
+    headers: jsonAuthHeaders(),
   });
 
   if (!res.ok) {
@@ -71,12 +75,12 @@ export const toggleUserLock = async (userId) => {
   return res.json();
 };
 
-/* ================= ADMIN: CREATE MANAGER ================= */
+/* ================= ADMIN ================= */
 
 export const createManager = async (payload) => {
   const res = await fetch(`${API_URL}/admin/create-manager`, {
     method: "POST",
-    headers: getJsonHeaders(),
+    headers: jsonAuthHeaders(),
     body: JSON.stringify(payload),
   });
 
@@ -92,13 +96,29 @@ export const createManager = async (payload) => {
 
 export const getProfile = async () => {
   const res = await fetch(`${API_URL}/profile`, {
-    headers: authHeader(),
+    headers: jsonAuthHeaders(),
   });
-  
+
   if (!res.ok) {
     const err = await res.json();
     throw new Error(err.message || "Failed to fetch profile");
   }
+
+  return res.json();
+};
+
+export const updateProfile = async (payload) => {
+  const res = await fetch(`${API_URL}/profile`, {
+    method: "PUT",
+    headers: jsonAuthHeaders(),
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.message || "Failed to update profile");
+  }
+
   return res.json();
 };
 
@@ -121,6 +141,39 @@ export const uploadAvatar = async (file) => {
     const err = await res.json();
     throw new Error(err.message || "Upload avatar failed");
   }
+
+  return res.json();
+};
+
+/* ================= CREDENTIALS ================= */
+
+export const updateCredentials = async (payload) => {
+  const res = await fetch(`${API_URL}/profile/credentials`, {
+    method: "PUT",
+    headers: jsonAuthHeaders(),
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.message || "Failed to update credentials");
+  }
+
+  return res.json();
+};
+
+export const changePassword = async ({ oldPassword, newPassword }) => {
+  const res = await fetch(`${API_URL}/profile/password`, {
+    method: "PUT",
+    headers: jsonAuthHeaders(),
+    body: JSON.stringify({ oldPassword, newPassword }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.message || "Failed to change password");
+  }
+
   return res.json();
 };
 
