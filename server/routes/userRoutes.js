@@ -8,12 +8,9 @@ import {
   getProfile,
   createManager,
   importUsers,
-<<<<<<< HEAD
   updateCredentials,
-  changePassword
-=======
+  changePassword,
   setBadgeVisibility,
->>>>>>> fdf9d341f67f54799accd0efc9559e9e014fea35
 } from "../controllers/userController.js";
 
 import { uploadAvatar } from "../middleware/uploadAvatar.js";

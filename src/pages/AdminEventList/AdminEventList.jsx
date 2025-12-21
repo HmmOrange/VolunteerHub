@@ -64,10 +64,8 @@ export default function AdminEventList() {
   const [allEvents, setAllEvents] = useState([]);
   const [loading, setLoading] = useState(true);
 
-<<<<<<< HEAD
   // ===== EXPORT STATE =====
   const [exportType, setExportType] = useState("csv");
-=======
   // === HÀM TÍNH TRẠNG THÁI TỰ ĐỘNG ===
   const calculateEventStatus = (event) => {
     if (!event) return 'upcoming';
@@ -93,7 +91,6 @@ export default function AdminEventList() {
     if (now >= startDate && now <= endDate) return 'ongoing';
     return 'completed';
   };
->>>>>>> fdf9d341f67f54799accd0efc9559e9e014fea35
 
   // ===== FETCH EVENTS =====
   const fetchData = async () => {
@@ -186,50 +183,6 @@ export default function AdminEventList() {
     );
   }
 
-<<<<<<< HEAD
-  const renderEventTable = (events, showActions = false) => (
-    <Table size="small">
-      <TableHead>
-        <TableRow>
-          <TableCell>Tên sự kiện</TableCell>
-          <TableCell>Người tạo</TableCell>
-          <TableCell>Ngày</TableCell>
-          <TableCell>Địa điểm</TableCell>
-          <TableCell>Riêng tư</TableCell>
-          <TableCell>Trạng thái</TableCell>
-          {showActions && <TableCell align="right">Hành động</TableCell>}
-        </TableRow>
-      </TableHead>
-      <TableBody>
-        {events.map((e) => (
-          <TableRow key={e._id}>
-            <TableCell>{e.name}</TableCell>
-            <TableCell>{e.createdBy?.username}</TableCell>
-            <TableCell>
-              {new Date(e.date).toLocaleDateString("vi-VN")}
-            </TableCell>
-            <TableCell>{e.location}</TableCell>
-            <TableCell>{e.privacy}</TableCell>
-            <TableCell>
-              <Chip
-                size="small"
-                label={
-                  e.status === "approved"
-                    ? "Đã duyệt"
-                    : e.status === "rejected"
-                    ? "Từ chối"
-                    : "Chờ duyệt"
-                }
-                color={
-                  e.status === "approved"
-                    ? "success"
-                    : e.status === "rejected"
-                    ? "error"
-                    : "warning"
-                }
-              />
-            </TableCell>
-=======
   const renderEventTable = (events, showActions = false) => {
     const eventStatusMap = {
       upcoming: "Sắp diễn ra",
@@ -237,7 +190,6 @@ export default function AdminEventList() {
       completed: "Đã hoàn thành",
       cancelled: "Đã bị hủy"
     };
->>>>>>> fdf9d341f67f54799accd0efc9559e9e014fea35
 
     return (
       <Table size="small">

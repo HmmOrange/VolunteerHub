@@ -36,24 +36,7 @@ import {
 import { getProfile, uploadAvatar, setBadgeVisibility } from "../../api/Users";
 
 export default function Profile() {
-<<<<<<< HEAD
 	const navigate = useNavigate();
-	const roleLabel = {
-		manager: "Quản lý",
-		admin: "Admin",
-		volunteer: "Thành viên",
-	};
-	const [profile, setProfile] = useState(null);
-	const [error, setError] = useState("");
-	const [uploading, setUploading] = useState(false);
-	const [confirmOpen, setConfirmOpen] = useState(false);
-	const [pendingFile, setPendingFile] = useState(null);
-	const [snackbar, setSnackbar] = useState({
-		open: false,
-		message: "",
-		severity: "success",
-	});
-=======
   // Label và màu sắc cho các Role
   const roleLabel = {
     manager: "Quản lý",
@@ -66,7 +49,6 @@ export default function Profile() {
     admin: "error",
     volunteer: "success", // Màu xanh lá cho tình nguyện viên
   };
->>>>>>> fdf9d341f67f54799accd0efc9559e9e014fea35
 
   const [profile, setProfile] = useState(null);
   const [error, setError] = useState("");
@@ -346,21 +328,6 @@ export default function Profile() {
 
           <Divider sx={{ my: 4 }} />
 
-<<<<<<< HEAD
-			<Typography>
-				<b>Vai trò:</b> {roleLabel[profile.role] || profile.role}
-			</Typography>
-        </Stack>
-		<Stack direction="row" justifyContent="flex-end" sx={{ mt: 3 }}>
-			<Button
-				variant="contained"
-				onClick={() => navigate("/profile/edit")}
-			>
-				Chỉnh sửa thông tin
-			</Button>
-		</Stack>
-
-=======
           {/* --- THÔNG TIN CHI TIẾT --- */}
           <Grid container spacing={3}>
             <Grid item xs={12} sm={6}>
@@ -411,7 +378,6 @@ export default function Profile() {
           </Grid>
 
         </Box>
->>>>>>> fdf9d341f67f54799accd0efc9559e9e014fea35
       </Paper>
 
       {/* --- DIALOG XÁC NHẬN --- */}

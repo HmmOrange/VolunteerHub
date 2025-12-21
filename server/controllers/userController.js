@@ -326,7 +326,6 @@ export const importUsers = async (req, res) => {
 };
 
 /* ======================================================
-<<<<<<< HEAD
    UPDATE CREDENTIALS (USERNAME / EMAIL)
 ====================================================== */
 export const updateCredentials = async (req, res) => {
@@ -396,8 +395,7 @@ export const changePassword = async (req, res) => {
   }
 };
 
-
-=======
+/* =====================================================
    SET BADGE VISIBILITY (AUTHENTICATED USER)
    Body: { eventId: string, visible: boolean }
 ====================================================== */
@@ -421,4 +419,3 @@ export const setBadgeVisibility = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
->>>>>>> fdf9d341f67f54799accd0efc9559e9e014fea35

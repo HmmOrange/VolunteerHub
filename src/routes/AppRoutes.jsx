@@ -12,13 +12,10 @@ import Events from "../pages/Events/Events";
 import Discovery from "../pages/Discovery/Discovery";
 import Profile from "../pages/Profile/Profile";
 import AdminEventList from "../pages/AdminEventList/AdminEventList";
-<<<<<<< HEAD
 import UserSetting from "../pages/UserSetting/UserSetting";
-=======
 import SearchResults from "../pages/SearchResults/SearchResults";
 import CalendarPage from "../pages/Calendar/Calendar";
 
->>>>>>> fdf9d341f67f54799accd0efc9559e9e014fea35
 export default function AppRoutes() {
   return (
     <BrowserRouter>
@@ -33,12 +30,9 @@ export default function AppRoutes() {
           <Route path="/admin/users" element={<UserList />} />
           <Route path="/admin/events" element={<AdminEventList />} />
           <Route path="/profile" element={<Profile />} />
-<<<<<<< HEAD
           <Route path="/profile/edit" element={<UserSetting />} />
-=======
           <Route path="/search" element={<SearchResults />} />
           <Route path="/calendar" element={<CalendarPage />} />
->>>>>>> fdf9d341f67f54799accd0efc9559e9e014fea35
         </Route>
 
         {/* Các trang KHÔNG có layout */}
