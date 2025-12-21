@@ -189,9 +189,9 @@ export default function SearchResults() {
         </Typography>
 
         {/* Sort and Filter Controls */}
-        <Box sx={{ mb: 3, display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+        <Box sx={{ mb: 3, display: 'flex', gap: 2, alignItems: { xs: 'stretch', sm: 'center' }, flexDirection: { xs: 'column', sm: 'row' }, flexWrap: 'wrap' }}>
           {/* Sort Dropdown */}
-          <FormControl size="small" sx={{ minWidth: 200 }}>
+          <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: '12.5rem' }, flex: { xs: '1 1 100%', sm: '0 0 auto' } }}>
             <InputLabel id="sort-label">
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                 <Sort fontSize="small" />
@@ -209,8 +209,8 @@ export default function SearchResults() {
             </Select>
           </FormControl>
 
-          {/* Filter Toggle Buttons */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          {/* Filter - Toggle Buttons on desktop, Select on mobile */}
+          <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
             <FilterList fontSize="small" color="action" />
             <ToggleButtonGroup
               value={filterStatus}
@@ -229,6 +229,28 @@ export default function SearchResults() {
               <ToggleButton value="cancelled">Đã hủy</ToggleButton>
             </ToggleButtonGroup>
           </Box>
+
+          {/* Filter - Select on mobile */}
+          <FormControl size="small" sx={{ display: { xs: 'flex', md: 'none' }, minWidth: { xs: '100%', sm: '12.5rem' }, flex: { xs: '1 1 100%', sm: '0 0 auto' } }}>
+            <InputLabel id="filter-label">
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <FilterList fontSize="small" />
+                Lọc theo trạng thái
+              </Box>
+            </InputLabel>
+            <Select
+              labelId="filter-label"
+              value={filterStatus}
+              label="Lọc theo trạng thái"
+              onChange={(e) => setFilterStatus(e.target.value)}
+            >
+              <MenuItem value="all">Tất cả</MenuItem>
+              <MenuItem value="upcoming">Sắp diễn ra</MenuItem>
+              <MenuItem value="ongoing">Đang diễn ra</MenuItem>
+              <MenuItem value="completed">Đã hoàn thành</MenuItem>
+              <MenuItem value="cancelled">Đã hủy</MenuItem>
+            </Select>
+          </FormControl>
         </Box>
 
         {/* Two column layout với flex */}
@@ -236,14 +258,28 @@ export default function SearchResults() {
           display: 'flex', 
           gap: 3, 
           alignItems: 'flex-start', 
-          flexWrap: { xs: 'wrap', md: 'nowrap' } 
+          flexWrap: { xs: 'wrap', lg: 'nowrap' } 
         }}>
-          {/* Left side - Search Results (85%) */}
-          <Box sx={{ flex: { xs: '1 1 100%', md: '1 1 auto' }, minWidth: 0 }}>
+          {/* Left side - Search Results */}
+          <Box sx={{ flex: { xs: '1 1 100%', lg: '1 1 auto' }, minWidth: 0, width: '100%' }}>
             {displayEvents.length > 0 ? (
-              <Grid container spacing={2}>
+              <Box sx={{ 
+                display: 'flex', 
+                flexWrap: 'wrap', 
+                gap: 2,
+                justifyContent: 'flex-start'
+              }}>
                 {displayEvents.map((event) => (
-                  <Grid item xs={12} sm={6} md={4} key={event._id}>
+                  <Box key={event._id} sx={{ 
+                    width: { 
+                      xs: '100%',                      // Mobile: 1 event/hàng
+                      sm: 'calc(50% - 1rem)',          // Tablet nhỏ: 2 events/hàng
+                      md: 'calc(50% - 1rem)',          // Tablet: 2 events/hàng
+                      lg: 'calc(33.333% - 1.33rem)'    // Desktop: 3 events/hàng
+                    },
+                    flexGrow: 0, 
+                    flexShrink: 0 
+                  }}>
                     <Card 
                       className="search-result-card"
                       sx={{
@@ -264,8 +300,8 @@ export default function SearchResults() {
                         {/* Banner với kích thước cố định */}
                         <Box
                           sx={{
-                            width: '20vw',
-                            height: '15vh',
+                            width: '100%',
+                            height: '12rem',
                             backgroundColor: '#f5f5f5',
                             overflow: 'hidden',
                             flexShrink: 0,
@@ -303,13 +339,13 @@ export default function SearchResults() {
                                 label="Đã duyệt" 
                                 size="small" 
                                 color="success" 
-                                sx={{ height: 20, fontSize: '0.7rem' }}
+                                sx={{ height: '1.25rem', fontSize: '0.7rem' }}
                               />
                               <Chip 
                                 label={getStatusInfo(event).label}
                                 size="small" 
                                 color={getStatusInfo(event).color}
-                                sx={{ height: 20, fontSize: '0.7rem' }}
+                                sx={{ height: '1.25rem', fontSize: '0.7rem' }}
                               />
                             </Stack>
                           </Box>
@@ -318,7 +354,7 @@ export default function SearchResults() {
                           <Stack spacing={0.8}>
                             {/* Ngày bắt đầu - kết thúc */}
                             <Box display="flex" alignItems="flex-start" gap={1}>
-                              <CalendarToday sx={{ fontSize: 16, mt: 0.2 }} color="action" />
+                              <CalendarToday sx={{ fontSize: '1rem', mt: 0.2 }} color="action" />
                               <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.85rem' }}>
                                 {new Date(event.date).toLocaleDateString('vi-VN')}
                                 {event.endDate && event.endDate !== event.date && (
@@ -329,7 +365,7 @@ export default function SearchResults() {
                             
                             {/* Giờ bắt đầu - kết thúc */}
                             <Box display="flex" alignItems="flex-start" gap={1}>
-                              <Schedule sx={{ fontSize: 16, mt: 0.2 }} color="action" />
+                              <Schedule sx={{ fontSize: '1rem', mt: 0.2 }} color="action" />
                               <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.85rem' }}>
                                 {event.startTime} - {event.endTime}
                               </Typography>
@@ -337,7 +373,7 @@ export default function SearchResults() {
                             
                             {/* Địa điểm */}
                             <Box display="flex" alignItems="flex-start" gap={1}>
-                              <LocationOn sx={{ fontSize: 16, mt: 0.2 }} color="action" />
+                              <LocationOn sx={{ fontSize: '1rem', mt: 0.2 }} color="action" />
                               <Typography 
                                 variant="body2" 
                                 color="text.secondary"
@@ -356,7 +392,7 @@ export default function SearchResults() {
 
                             {/* Số người tham gia */}
                             <Box display="flex" alignItems="flex-start" gap={1}>
-                              <Group sx={{ fontSize: 16, mt: 0.2 }} color="action" />
+                              <Group sx={{ fontSize: '1rem', mt: 0.2 }} color="action" />
                               <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.85rem' }}>
                                 {event.volunteersCount || 0} người tham gia
                               </Typography>
@@ -365,7 +401,7 @@ export default function SearchResults() {
                             {/* Người tạo */}
                             {event.createdBy && (
                               <Box display="flex" alignItems="flex-start" gap={1}>
-                                <Person sx={{ fontSize: 16, mt: 0.2 }} color="action" />
+                                <Person sx={{ fontSize: '1rem', mt: 0.2 }} color="action" />
                                 <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.85rem' }}>
                                   {event.createdBy.username}
                                 </Typography>
@@ -394,9 +430,9 @@ export default function SearchResults() {
                         </CardContent>
                       </CardActionArea>
                     </Card>
-                  </Grid>
+                  </Box>
                 ))}
-              </Grid>
+              </Box>
             ) : (
               <Paper sx={{ p: 4, textAlign: 'center' }}>
                 <Typography variant="h6" color="text.secondary">
@@ -409,13 +445,16 @@ export default function SearchResults() {
             )}
           </Box>
 
-          {/* Right side - Sidebar (15%) - Sticky */}
+          {/* Right side - Sidebar - Sticky - Hidden on small screens */}
           <Box sx={{ 
-            flex: { xs: '1 1 100%', md: '0 0 17%' }, 
-            minWidth: 0, 
+            flex: { xs: '0 0 0', lg: '0 0 17%' }, 
+            minWidth: { xs: 0, lg: '15rem' },
+            width: { xs: 0, lg: 'auto' },
             height: 'fit-content',
-            position: { xs: 'relative', md: 'sticky' },
-            top: '100px'
+            position: { xs: 'relative', lg: 'sticky' },
+            top: '6.25rem',
+            overflow: 'hidden',
+            display: { xs: 'none', lg: 'block' }
           }}>
             {/* Lịch sử tìm kiếm */}
             <Paper sx={{ p: 2, mb: 2 }}>
