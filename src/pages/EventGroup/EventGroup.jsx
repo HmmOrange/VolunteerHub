@@ -777,7 +777,8 @@ export default function EventGroup() {
             alignItems: { xs: 'stretch', sm: 'center' }, 
             px: 0,
             py: { xs: 1, sm: 0 },
-            gap: { xs: 1, sm: 0 }
+            gap: { xs: 1, sm: 0 },
+            overflow: 'hidden'
           }}>
             <Tabs
               value={currentTab}
@@ -787,18 +788,39 @@ export default function EventGroup() {
               }}
               variant="scrollable"
               scrollButtons="auto"
+              allowScrollButtonsMobile
               sx={{ 
                 flexGrow: 1,
+                minHeight: 'auto',
+                maxWidth: { xs: '100%', sm: 'calc(100% - 10rem)' },
                 '& .Mui-selected': { color: '#49BBBD !important' }, 
                 '& .MuiTabs-indicator': { backgroundColor: '#49BBBD' },
-                '& .MuiTab-root': { minWidth: { xs: 'auto', sm: '6rem' }, fontSize: { xs: '0.8rem', sm: '0.875rem' }, px: 2 }
+                '& .MuiTab-root': { 
+                  minWidth: { xs: 'auto', sm: '5rem', md: '6rem' }, 
+                  fontSize: { xs: '0.7rem', sm: '0.8rem', md: '0.875rem' }, 
+                  px: { xs: 1, sm: 1.5, md: 2 },
+                  py: { xs: 1, sm: 1.25, md: 1.5 },
+                  minHeight: { xs: '2.5rem', sm: '3rem' }
+                },
+                '& .MuiTabs-scrollButtons': {
+                  width: { xs: '1.5rem', sm: '2rem' },
+                  '&.Mui-disabled': { opacity: 0.3 }
+                }
               }}
             >
             <Tab label="Bài đăng" />
             <Tab label="Thông tin" />
             <Tab label="Thành viên" />
               {isOwner && (
-                <Tab label={<Badge badgeContent={pendingRequests.length} color="error">Yêu cầu tham gia</Badge>} />
+                <Tab 
+                  label={
+                    <Badge badgeContent={pendingRequests.length} color="error">
+                      <Box component="span" sx={{ fontSize: { xs: '0.7rem', sm: '0.8rem', md: '0.875rem' } }}>
+                        Yêu cầu
+                      </Box>
+                    </Badge>
+                  } 
+                />
               )}
           </Tabs>
 
@@ -836,7 +858,7 @@ export default function EventGroup() {
                       mr: { xs: 0, sm: 0 },
                       mt: { xs: 1, sm: 0 },
                       color: '#49BBBD',
-                      alignSelf: { xs: 'center', sm: 'auto' }
+                      width: { xs: '100%', sm: 'auto' }
                     }}
                   >
                   <MoreVertIcon />
