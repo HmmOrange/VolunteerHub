@@ -288,7 +288,7 @@ export default function HNavbar({ onToggleVNavBar }) {
         {/* ===== CENTER ===== */}
         <Box className="hnavbar-search" style={{ position: 'relative' }}>
           <ClickAwayListener onClickAway={handleClickAway}>
-            <form onSubmit={handleSearchSubmit} style={{ width: '100%' }}>
+            <form onSubmit={handleSearchSubmit} style={{ width: '100%', display: 'flex', alignItems: 'center' }}>
               <SearchIcon className="hnavbar-search-icon" />
               <InputBase
                 ref={searchInputRef}
