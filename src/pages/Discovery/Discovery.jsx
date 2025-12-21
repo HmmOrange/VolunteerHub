@@ -212,104 +212,55 @@ export default function Discovery() {
       cancelled: "#d32f2f"
     };
 
+    const calcStatus = calculateEventStatus(event);
+    const serverStatusLabel = statusMap[event.status] || '';
+    const timeStatusLabel = eventStatusMap[calcStatus];
+
+    const startDate = new Date(event.date);
+    if (event.startTime) {
+      const [h, m] = event.startTime.split(":");
+      startDate.setHours(parseInt(h), parseInt(m), 0, 0);
+    }
+    const endDate = new Date(event.endDate || event.date);
+    if (event.endTime) {
+      const [h2, m2] = event.endTime.split(":");
+      endDate.setHours(parseInt(h2), parseInt(m2), 0, 0);
+    }
+
+    const fmtDate = (d) => d.toLocaleDateString();
+    const fmtTime = (d) => d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    const shortDesc = event.description ? (event.description.length > 160 ? event.description.slice(0, 157) + '...' : event.description) : 'Không có mô tả';
+
     return (
       <Grid item xs={12} sm={6} md={4} key={event._id}>
         <Card
-          sx={{ 
-            height: "100%",
-            minWidth: '20vw',
-            cursor: editing !== event.slug ? 'pointer' : 'default'
-          }}
-          onClick={() =>
-            editing !== event.slug && navigate(`/event/${event.slug}`)
-          }
+          sx={{ height: "100%", minWidth: '20vw', position: 'relative', display: 'flex', flexDirection: 'column', transition: 'transform .18s ease, box-shadow .18s ease', '&:hover': { transform: 'translateY(-6px)', boxShadow: '0 12px 30px rgba(0,0,0,0.12)' }, cursor: editing !== event.slug ? 'pointer' : 'default' }}
+          onClick={() => editing !== event.slug && navigate(`/event/${event.slug}`)}
         >
-          <CardContent>
-            <Typography variant="h6" fontWeight="bold">
-              {event.name}
-            </Typography>
+          <CardContent sx={{ flex: '1 1 auto' }}>
+            <Typography variant="h6" fontWeight="bold" gutterBottom>{event.name}</Typography>
 
-            <Typography 
-              variant="caption" 
-              display="block"
-              sx={{ 
-                color: eventStatusColor[calculateEventStatus(event)],
-                fontWeight: 'bold',
-                mb: 1
-              }}
-            >
-              {eventStatusMap[calculateEventStatus(event)]}
-            </Typography>
-
-            {/* Event Banner */}
-            <Box
-              sx={{
-                width: '100%',
-                maxWidth: '20vw',
-                height: '15vh',
-                minHeight: '150px',
-                mb: 2,
-                borderRadius: 1,
-                overflow: 'hidden',
-                bgcolor: '#f5f5f5',
-                position: 'relative',
-                flexShrink: 0,
-              }}
-            >
-              <img
-                src={getBannerUrl(event.banner)}
-                alt={event.name}
-                loading="lazy"
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                  objectPosition: 'center',
-                }}
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src = placeholderImage;
-                }}
-              />
+            <Box sx={{ width: '100%', height: 160, mb: 2, borderRadius: 1, overflow: 'hidden', bgcolor: '#f5f5f5', position: 'relative' }}>
+              <img src={getBannerUrl(event.banner)} alt={event.name} loading="lazy" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { e.target.onerror = null; e.target.src = placeholderImage; }} />
             </Box>
 
-            <Typography variant="body2">
-              <b>Ngày:</b>{" "}
-              {renderDateRange(event.date, event.endDate)}
-            </Typography>
+            <Typography variant="body2" sx={{ mb: 0.5 }}><b>Bắt đầu:</b> {fmtDate(startDate)} · {fmtTime(startDate)}</Typography>
+            <Typography variant="body2" sx={{ mb: 1 }}><b>Kết thúc:</b> {fmtDate(endDate)} · {fmtTime(endDate)}</Typography>
 
-            <Typography variant="body2">
-              <b>Thời gian:</b>{" "}
-              {renderTime(event.startTime, event.endTime)}
-            </Typography>
+            <Typography variant="body2" sx={{ mb: 1 }}><b>Địa điểm:</b> {event.location || 'Chưa xác định'}</Typography>
 
-            <Typography variant="body2">
-              <b>Địa điểm:</b>{" "}
-              {event.location || "Chưa xác định"}
-            </Typography>
-
-            <Typography variant="body2" sx={{ mt: 1 }}>
-              <b>Tình nguyện viên:</b>{" "}
-              {event.volunteers?.length || 0} người
-            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>{shortDesc}</Typography>
           </CardContent>
 
-          {isCreator && (
-            <CardActions>
-              <Button onClick={(e) => handleEdit(e, event)}>
-                Chỉnh sửa
-              </Button>
-              <Button
-                color="error"
-                onClick={(e) => handleDelete(e, event.slug)}
-              >
-                Xóa
-              </Button>
-            </CardActions>
-          )}
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', p: 2, pt: 0 }}>
+            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+              {serverStatusLabel && (<Box sx={{ bgcolor: '#f0f0f0', color: '#333', px: 1, py: '2px', borderRadius: '12px', fontSize: 12, fontWeight: 700 }}>{serverStatusLabel}</Box>)}
+              {timeStatusLabel && (<Box sx={{ bgcolor: eventStatusColor[calcStatus], color: '#fff', px: 1, py: '2px', borderRadius: '12px', fontSize: 12, fontWeight: 700 }}>{timeStatusLabel}</Box>)}
+            </Box>
+          </Box>
+
+          
         </Card>
       </Grid>
     );
