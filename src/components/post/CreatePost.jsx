@@ -21,6 +21,7 @@ import {
 import "./Post.css"; 
 
 import { createPost, uploadImage } from "../../api/Posts"; 
+import validators from "../../utils/validators";
 
 export default function CreatePost({ eventId, onPostCreated }) {
   const navigate = useNavigate();
@@ -123,7 +124,12 @@ export default function CreatePost({ eventId, onPostCreated }) {
       alert("Đang tải dữ liệu sự kiện, vui lòng thử lại sau giây lát.");
       return;
     }
-    
+    // validate post content
+    if (!postContent || !postContent.trim()) {
+      alert('Nội dung bài viết không được để trống');
+      return;
+    }
+
     setIsLoading(true);
     let finalImageUrl = null; 
 
