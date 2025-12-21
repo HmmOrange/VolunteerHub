@@ -91,27 +91,28 @@ export default function Landing() {
       {/* --- NAVBAR --- */}
       <AppBar position="fixed" elevation={1} sx={{ bgcolor: '#ffffff', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
         <Container maxWidth="xl">
-          <Toolbar sx={{ height: 64, justifyContent: 'space-between' }}>
+          <Toolbar sx={{ height: { xs: 56, sm: 64 }, justifyContent: 'space-between', px: { xs: 1, sm: 2 } }}>
             <Stack 
               direction="row" 
               alignItems="center" 
-              spacing={1} 
+              spacing={{ xs: 0.5, sm: 1 }} 
               onClick={() => navigate("/")} 
               sx={{ cursor: 'pointer' }}
             >
-              <VolunteerActivismIcon sx={{ fontSize: 32, color: '#49BBBD' }} />
-              <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+              <VolunteerActivismIcon sx={{ fontSize: { xs: 28, sm: 32 }, color: '#49BBBD' }} />
+              <Typography variant="h6" sx={{ fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                 <Box component="span" sx={{ color: '#000000' }}>Volunteer</Box>
                 <Box component="span" sx={{ color: '#49BBBD' }}>Hub</Box>
               </Typography>
             </Stack>
 
-            <Stack direction="row" spacing={2} alignItems="center">
+            <Stack direction="row" spacing={{ xs: 1, sm: 2 }} alignItems="center">
               <Button 
                 variant="text" 
                 sx={{ 
-                  color: '#2D3436', 
-                  display: { xs: 'none', sm: 'block' },
+                  color: '#2D3436',
+                  fontSize: { xs: '0.875rem', sm: '1rem' },
+                  px: { xs: 1, sm: 2 },
                   transition: 'all 0.3s ease',
                   '&:hover': {
                     color: '#49BBBD',
@@ -129,6 +130,8 @@ export default function Landing() {
                   bgcolor: '#49BBBD', 
                   color: '#ffffff',
                   fontWeight: 'bold',
+                  fontSize: { xs: '0.875rem', sm: '1rem' },
+                  px: { xs: 2, sm: 3 },
                   transition: 'all 0.3s ease',
                   boxShadow: '0 4px 12px rgba(73, 187, 189, 0.3)',
                   '&:hover': { 
@@ -148,9 +151,9 @@ export default function Landing() {
 
       {/* --- HERO SECTION --- */}
       <Box sx={{ 
-        pt: 20, 
-        pb: 10, 
-        minHeight: '85vh',
+        pt: { xs: 12, sm: 16, md: 20 }, 
+        pb: { xs: 6, sm: 8, md: 10 }, 
+        minHeight: { xs: '70vh', sm: '80vh', md: '85vh' },
         display: 'flex',
         alignItems: 'center',
         backgroundImage: `
@@ -159,17 +162,18 @@ export default function Landing() {
         `,
         backgroundSize: 'cover',
         backgroundPosition: 'center top',
+        px: { xs: 2, sm: 3 }
       }}>
         <Container maxWidth="md" sx={{ textAlign: 'center' }}>
           
-          <Typography variant="h2" sx={{ color: '#2D3436', mb: 1, fontWeight: 800 }}>
+          <Typography variant="h2" sx={{ color: '#2D3436', mb: { xs: 0.5, sm: 1 }, fontWeight: 800, fontSize: { xs: '1.75rem', sm: '2.5rem', md: '3.75rem' } }}>
             Kết Nối Trái Tim
           </Typography>
-          <Typography variant="h2" sx={{ color: '#49BBBD', mb: 3, fontWeight: 800 }}>
+          <Typography variant="h2" sx={{ color: '#49BBBD', mb: { xs: 2, sm: 3 }, fontWeight: 800, fontSize: { xs: '1.75rem', sm: '2.5rem', md: '3.75rem' } }}>
             Lan Tỏa Yêu Thương
           </Typography>
           
-          <Typography variant="body1" color="text.secondary" sx={{ mb: 6, maxWidth: '700px', mx: 'auto', fontSize: '1.1rem', lineHeight: 1.8 }}>
+          <Typography variant="body1" color="text.secondary" sx={{ mb: { xs: 4, sm: 5, md: 6 }, maxWidth: '700px', mx: 'auto', fontSize: { xs: '0.95rem', sm: '1rem', md: '1.1rem' }, lineHeight: 1.8, px: { xs: 1, sm: 0 } }}>
             Hệ sinh thái thiện nguyện minh bạch. Nơi bạn tự do <strong>tạo sự kiện</strong>, 
             tìm kiếm đồng đội và xây dựng hồ sơ tình nguyện ấn tượng cho riêng mình.
           </Typography>
@@ -180,7 +184,13 @@ export default function Landing() {
               size="large" 
               onClick={() => navigate("/register")}
               endIcon={<ArrowForwardIcon />}
-              sx={{ px: 5, py: 1.5, fontSize: '1.1rem', boxShadow: '0 10px 20px rgba(73, 187, 189, 0.3)' }}
+              sx={{ 
+                px: { xs: 4, sm: 5 }, 
+                py: { xs: 1.2, sm: 1.5 }, 
+                fontSize: { xs: '1rem', sm: '1.1rem' }, 
+                boxShadow: '0 10px 20px rgba(73, 187, 189, 0.3)',
+                width: { xs: '100%', sm: 'auto' }
+              }}
             >
               Tham gia ngay
             </Button>
@@ -189,7 +199,12 @@ export default function Landing() {
               size="large"
               endIcon={<PlayCircleOutlineIcon />}
               sx={{ 
-                borderColor: '#b2bec3', color: '#636E72', px: 4, py: 1.5, fontSize: '1.1rem',
+                borderColor: '#b2bec3', 
+                color: '#636E72', 
+                px: { xs: 4, sm: 4 }, 
+                py: { xs: 1.2, sm: 1.5 }, 
+                fontSize: { xs: '1rem', sm: '1.1rem' },
+                width: { xs: '100%', sm: 'auto' },
                 '&:hover': { borderColor: '#49BBBD', color: '#49BBBD' }
               }}
             >
@@ -200,27 +215,27 @@ export default function Landing() {
       </Box>
 
       {/* --- FEATURES SECTION --- */}
-      <Box sx={{ pb: 15, bgcolor: '#ffffff' }}>
+      <Box sx={{ pb: { xs: 8, sm: 12, md: 15 }, bgcolor: '#ffffff', px: { xs: 2, sm: 3 } }}>
         <Container maxWidth="xl">
-          <Box textAlign="center" mb={8}>
-            <Typography variant="h4" fontWeight="bold" sx={{ color: '#2D3436', mb: 2 }}>
+          <Box textAlign="center" mb={{ xs: 5, sm: 6, md: 8 }}>
+            <Typography variant="h4" fontWeight="bold" sx={{ color: '#2D3436', mb: 2, fontSize: { xs: '1.5rem', sm: '2rem', md: '2.125rem' } }}>
               Tính Năng Nổi Bật
             </Typography>
-            <Typography variant="body1" color="text.secondary">
+            <Typography variant="body1" color="text.secondary" sx={{ fontSize: { xs: '0.95rem', sm: '1rem' }, px: { xs: 2, sm: 0 } }}>
               Mọi công cụ bạn cần để bắt đầu hành trình thiện nguyện.
             </Typography>
           </Box>
 
           {/* SỬ DỤNG VÒNG LẶP ĐỂ ĐẢM BẢO CÁC Ô ĐỀU NHAU TUYỆT ĐỐI */}
-          <Grid container spacing={4} justifyContent="center">
+          <Grid container spacing={{ xs: 3, sm: 3, md: 4 }} justifyContent="center">
             {features.map((feature, index) => (
               <Grid item xs={12} sm={6} md={3} key={index} sx={{ display: 'flex' }}>
                 <Paper 
                   elevation={0} 
                   sx={{ 
-                    p: 4, 
+                    p: { xs: 3, sm: 3.5, md: 4 }, 
                     textAlign: 'center', 
-                    width: '500px',
+                    width: '100%',
                     // Flex column và flex: 1 giúp card tự giãn đều theo chiều cao của hàng
                     display: 'flex',
                     flexDirection: 'column',
@@ -241,18 +256,18 @@ export default function Landing() {
                     sx={{ 
                       bgcolor: 'rgba(73, 187, 189, 0.1)', 
                       color: '#49BBBD', 
-                      width: 70, 
-                      height: 70, 
+                      width: { xs: 60, sm: 65, md: 70 }, 
+                      height: { xs: 60, sm: 65, md: 70 }, 
                       mx: 'auto', 
-                      mb: 3 
+                      mb: { xs: 2, sm: 2.5, md: 3 } 
                     }}
                   >
                     {feature.icon}
                   </Avatar>
-                  <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ minHeight: '32px' }}>
+                  <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ minHeight: { xs: '28px', sm: '30px', md: '32px' }, fontSize: { xs: '1rem', sm: '1.15rem', md: '1.25rem' } }}>
                     {feature.title}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6, fontSize: { xs: '0.875rem', sm: '0.875rem' } }}>
                     {feature.desc}
                   </Typography>
                 </Paper>
