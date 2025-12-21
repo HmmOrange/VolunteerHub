@@ -25,8 +25,6 @@ import PostModal from "../../components/post/PostModal";
 
   Mô tả:
   - Trang chính hiển thị feed bài viết công khai, sự kiện sắp tới mà user đã tham gia và các sự kiện nổi bật.
-  - Hỗ trợ infinite scroll để tải thêm bài viết công khai (`loadMorePosts`), và carousel nhỏ cho sự kiện sắp diễn ra.
-  - Chứa hàm lớn: `calculateEventStatus`, `loadMorePosts`, và nhiều useEffect để tải dữ liệu ban đầu (events, posts).
 */
 
 export default function Dashboard() {
@@ -40,19 +38,16 @@ export default function Dashboard() {
   const [currentPage, setCurrentPage] = useState(0);
   const [upcomingScrollIndex, setUpcomingScrollIndex] = useState(0);
   
-  // States cho infinite scroll
   const [postsPage, setPostsPage] = useState(1);
   const [hasMorePosts, setHasMorePosts] = useState(true);
   const [loadingPosts, setLoadingPosts] = useState(false);
   const [joinedEventIds, setJoinedEventIds] = useState([]);
   
-  // States cho post modal
   const [selectedPost, setSelectedPost] = useState(null);
   const [postModalOpen, setPostModalOpen] = useState(false);
   
   const observerTarget = useRef(null);
 
-  // Helper function để render banner URL
   const getBannerUrl = (banner) => {
     if (!banner) return null;
     if (banner.startsWith("http")) return banner;
@@ -61,14 +56,11 @@ export default function Dashboard() {
     return `http://localhost:5000${path}`;
   };
 
-  // === HÀM TÍNH TRẠNG THÁI TỰ ĐỘNG ===
   const calculateEventStatus = (event) => {
     if (!event) return 'upcoming';
     
-    // Chỉ giữ trạng thái cancelled nếu đã bị hủy
     if (event.eventStatus === 'cancelled') return 'cancelled';
     
-    // Còn lại tất cả dựa vào thời gian thực tế
     const now = new Date();
     const startDate = new Date(event.date);
     if (event.startTime) {
@@ -87,7 +79,6 @@ export default function Dashboard() {
     return 'completed';
   };
 
-  // Hàm load posts với pagination - HIỂN THỊ TẤT CẢ POSTS CÔNG KHAI
   const loadMorePosts = useCallback(async () => {
     if (loadingPosts || !hasMorePosts) return;
     
@@ -95,7 +86,6 @@ export default function Dashboard() {
     try {
       const response = await getAllPublicPosts(postsPage, 5, userId);
       
-      // Map posts để thêm event info
       const postsWithEventInfo = response.posts.map(p => ({
         ...p,
         event: p.eventId ? {
@@ -106,10 +96,8 @@ export default function Dashboard() {
         } : p.event
       }));
       
-      // Shuffle posts ngẫu nhiên
       const shuffledPosts = [...postsWithEventInfo].sort(() => Math.random() - 0.5);
       
-      // Thêm vào mảng với deduplication dựa trên _id
       setFeedPosts(prev => {
         const existingIds = new Set(prev.map(p => p._id));
         const newPosts = shuffledPosts.filter(p => !existingIds.has(p._id));
@@ -141,7 +129,6 @@ export default function Dashboard() {
         now.getDate()
       );
 
-      // ===== JOINED EVENTS =====
       const joinedEvents = events.filter((event) =>
         event.volunteers?.some((v) =>
           typeof v === "string"
@@ -150,11 +137,9 @@ export default function Dashboard() {
         )
       );
 
-      // Lưu event IDs để dùng cho pagination
       const eventIds = joinedEvents.map(e => e._id);
       setJoinedEventIds(eventIds);
 
-      // ===== UPCOMING (DATE + TIME) =====
       const upcoming = joinedEvents.filter((event) => {
         if (!event.date) return false;
         const eventDate = new Date(event.date);
@@ -180,23 +165,19 @@ export default function Dashboard() {
 
       setUpcomingJoinedEvents(upcoming);
 
-      // ===== HOT EVENTS (SẮP DIỄN RA + ĐANG DIỄN RA, NHIỀU THÀNH VIÊN NHẤT) =====
       const hotEventCandidates = events.filter((event) => {
         const status = calculateEventStatus(event);
         return status === 'upcoming' || status === 'ongoing';
       });
 
-      // Sắp xếp theo số lượng thành viên giảm dần
       hotEventCandidates.sort((a, b) => {
         const countA = a.volunteers?.length || 0;
         const countB = b.volunteers?.length || 0;
         return countB - countA;
       });
 
-      // Lấy top 3 sự kiện hot
       let topHotEvents = hotEventCandidates.slice(0, 3);
       
-      // Thêm dữ liệu mẫu nếu không có đủ sự kiện
       if (topHotEvents.length < 3) {
         const mockEvents = [
           {
@@ -268,14 +249,12 @@ export default function Dashboard() {
     })();
   }, [userId]);
 
-  // Load posts ban đầu - TẤT CẢ POSTS CÔNG KHAI
   useEffect(() => {
     if (feedPosts.length === 0 && userId) {
       loadMorePosts();
     }
   }, [userId]);
 
-  // Intersection Observer cho infinite scroll
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -312,18 +291,16 @@ export default function Dashboard() {
     );
   };
 
-  // Auto-slide cho sự kiện hot
   useEffect(() => {
     if (hotEvents.length === 0) return;
     
-    // Reset về trang 0 nếu currentPage vượt quá số lượng sự kiện
     if (currentPage >= hotEvents.length) {
       setCurrentPage(0);
     }
     
     const interval = setInterval(() => {
       setCurrentPage((prev) => (prev + 1) % hotEvents.length);
-    }, 15000); // 15 giây
+    }, 15000);
 
     return () => clearInterval(interval);
   }, [hotEvents, currentPage]);
@@ -344,7 +321,6 @@ export default function Dashboard() {
         Xin chào, {username || "Người dùng"}!
       </Typography>
 
-      {/* Container chính với độ rộng responsive */}
       <Box 
         sx={{ 
           width: { xs: '100%', sm: '95%', md: '90vw', lg: '75vw', xl: '70vw' },
@@ -353,7 +329,6 @@ export default function Dashboard() {
           px: { xs: 1, sm: 2 },
         }}
       >
-        {/* Sự kiện sắp diễn ra - Carousel */}
         <Paper elevation={2} sx={{ p: { xs: 2, sm: 2.5, md: 3 }, mb: { xs: 3, md: 4 }, mt: { xs: 2, md: 3 }, borderRadius: { xs: 2, md: 3 } }}>
           <Typography 
             variant="h6" 
@@ -372,7 +347,6 @@ export default function Dashboard() {
           </Typography>
         ) : (
           <Box sx={{ position: 'relative' }}>
-            {/* Nút trái - Hiện trên mobile */}
             {upcomingScrollIndex > 0 && (
               <IconButton
                 onClick={() => setUpcomingScrollIndex(prev => Math.max(0, prev - 1))}
@@ -387,7 +361,7 @@ export default function Dashboard() {
                   width: { xs: '2rem', md: '2.5rem' },
                   height: { xs: '2rem', md: '2.5rem' },
                   '&:hover': { 
-                    bgcolor: '#49BBBD', /* Màu nhấn */
+                    bgcolor: '#49BBBD',
                     color: 'white'
                   }
                 }}
@@ -396,7 +370,6 @@ export default function Dashboard() {
               </IconButton>
             )}
 
-            {/* Nút phải - Hiện trên mobile */}
             {upcomingScrollIndex < upcomingJoinedEvents.length - 1 && (
               <IconButton
                 onClick={() => setUpcomingScrollIndex(prev => Math.min(upcomingJoinedEvents.length - 1, prev + 1))}
@@ -411,7 +384,7 @@ export default function Dashboard() {
                   width: { xs: '2rem', md: '2.5rem' },
                   height: { xs: '2rem', md: '2.5rem' },
                   '&:hover': { 
-                    bgcolor: '#49BBBD', /* Màu nhấn */
+                    bgcolor: '#49BBBD',
                     color: 'white'
                   }
                 }}
@@ -420,7 +393,6 @@ export default function Dashboard() {
               </IconButton>
             )}
 
-            {/* Container chứa events - Carousel cho mọi màn hình */}
             <Box
               sx={{
                 display: 'flex',
@@ -495,7 +467,6 @@ export default function Dashboard() {
                         {eventStatusMap[calculateEventStatus(event)]}
                       </Typography>
 
-                      {/* Event Banner */}
                       <Box
                         sx={{
                           width: '100%',
@@ -564,9 +535,7 @@ export default function Dashboard() {
         )}
       </Paper>
 
-      {/* Bài viết và Sự kiện Hot - 65% và 30% */}
       <Box sx={{ mb: 4, display: 'flex', gap: { xs: 2, md: '2%' }, alignItems: 'flex-start', flexDirection: { xs: 'column', md: 'row' }, overflow: 'visible' }}>
-        {/* Cột trái: Danh sách bài viết - 100% trên mobile, 65% trên desktop */}
         <Box sx={{ flex: { xs: '1 1 100%', md: '0 0 65%' }, width: '100%', minWidth: 0 }}>
           <Paper elevation={2} sx={{ p: { xs: 2, sm: 2.5, md: 3 }, borderRadius: { xs: 2, md: 3 } }}>
             <Typography 
@@ -599,17 +568,14 @@ export default function Dashboard() {
                   />
                 ))}
                 
-                {/* Observer target cho infinite scroll */}
                 <div ref={observerTarget} style={{ height: '20px', width: '100%' }} />
                 
-                {/* Loading indicator */}
                 {loadingPosts && (
                   <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
                     <CircularProgress />
                   </Box>
                 )}
                 
-                {/* Hiển thị khi hết posts */}
                 {!hasMorePosts && feedPosts.length > 0 && (
                   <Typography color="text.secondary" textAlign="center" py={2}>
                     Đã hiển thị tất cả bài viết
@@ -620,7 +586,6 @@ export default function Dashboard() {
           </Paper>
         </Box>
 
-        {/* Cột phải: Sự kiện Hot - 30% - Ẩn trên mobile */}
         <Box sx={{ 
           display: { xs: 'none', md: 'block' },
           flex: { xs: '1 1 100%', md: '0 0 33%' }, 
@@ -660,7 +625,6 @@ export default function Dashboard() {
                 </Typography>
               ) : (
                 <>
-                  {/* Hiển thị sự kiện của trang hiện tại */}
                   {hotEvents[currentPage] && (
                     <Card
                       className="event-card-clickable"
@@ -697,7 +661,6 @@ export default function Dashboard() {
                           {calculateEventStatus(hotEvents[currentPage]) === 'upcoming' ? "Sắp diễn ra" : "Đang diễn ra"}
                         </Typography>
 
-                        {/* Event Banner */}
                         <Box
                           sx={{
                             width: '100%',
@@ -766,7 +729,6 @@ export default function Dashboard() {
                     </Card>
                   )}
 
-                  {/* Pagination Dots */}
                   <Box sx={{ display: "flex", justifyContent: "center", gap: { xs: 1, sm: 1.5 }, mt: { xs: 2, sm: 3 } }}>
                     {hotEvents.map((_, index) => (
                       <Box
@@ -793,7 +755,6 @@ export default function Dashboard() {
         </Box>
       </Box>
 
-      {/* POST MODAL */}
       {selectedPost && (
         <PostModal
           open={postModalOpen}
