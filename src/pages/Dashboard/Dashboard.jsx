@@ -568,7 +568,7 @@ export default function Dashboard() {
                 fontSize: { xs: '1.1rem', sm: '1.15rem', md: '1.25rem' }
               }}
             >
-              Bài viết từ các sự kiện bạn đã tham gia
+              Bài viết gợi ý cho bạn
             </Typography>
 
             {feedPosts.length === 0 && !loadingPosts ? (
