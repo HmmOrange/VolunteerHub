@@ -184,9 +184,20 @@ export default function ImportExport({ users, onImported, showExport = true }) {
               </Select>
             </FormControl>
 
-            <Button variant="contained" onClick={handleExport}>
+            <Button
+              // variant="contained"
+              onClick={handleExport}
+              sx={{
+                backgroundColor: "#49BBBD",
+                color: "white",
+                "&:hover": {
+                  backgroundColor: "#3fa6a8",
+                },
+              }}
+            >
               Xuất
             </Button>
+
           </Stack>
 
           <Divider sx={{ my: 3 }} />
@@ -214,9 +225,20 @@ export default function ImportExport({ users, onImported, showExport = true }) {
             {file ? file.name : "Chưa chọn file"}
           </Typography>
 
-          <Button variant="contained" color="success" onClick={handleImport}>
-            Import
+          <Button
+            variant="contained"
+            onClick={handleImport}
+            sx={{
+              backgroundColor: "#49BBBD",
+              color: "white",
+              "&:hover": {
+                backgroundColor: "#3fa6a8",
+              },
+            }}
+          >
+            Nhập
           </Button>
+
         </Stack>
 
         {/* ===== TEMPLATES ===== */}

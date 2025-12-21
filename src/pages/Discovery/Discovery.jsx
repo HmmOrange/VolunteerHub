@@ -303,51 +303,12 @@ export default function Discovery() {
   return (
     <>
     <Container maxWidth="xl" sx={{ px: { xs: 2, sm: 3, md: 4 }, py: 2 }}>
-      {/* FILTERS */}
-      <Paper sx={{ p: { xs: 2, sm: 2.5, md: 3 }, mb: { xs: 3, md: 4 }, mt: { xs: 6, sm: 7, md: 8 }, border: '2px solid #49BBBD' }}>
-        <Stack 
-          direction={{ xs: 'column', sm: 'row' }} 
-          spacing={2}
-        >
-          <TextField
-            select
-            label="Thời gian"
-            value={timeFilter}
-            onChange={(e) => setTimeFilter(e.target.value)}
-            sx={{ 
-              width: { xs: '100%', sm: '45%', md: '20vw' },
-              maxWidth: '20rem'
-            }}
-          >
-            <MenuItem value="all">Tất cả</MenuItem>
-            <MenuItem value="ongoing">Đang diễn ra</MenuItem>
-            <MenuItem value="upcoming">Sắp tới</MenuItem>
-            <MenuItem value="previous">Đã kết thúc</MenuItem>
-          </TextField>
 
-          <TextField
-            select
-            label="Sắp xếp"
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            sx={{ 
-              width: { xs: '100%', sm: '45%', md: '20vw' },
-              maxWidth: '20rem'
-            }}
-          >
-            <MenuItem value="time-asc">Thời gian ↑</MenuItem>
-            <MenuItem value="time-desc">Thời gian ↓</MenuItem>
-            <MenuItem value="name-asc">Tên A → Z</MenuItem>
-            <MenuItem value="name-desc">Tên Z → A</MenuItem>
-          </TextField>
-        </Stack>
-      </Paper>
-
-      {/* ALL EVENTS */}
+      {/* ALL EVENTS Heading */}
       <Typography 
         variant="h5" 
         fontWeight="bold" 
-        mb={3}
+        mb={1}
         sx={{ 
           fontSize: { xs: '1.25rem', sm: '1.375rem', md: '1.5rem' }
         }}
@@ -355,31 +316,83 @@ export default function Discovery() {
         Khám phá sự kiện
       </Typography>
 
+      {/* FILTERS — moved below heading and right-aligned */}
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: { xs: 2, md: 3 } }}>
+        <Paper sx={{ p: { xs: 1.5, sm: 2 }, borderRadius: 2, bgcolor: 'transparent' }} elevation={0}>
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+            <TextField
+              select
+              label="Thời gian"
+              value={timeFilter}
+              onChange={(e) => setTimeFilter(e.target.value)}
+              sx={{ 
+                width: { xs: '100%', sm: '45%', md: '20vw' },
+                maxWidth: '20rem',
+                '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#49BBBD' },
+                '& .MuiInputLabel-root.Mui-focused': { color: '#49BBBD' }
+              }}
+              MenuProps={{
+                PaperProps: {
+                  sx: {
+                    '& .Mui-selected': { color: '#49BBBD !important', backgroundColor: 'rgba(73,187,189,0.06) !important' }
+                  }
+                }
+              }}
+            >
+              <MenuItem value="all">Tất cả</MenuItem>
+              <MenuItem value="ongoing">Đang diễn ra</MenuItem>
+              <MenuItem value="upcoming">Sắp tới</MenuItem>
+              <MenuItem value="previous">Đã kết thúc</MenuItem>
+            </TextField>
+
+            <TextField
+              select
+              label="Sắp xếp"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              sx={{ 
+                width: { xs: '100%', sm: '45%', md: '20vw' },
+                maxWidth: '20rem',
+                '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#49BBBD' },
+                '& .MuiInputLabel-root.Mui-focused': { color: '#49BBBD' }
+              }}
+              MenuProps={{
+                PaperProps: {
+                  sx: {
+                    '& .Mui-selected': { color: '#49BBBD !important', backgroundColor: 'rgba(73,187,189,0.06) !important' }
+                  }
+                }
+              }}
+            >
+              <MenuItem value="time-asc">Thời gian ↑</MenuItem>
+              <MenuItem value="time-desc">Thời gian ↓</MenuItem>
+              <MenuItem value="name-asc">Tên A → Z</MenuItem>
+              <MenuItem value="name-desc">Tên Z → A</MenuItem>
+            </TextField>
+          </Stack>
+        </Paper>
+      </Box>
+
       {filteredAndSortedEvents.length === 0 ? (
-        <Typography color="text.secondary">
-          Không có sự kiện nào
-        </Typography>
+        <Typography color="text.secondary">Không có sự kiện nào</Typography>
       ) : (
-        <Box sx={{ bgcolor: 'white', p: { xs: 2, sm: 3, md: 4 }, borderRadius: 2, border: '2px solid #49BBBD' }}>
-          <Box sx={{ 
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: { xs: '1rem', sm: '1.5rem', md: '2rem' }
-          }}>
-                  {filteredAndSortedEvents.map(renderEventCard)}
-                </Box>
-              </Box>
-            )}
-          </Container>
-          <ConfirmDialog
-            open={confirmOpen}
-            title={confirmOptions.title}
-            description={confirmOptions.description}
-            onConfirm={() => { if (confirmOptions.onConfirm) confirmOptions.onConfirm(); }}
-            onClose={() => setConfirmOpen(false)}
-            confirmText="Xóa"
-            cancelText="Hủy"
-          />
-          </>
+        <Box sx={{ bgcolor: 'white', p: { xs: 2, sm: 3, md: 4 }, borderRadius: 2 }}>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: { xs: '1rem', sm: '1.5rem', md: '2rem' } }}>
+            {filteredAndSortedEvents.map(renderEventCard)}
+          </Box>
+        </Box>
+      )}
+
+    </Container>
+    <ConfirmDialog
+      open={confirmOpen}
+      title={confirmOptions.title}
+      description={confirmOptions.description}
+      onConfirm={() => { if (confirmOptions.onConfirm) confirmOptions.onConfirm(); }}
+      onClose={() => setConfirmOpen(false)}
+      confirmText="Xóa"
+      cancelText="Hủy"
+    />
+    </>
   );
 }

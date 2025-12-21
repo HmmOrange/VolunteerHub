@@ -388,13 +388,15 @@ export default function AdminEventList() {
             <Select
               value={exportType}
               onChange={(e) => setExportType(e.target.value)}
+              sx={{ '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#49BBBD' }, '& .MuiSvgIcon-root': { color: 'inherit' } }}
+              MenuProps={{ PaperProps: { sx: { '& .Mui-selected': { color: '#49BBBD !important', backgroundColor: 'rgba(73,187,189,0.06) !important' } } } }}
             >
               <MenuItem value="csv">CSV</MenuItem>
               <MenuItem value="json">JSON</MenuItem>
             </Select>
           </FormControl>
 
-          <Button variant="contained" onClick={handleExport}>
+          <Button variant="contained" onClick={handleExport} sx={{ bgcolor: '#49BBBD', '&:hover': { bgcolor: '#359698' } }}>
             Xuất
           </Button>
         </Stack>

@@ -216,13 +216,11 @@ export default function PostCard({ post, onPostDeleted, onPostUpdated, eventOwne
     <> 
       <Paper 
         className="post-card-paper" 
-        elevation={0} 
-        variant="outlined"
+        elevation={0}
         onClick={handlePostClick}
         sx={{
           cursor: onPostClick ? 'pointer' : 'default',
           transition: 'all 0.2s',
-          border: '2px solid #49BBBD',
           borderRadius: 2,
           '&:hover': onPostClick ? {
             boxShadow: '0 2px 8px rgba(0,0,0,0.1)',

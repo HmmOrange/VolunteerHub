@@ -38,13 +38,16 @@
 
 /* Class mới cho thẻ Card có thể bấm */
 .event-card-clickable {
-  transition: all 0.2s ease-in-out;
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+  border: 1.5px solid #D3D3D3  !important;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.06) !important;
 }
 
 .event-card-clickable:hover {
   cursor: pointer;
-  box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.1) !important; 
-  transform: translateY(-0.125rem);
+  border-color: #49BBBD !important;
+  box-shadow: 0 14px 40px rgba(50, 128, 120, 0.08) !important;
+  transform: translateY(-0.35rem);
 }
 
 @media (max-width: 900px) {

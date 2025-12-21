@@ -68,6 +68,18 @@
   padding: 1rem 1rem 0 1rem; 
 }
 
+/* make border invisible by default and show accent on hover */
+.post-card-paper {
+  border: 1.5px solid #D3D3D3  !important;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.06) !important;
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+.post-card-paper:hover {
+  border-color: #49BBBD !important;
+  box-shadow: 0 14px 40px rgba(50, 128, 120, 0.08) !important;
+  transform: translateY(-6px);
+}
+
 @media (max-width: 600px) {
   .post-card-paper {
     padding: 0.75rem 0.75rem 0 0.75rem;
