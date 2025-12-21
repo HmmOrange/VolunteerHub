@@ -19,6 +19,14 @@ import { getAllEvents, deleteEvent, updateEvent } from "../../api/Events";
 import placeholderImage from "../../assets/img/event_group.jpg";
 import ConfirmDialog from "../../components/common/ConfirmDialog";
 
+/*
+  Page: `Discovery`
+
+  Mô tả:
+  - Trang khám phá sự kiện: hiển thị tất cả sự kiện đã được duyệt, hỗ trợ lọc, sắp xếp và các thao tác (nếu có quyền).
+  - Hàm lớn: tải dữ liệu `getAllEvents`, tính trạng thái sự kiện và các handler cho edit/delete.
+*/
+
 export default function Discovery() {
   const navigate = useNavigate();
   const username = localStorage.getItem("username");

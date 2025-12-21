@@ -19,6 +19,20 @@ import CommentInput from "./CommentInput";
 import "./Post.css";
 import ConfirmDialog from "../common/ConfirmDialog";
 
+/*
+  Component: `PostModal`
+
+  Mô tả:
+  - Hiển thị nội dung bài viết trong hộp thoại (modal) với phần ảnh, tác giả, lượt thích và danh sách bình luận.
+  - Hàm lớn/quan trọng:
+    - `useEffect` tải comment (`getCommentsByPost`) khi modal mở.
+    - `handleLike` xử lý like/unlike (gọi API `likePost`).
+    - `handleDelete` xử lý xóa bài (gọi API `deletePost`) với ConfirmDialog.
+    - `handleUpdate` xử lý cập nhật nội dung bài (gọi API `updatePost`).
+  - Quyền chỉnh sửa/xóa được xác định từ `currentUserId` và `eventOwnerId`.
+  - Lưu ý: chỉ thêm comment, không thay đổi logic hiện tại.
+*/
+
 export default function PostModal({ open, onClose, post, onPostDeleted, onPostUpdated, eventOwnerId }) {
   const navigate = useNavigate();
 

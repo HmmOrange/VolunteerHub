@@ -1,8 +1,12 @@
 import Notification from "../models/Notification.js";
 import mongoose from "mongoose";
 
-// 1. Lấy thông báo
-// 1. Lấy thông báo
+/**
+ * Lấy danh sách thông báo của một user (getUserNotifications)
+ * - Input: `req.params.userId`.
+ * - Hành động: validate userId, truy vấn Notification theo recipient, populate relatedId và trả về số lượng unread.
+ * - Output: trả về mảng notifications và `unreadCount` hoặc lỗi.
+ */
 export const getUserNotifications = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -37,7 +41,12 @@ export const getUserNotifications = async (req, res) => {
   }
 };
 
-// 2. Đánh dấu đã đọc
+/**
+ * Đánh dấu 1 thông báo là đã đọc (markAsRead)
+ * - Input: `req.params.notificationId`.
+ * - Hành động: validate id, cập nhật trường `isRead` của Notification.
+ * - Output: trả về thông báo đã cập nhật hoặc lỗi.
+ */
 export const markAsRead = async (req, res) => {
   try {
     // Vì route là /:notificationId/read nên params phải lấy notificationId
@@ -64,7 +73,11 @@ export const markAsRead = async (req, res) => {
   }
 };
 
-// 3. Tạo thông báo nội bộ
+/**
+ * Tạo thông báo nội bộ không thông qua HTTP (createNotificationInternal)
+ * - Input: object chứa `recipientId`, `type`, `message`, optional `relatedId`, `relatedModel`.
+ * - Hành động: nếu có recipientId thì tạo Notification mới và lưu vào DB. Hàm này dùng nội bộ và không trả lỗi lên client.
+ */
 export const createNotificationInternal = async ({ recipientId, type, message, relatedId, relatedModel }) => {
   try {
     if (!recipientId) return;
@@ -81,7 +94,12 @@ export const createNotificationInternal = async ({ recipientId, type, message, r
   }
 };
 
-// 3. Đánh dấu tất cả thông báo của user là đã đọc
+/**
+ * Đánh dấu tất cả thông báo của user là đã đọc (markAllRead)
+ * - Input: `req.params.userId`.
+ * - Hành động: validate id, updateMany để set isRead = true cho các thông báo chưa đọc.
+ * - Output: trả về số lượng thông báo đã được đánh dấu hoặc lỗi.
+ */
 export const markAllRead = async (req, res) => {
   try {
     const { userId } = req.params;

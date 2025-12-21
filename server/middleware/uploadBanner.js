@@ -27,6 +27,11 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
+/**
+ * Middleware multer để xử lý upload banner cho event (uploadBanner)
+ * - Lưu file vào `uploads/banners` với tên gồm timestamp.
+ * - Chỉ cho phép image/* và giới hạn kích thước 2MB.
+ */
 export const uploadBanner = multer({
   storage,
   fileFilter,

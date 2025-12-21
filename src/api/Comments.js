@@ -1,3 +1,8 @@
+/**
+ * API Comments - các hàm tương tác với backend cho Comment
+ * - `getCommentsByPost(postId)`: GET /api/comments/post/:postId, trả về danh sách comment.
+ * - `createComment(data)`: POST /api/comments/create với body JSON `data`, trả về comment vừa tạo.
+ */
 const API_URL = "http://localhost:5000/api/comments";
 
 const getHeaders = () => {

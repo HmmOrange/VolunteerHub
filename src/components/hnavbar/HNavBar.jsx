@@ -35,6 +35,12 @@ import placeholderImage from "../../assets/img/event_group.jpg";
 
 import "./HNavBar.css";
 
+/**
+ * Component `HNavbar` - Thanh header chính
+ * Props:
+ * - `onToggleVNavBar`: callback để mở/đóng vertical navbar
+ * Hành vi: hiển thị logo, thanh tìm kiếm với autocomplete, nút tạo event, thông báo và menu profile.
+ */
 export default function HNavbar({ onToggleVNavBar }) {
   const navigate = useNavigate();
   const { showToast } = useToast();

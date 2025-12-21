@@ -6,7 +6,12 @@ import slugify from "slugify";
 import mongoose from "mongoose";
 import { createNotificationInternal } from "../controllers/notificationController.js"; // Import Notification
 
-// ---------------------- HELPER: TỰ ĐỘNG TẠO BÀI ĐĂNG CHO SỰ KIỆN ----------------------
+/**
+ * Helper: Tạo bài đăng tự động cho một Event mới (createEventPost)
+ * - Input: đối tượng `event` (Event document).
+ * - Hành động: kiểm tra nếu đã tồn tại announcement cho event, nếu chưa thì tạo một Post công khai mô tả event.
+ * - Output: trả về Post vừa tạo hoặc Post đã tồn tại; lỗi được catch và log (không throw tiếp).
+ */
 const createEventPost = async (event) => {
   try {
     // Kiểm tra xem đã có bài announcement cho event này chưa
@@ -73,7 +78,12 @@ const createEventPost = async (event) => {
   }
 };
 
-// ---------------------- CREATE EVENT (CÓ THÔNG BÁO CHO ADMIN) ----------------------
+/**
+ * Tạo một Event mới (createEvent)
+ * - Input: `req.body` chứa thông tin event như `name`, `date`, `startTime`, `endTime`, `username`, `privacy`, v.v.
+ * - Hành động: validate thời gian, tìm user tạo, tạo Event trong DB, tự động tạo bài announcement và gửi notification tới admin để duyệt.
+ * - Output: trả về `201` với slug và eventId; hoặc lỗi tương ứng.
+ */
 export const createEvent = async (req, res) => {
   try {
     // 1. Lấy dữ liệu từ Client
@@ -226,7 +236,12 @@ export const getAllEvents = async (req, res) => {
   }
 };
 
-// ---------------------- GET EVENT BY SLUG ----------------------
+/**
+ * Lấy thông tin Event theo `slug` hoặc id (getEventBySlug)
+ * - Input: `req.params.slug`, optional `req.query.userId` để xác định trạng thái người dùng với event.
+ * - Hành động: tìm Event, kiểm tra quyền/ trạng thái, tính toán isJoined/isManager/requestStatus và gắn attendance cho từng volunteer.
+ * - Output: trả về object event chi tiết hoặc lỗi 404/403/500.
+ */
 export const getEventBySlug = async (req, res) => {
   try {
     const { slug } = req.params;
@@ -331,7 +346,12 @@ export const getEventBySlug = async (req, res) => {
   }
 };
 
-// ---------------------- JOIN EVENT ----------------------
+/**
+ * Xử lý yêu cầu tham gia Event (joinEvent)
+ * - Input: `req.body` gồm `slug`, `userId`, optional `answer` cho private event.
+ * - Hành động: tìm Event và user, xử lý theo privacy (Public: join ngay, Private: tạo hoặc cập nhật JoinRequest), gửi notification tới creator.
+ * - Output: trả về trạng thái tham gia hoặc pending; hoặc lỗi tương ứng.
+ */
 export const joinEvent = async (req, res) => {
   try {
     const { slug, userId, answer } = req.body;
@@ -499,7 +519,12 @@ export const removeMember = async (req, res) => {
   }
 };
 
-// ---------------------- UPDATE EVENT ----------------------
+/**
+ * Cập nhật Event (updateEvent)
+ * - Input: `req.body` chứa `slug`, `username` và các trường cần cập nhật hoặc `action` đặc biệt (cancel, end_early, extend).
+ * - Hành động: kiểm tra quyền (creator/manager), áp dụng các cập nhật hoặc action, xử lý trao badge khi event completed, gửi thông báo nếu cần.
+ * - Output: trả về `updatedEvent` hoặc lỗi.
+ */
 export const updateEvent = async (req, res) => {
   try {
     const { slug, username, name, date, endDate, startTime, endTime, location, description, privacy, question, banner, action, extendHours } = req.body;
@@ -638,7 +663,12 @@ export const updateEvent = async (req, res) => {
   }
 };
 
-// ---------------------- DELETE EVENT ----------------------
+/**
+ * Xóa Event (deleteEvent)
+ * - Input: `req.body` chứa `slug` và `username` của người thao tác.
+ * - Hành động: kiểm tra quyền, gửi thông báo tới tất cả thành viên, xóa JoinRequest liên quan và xóa Event.
+ * - Output: trả về message xác nhận hoặc lỗi.
+ */
 export const deleteEvent = async (req, res) => {
   try {
     const { slug, username } = req.body;
@@ -945,7 +975,12 @@ export const rejectEvent = async (req, res) => {
   }
 };
 
-// ---------------------- CẬP NHẬT TRẠNG THÁI THAM GIA (ATTENDANCE) ----------------------
+/**
+ * Cập nhật trạng thái tham gia của thành viên trong Event (updateMemberAttendance)
+ * - Input: `req.params.slug`, `req.body` chứa `userId` và `attendance` (completed|absent|pending).
+ * - Hành động: kiểm tra quyền requester (creator/manager), cập nhật event.attendance, gắn hoặc loại bỏ badge tương ứng và thông báo người dùng.
+ * - Output: trả về message và trạng thái attendance hoặc lỗi.
+ */
 export const updateMemberAttendance = async (req, res) => {
   try {
     const { slug } = req.params;
@@ -1094,7 +1129,12 @@ export const searchEvents = async (req, res) => {
   }
 };
 
-// ===================== UPLOAD EVENT BANNER =====================
+/**
+ * Upload và cập nhật banner cho Event (uploadEventBanner)
+ * - Input: `req.params.slug`, file upload từ `req.file` (multer).
+ * - Hành động: kiểm tra quyền (creator/manager), xóa file cũ nếu có, lưu path mới, cập nhật bài announcement nếu tồn tại.
+ * - Output: trả về message và path banner, hoặc lỗi.
+ */
 export const uploadEventBanner = async (req, res) => {
   try {
     const { slug } = req.params;
@@ -1162,7 +1202,12 @@ export const uploadEventBanner = async (req, res) => {
   }
 };
 
-// -------------------- UPLOAD EVENT BADGE --------------------
+/**
+ * Upload và cập nhật badge cho Event (uploadEventBadge)
+ * - Input: `req.params.slug`, file upload từ `req.file`.
+ * - Hành động: kiểm tra quyền, xóa badge cũ nếu có, lưu path badge và cập nhật Event.
+ * - Output: trả về message và path badge hoặc lỗi.
+ */
 export const uploadEventBadge = async (req, res) => {
   try {
     const { slug } = req.params;
@@ -1199,7 +1244,12 @@ export const uploadEventBadge = async (req, res) => {
   }
 };
 
-// -------------------- SAVE CONTRIBUTIONS --------------------
+/**
+ * Lưu trạng thái đóng góp của các thành viên cho Event (saveContributions)
+ * - Input: `req.params.slug`, `req.body.contributions` là object mapping userId -> boolean.
+ * - Hành động: kiểm tra quyền (chỉ creator), cập nhật event.contributions, gắn/loại bỏ badge cho từng user và gửi thông báo nếu cần.
+ * - Output: trả về event đã cập nhật hoặc lỗi.
+ */
 export const saveContributions = async (req, res) => {
   try {
     const { slug } = req.params;

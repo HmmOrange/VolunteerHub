@@ -3,7 +3,12 @@ import User from "../models/User.js";
 import Post from "../models/Post.js";
 import { createNotificationInternal } from "../controllers/notificationController.js";
 
-// Lấy tất cả bình luận của một bài đăng
+/**
+ * Lấy danh sách bình luận theo `postId` (getCommentsByPost)
+ * - Input: `req.params.postId`.
+ * - Hành động: truy vấn Comment theo postId, populate thông tin `createdBy`, sắp xếp theo thời gian tăng dần.
+ * - Output: trả về mảng bình luận hoặc lỗi tương ứng.
+ */
 export const getCommentsByPost = async (req, res) => {
   try {
     const { postId } = req.params;
@@ -17,7 +22,12 @@ export const getCommentsByPost = async (req, res) => {
   }
 };
 
-// Tạo một bình luận mới
+/**
+ * Tạo bình luận mới cho một bài viết (createComment)
+ * - Input: `req.body` chứa `content`, `username`, `postId`.
+ * - Hành động: kiểm tra user và post tồn tại, tạo Comment, lưu và gửi notification tới chủ bài nếu cần.
+ * - Output: trả về comment vừa tạo (đã populate) hoặc lỗi.
+ */
 export const createComment = async (req, res) => {
   try {
     const { content, username, postId } = req.body;
@@ -58,7 +68,12 @@ export const createComment = async (req, res) => {
   }
 };
 
-// [GIỮ LẠI] Lấy chi tiết 1 Comment
+/**
+ * Lấy chi tiết một Comment theo `commentId` (getCommentById)
+ * - Input: `req.params.commentId`.
+ * - Hành động: tìm Comment theo id và trả về nếu tồn tại.
+ * - Output: object comment hoặc lỗi 404/500.
+ */
 export const getCommentById = async (req, res) => {
   try {
     const { commentId } = req.params;

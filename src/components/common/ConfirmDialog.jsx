@@ -2,6 +2,16 @@ import React from 'react';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography, DialogContentText, useTheme, useMediaQuery, Stack } from '@mui/material';
 import { WarningAmber as WarningIcon, CheckCircle as ConfirmIcon } from '@mui/icons-material';
 
+/*
+  Component: `ConfirmDialog`
+
+  Mô tả:
+  - Hộp thoại xác nhận tái sử dụng được cho các thao tác nguy hiểm (xóa, gỡ, v.v.).
+  - Props chính: `open`, `title`, `description`, `confirmText`, `cancelText`, `onClose`, `onConfirm`, `destructive`.
+  - Tự động suy đoán `destructive` nếu không truyền (dựa trên nội dung có chứa từ khóa như "xóa").
+  - Responsive: chuyển sang `fullScreen` trên màn hình nhỏ.
+*/
+
 export default function ConfirmDialog({
   open,
   title = 'Xác nhận',
