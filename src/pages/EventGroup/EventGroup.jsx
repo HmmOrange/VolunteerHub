@@ -1292,8 +1292,9 @@ export default function EventGroup() {
                     
                     // Kiểm tra trạng thái sự kiện để hiển thị attendance options
                     const currentEventStatus = autoEventStatus || calculateEventStatus(eventData);
-                    const canMarkAttendance = isOwner && memberId !== currentUserId && 
-                                             (currentEventStatus === 'completed' || currentEventStatus === 'ongoing');
+                    // Only allow marking attendance after the event is completed
+                    const canMarkAttendance = isOwner && memberId !== currentUserId &&
+                                             (currentEventStatus === 'completed');
 
                     return (
                         <ListItem key={memberId} secondaryAction={
@@ -1312,7 +1313,7 @@ export default function EventGroup() {
                               
                               {/* Menu attendance cho quản lý (khi sự kiện ongoing hoặc completed) */}
                               {isOwner && memberId !== currentUserId && 
-                               (currentEventStatus === 'completed' || currentEventStatus === 'ongoing') && (
+                               (currentEventStatus === 'completed') && (
                                 <IconButton 
                                   size="small"
                                   onClick={(e) => handleOpenAttendanceMenu(e, member)}
