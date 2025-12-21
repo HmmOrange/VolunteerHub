@@ -694,12 +694,12 @@ export default function EventGroup() {
   if (errorState) {
     return (
       // Giữ nguyên layout nền xám để đồng bộ với App
-      <Container maxWidth="lg" sx={{ p: 3, minHeight: '100vh', bgcolor: '#f1f4f7' }}>
+      <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3, md: 4 }, py: 3, minHeight: '100vh', bgcolor: '#f1f4f7' }}>
           <Paper 
               elevation={0} 
               sx={{ 
-                  p: 5, 
-                  mt: 4, 
+                  p: { xs: 3, sm: 4, md: 5 }, 
+                  mt: { xs: 2, sm: 3, md: 4 }, 
                   display: 'flex', 
                   flexDirection: 'column', 
                   alignItems: 'center', 
@@ -707,15 +707,14 @@ export default function EventGroup() {
                   borderRadius: 2
               }}
           >
-              <ErrorOutline sx={{ fontSize: 80, color: '#ff6b6b', mb: 2 }} /> {/* Icon màu đỏ nhạt cho đẹp */}
+              <ErrorOutline sx={{ fontSize: { xs: '3.75rem', sm: '4.5rem', md: '5rem' }, color: '#ff6b6b', mb: { xs: 1.5, md: 2 } }} />
               
-              <Typography variant="h5" fontWeight="bold" gutterBottom>
+              <Typography variant="h5" fontWeight="bold" gutterBottom sx={{ fontSize: { xs: '1.125rem', sm: '1.25rem', md: '1.5rem' } }}>
                   Truy cập bị từ chối
               </Typography>
               
-              <Typography variant="body1" color="text.secondary" sx={{ mb: 4, maxWidth: '500px' }}>
-                  {errorState} 
-                  {/* Ở đây giờ sẽ hiện tiếng Việt mượt mà do Bước 1 */}
+              <Typography variant="body1" color="text.secondary" sx={{ mb: { xs: 3, md: 4 }, maxWidth: '31.25rem', fontSize: { xs: '0.875rem', sm: '0.9375rem', md: '1rem' } }}>
+                  {errorState}
               </Typography>
 
               <Button 
@@ -723,8 +722,9 @@ export default function EventGroup() {
                   onClick={() => navigate('/dashboard')}
                   sx={{ 
                       bgcolor: '#49BBBD', 
-                      px: 4, 
+                      px: { xs: 3, md: 4 }, 
                       py: 1,
+                      fontSize: { xs: '0.875rem', md: '1rem' },
                       '&:hover': { bgcolor: '#3daeb0' }
                   }}
               >
@@ -736,24 +736,21 @@ export default function EventGroup() {
   }
   // =========================================================================
 
-  if (!eventData) return <Container sx={{ display: 'flex', justifyContent: 'center', mt: 10 }}><CircularProgress sx={{ color: '#49BBBD' }} /></Container>;
+  if (!eventData) return <Container sx={{ display: 'flex', justifyContent: 'center', mt: '5rem' }}><CircularProgress sx={{ color: '#49BBBD' }} /></Container>;
 
   return (
-    // ... (Phần render giao diện chính GIỮ NGUYÊN không thay đổi gì cả)
-    <Container maxWidth="lg" sx={{ p: 3, minHeight: '100vh', bgcolor: '#f1f4f7' }}>
-      {/* EVENT BANNER COVER */}
-      <Paper
-        elevation={0}
+    <Box sx={{ minHeight: '100vh', bgcolor: '#f1f4f7' }}>
+      {/* EVENT BANNER COVER - Full width */}
+      <Box
         sx={{
           width: '100%',
-          height: '30vh',
-          mb: 2,
-          borderRadius: 2,
+          height: { xs: '20vh', sm: '25vh', md: '30vh', lg: '35vh' },
           overflow: 'hidden',
           bgcolor: '#f5f5f5',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center'
+          justifyContent: 'center',
+          position: 'relative'
         }}
       >
         <img
@@ -766,19 +763,37 @@ export default function EventGroup() {
             objectFit: 'cover'
           }}
         />
-      </Paper>
+      </Box>
       
-      {/* HEADER TABS */}
-      <Paper className="event-group-tabs-paper" elevation={0} variant="outlined" sx={{ mb: 2 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 2 }}>
-          <Tabs
-            value={currentTab}
-            onChange={(e, v) => {
-              setCurrentTab(v);
-              try { setSearchParams({ tab: String(v) }); } catch (e) { /* ignore */ }
-            }}
-            sx={{ flexGrow: 1, '& .Mui-selected': { color: '#49BBBD !important' }, '& .MuiTabs-indicator': { backgroundColor: '#49BBBD' } }}
-          >
+      {/* Main content container */}
+      <Container maxWidth="xl" sx={{ px: { xs: 2, sm: 3, md: 4 }, py: 3 }}>
+      
+        {/* HEADER TABS */}
+        <Paper className="event-group-tabs-paper" elevation={0} variant="outlined" sx={{ mb: { xs: 1.5, md: 2 } }}>
+          <Box sx={{ 
+            display: 'flex', 
+            flexDirection: { xs: 'column', sm: 'row' },
+            justifyContent: 'space-between', 
+            alignItems: { xs: 'stretch', sm: 'center' }, 
+            px: 0,
+            py: { xs: 1, sm: 0 },
+            gap: { xs: 1, sm: 0 }
+          }}>
+            <Tabs
+              value={currentTab}
+              onChange={(e, v) => {
+                setCurrentTab(v);
+                try { setSearchParams({ tab: String(v) }); } catch (e) { /* ignore */ }
+              }}
+              variant="scrollable"
+              scrollButtons="auto"
+              sx={{ 
+                flexGrow: 1,
+                '& .Mui-selected': { color: '#49BBBD !important' }, 
+                '& .MuiTabs-indicator': { backgroundColor: '#49BBBD' },
+                '& .MuiTab-root': { minWidth: { xs: 'auto', sm: '6rem' }, fontSize: { xs: '0.8rem', sm: '0.875rem' }, px: 2 }
+              }}
+            >
             <Tab label="Bài đăng" />
             <Tab label="Thông tin" />
             <Tab label="Thành viên" />
@@ -787,15 +802,22 @@ export default function EventGroup() {
               )}
           </Tabs>
 
-          {!isJoined ? (
-            <Button 
-              variant="contained" 
-              size="small" 
-              onClick={handleJoinClick} 
-              // Chỉ disable khi đang chờ duyệt, 'rejected' hoặc null đều bấm được
-              disabled={requestStatus === 'pending'} 
-              sx={{ ml: 2, bgcolor: '#49BBBD' }}
-            >
+            {!isJoined ? (
+              <Button 
+                variant="contained" 
+                size="small" 
+                onClick={handleJoinClick} 
+                // Chỉ disable khi đang chờ duyệt, 'rejected' hoặc null đều bấm được
+                disabled={requestStatus === 'pending'} 
+                sx={{ 
+                  ml: { xs: 0, sm: 2 },
+                  mr: { xs: 0, sm: 0 },
+                  mt: { xs: 1, sm: 0 },
+                  bgcolor: '#49BBBD',
+                  width: { xs: '100%', sm: 'auto' },
+                  fontSize: { xs: '0.8rem', sm: '0.875rem' }
+                }}
+              >
               {/* Logic hiển thị chữ trên nút */}
               {requestStatus === 'pending' 
                 ? "Đang chờ duyệt" 
@@ -803,14 +825,20 @@ export default function EventGroup() {
               }
             </Button>
           ) : (
-            // Người tổ chức thấy menu actions, người khác thấy nút rời khỏi
-            currentUserIsCreator ? (
-              <>
-                <IconButton 
-                  size="small" 
-                  onClick={handleOpenActionsMenu} 
-                  sx={{ ml: 2, color: '#49BBBD' }}
-                >
+              // Người tổ chức thấy menu actions, người khác thấy nút rời khỏi
+              currentUserIsCreator ? (
+                <>
+                  <IconButton 
+                    size="small" 
+                    onClick={handleOpenActionsMenu} 
+                    sx={{ 
+                      ml: { xs: 0, sm: 2 },
+                      mr: { xs: 0, sm: 0 },
+                      mt: { xs: 1, sm: 0 },
+                      color: '#49BBBD',
+                      alignSelf: { xs: 'center', sm: 'auto' }
+                    }}
+                  >
                   <MoreVertIcon />
                 </IconButton>
                 <Menu
@@ -832,32 +860,50 @@ export default function EventGroup() {
                   </MenuItem>
                 </Menu>
               </>
-            ) : (
-              <Button variant="outlined" color="inherit" size="small" onClick={handleLeaveEvent} sx={{ ml: 2, color: 'gray', borderColor: 'gray' }}>
-                Rời khỏi
-              </Button>
-            )
-          )}
-        </Box>
-      </Paper>
+              ) : (
+                <Button 
+                  variant="outlined" 
+                  color="inherit" 
+                  size="small" 
+                  onClick={handleLeaveEvent} 
+                  sx={{ 
+                    ml: { xs: 0, sm: 2 },
+                    mr: { xs: 0, sm: 0 },
+                    mt: { xs: 1, sm: 0 },
+                    color: 'gray', 
+                    borderColor: 'gray',
+                    width: { xs: '100%', sm: 'auto' },
+                    fontSize: { xs: '0.8rem', sm: '0.875rem' }
+                  }}
+                >
+                  Rời khỏi
+                </Button>
+              )
+            )}
+          </Box>
+        </Paper>
 
-      <Box className="event-group-content-area" sx={{ mt: 0 }}>
         {/* TAB 0: POSTS */}
         {currentTab === 0 && (
           (eventData.privacy === 'Private' && !isJoined) ? (
-            <Paper sx={{ py: 8, mt: 2, textAlign: 'center' }} variant="outlined">
-              <LockOutlined sx={{ fontSize: 60, color: '#ccc', mb: 2 }} />
-              <Typography variant="h6" color="text.secondary">Nhóm riêng tư</Typography>
-              <Typography variant="body2" color="text.secondary">Bạn cần tham gia sự kiện để xem bài đăng</Typography>
-              {requestStatus !== 'pending' && <Button variant="contained" onClick={handleJoinClick} sx={{ mt: 2, bgcolor: '#49BBBD' }}>Tham gia ngay</Button>}
+            <Paper sx={{ 
+              py: { xs: 6, md: 8 }, 
+              px: { xs: 2, md: 0 },
+              mt: { xs: 1.5, md: 2 }, 
+              textAlign: 'center' 
+            }} variant="outlined">
+              <LockOutlined sx={{ fontSize: { xs: '3rem', md: '3.75rem' }, color: '#ccc', mb: { xs: 1.5, md: 2 } }} />
+              <Typography variant="h6" color="text.secondary" sx={{ fontSize: { xs: '1rem', md: '1.25rem' } }}>Nhóm riêng tư</Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>Bạn cần tham gia sự kiện để xem bài đăng</Typography>
+              {requestStatus !== 'pending' && <Button variant="contained" onClick={handleJoinClick} sx={{ mt: { xs: 1.5, md: 2 }, bgcolor: '#49BBBD', fontSize: { xs: '0.8rem', md: '0.875rem' } }}>Tham gia ngay</Button>}
             </Paper>
           ) : (
-            <Box sx={{ display: 'flex', gap: 3 }}>
+            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: { xs: 2, md: 3 }, mt: { xs: 1.5, md: 2 } }}>
               {/* PHẦN BÀI ĐĂNG BÊN TRÁI */}
-              <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Box sx={{ flex: 1, minWidth: 0, order: { xs: 2, lg: 1 } }}>
                 {isJoined && <CreatePost eventId={eventData._id} onPostCreated={(p) => setPosts([p, ...posts])} />}
-                {isLoadingPosts ? <Box sx={{ p: 5, textAlign: 'center' }}><CircularProgress sx={{ color: '#49BBBD' }}/></Box> : 
-                 posts.length === 0 ? <Typography textAlign="center" sx={{ mt: 2 }}>Chưa có bài đăng nào.</Typography> :
+                {isLoadingPosts ? <Box sx={{ p: { xs: 3, md: 5 }, textAlign: 'center' }}><CircularProgress sx={{ color: '#49BBBD' }}/></Box> : 
+                 posts.length === 0 ? <Typography textAlign="center" sx={{ mt: { xs: 1.5, md: 2 }, fontSize: { xs: '0.875rem', md: '1rem' } }}>Chưa có bài đăng nào.</Typography> :
                  posts.map(post => (
                    <PostCard 
                      key={post._id} 
@@ -878,21 +924,23 @@ export default function EventGroup() {
               <Paper 
                 elevation={3}
                 sx={{ 
-                  width: '320px',
+                  width: { xs: '100%', lg: '20rem' },
                   flexShrink: 0,
                   height: 'fit-content',
-                  position: 'sticky',
-                  top: '85px',
+                  position: { xs: 'relative', lg: 'sticky' },
+                  top: { xs: 0, lg: '5.3125rem' },
+                  order: { xs: 1, lg: 2 },
                   overflow: 'hidden',
                   background: 'linear-gradient(135deg, #49BBBD 0%, #3daeb0 100%)',
-                  borderRadius: 3
+                  borderRadius: { xs: 2, md: 3 },
+                  mb: { xs: 2, lg: 0 }
                 }}
               >
                 {/* HEADER */}
                 <Box sx={{ 
                   bgcolor: 'rgba(255,255,255,0.15)', 
                   backdropFilter: 'blur(10px)',
-                  p: 2.5,
+                  p: { xs: 2, md: 2.5 },
                   textAlign: 'center',
                   borderBottom: '1px solid rgba(255,255,255,0.2)'
                 }}>
@@ -901,8 +949,9 @@ export default function EventGroup() {
                     fontWeight="bold" 
                     sx={{ 
                       color: 'white',
-                      textShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                      letterSpacing: '0.5px'
+                      textShadow: '0 0.125rem 0.25rem rgba(0,0,0,0.2)',
+                      letterSpacing: '0.03125rem',
+                      fontSize: { xs: '1rem', sm: '1.125rem', md: '1.25rem' }
                     }}
                   >
                     Đồng hồ sự kiện
@@ -910,22 +959,22 @@ export default function EventGroup() {
                 </Box>
                 
                 {/* COUNTDOWN DISPLAY */}
-                <Box sx={{ p: 3, bgcolor: 'rgba(255,255,255,0.1)' }}>
+                <Box sx={{ p: { xs: 2, md: 3 }, bgcolor: 'rgba(255,255,255,0.1)' }}>
                   <Box sx={{ 
                     display: 'grid',
                     gridTemplateColumns: countdown.days > 0 ? 'repeat(4, 1fr)' : 'repeat(3, 1fr)',
-                    gap: 1.5,
-                    mb: 2
+                    gap: { xs: 1, md: 1.5 },
+                    mb: { xs: 1.5, md: 2 }
                   }}>
                     {/* Days */}
                     {countdown.days > 0 && (
                       <Box sx={{ textAlign: 'center' }}>
                         <Box sx={{ 
                           bgcolor: 'white',
-                          borderRadius: 2,
-                          p: 1.5,
-                          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                          minHeight: '64px',
+                          borderRadius: { xs: 1, md: 2 },
+                          p: { xs: 1, md: 1.5 },
+                          boxShadow: '0 0.25rem 0.75rem rgba(0,0,0,0.15)',
+                          minHeight: { xs: '3rem', sm: '3.5rem', md: '4rem' },
                           display: 'flex',
                           flexDirection: 'column',
                           justifyContent: 'center'
@@ -936,7 +985,8 @@ export default function EventGroup() {
                             sx={{ 
                               color: '#49BBBD',
                               lineHeight: 1,
-                              fontFamily: 'monospace'
+                              fontFamily: 'monospace',
+                              fontSize: { xs: '1.25rem', sm: '1.5rem', md: '1.75rem' }
                             }}
                           >
                             {String(countdown.days).padStart(2, '0')}
@@ -949,9 +999,9 @@ export default function EventGroup() {
                             display: 'block',
                             color: 'white',
                             fontWeight: 600,
-                            fontSize: '0.7rem',
+                            fontSize: { xs: '0.625rem', md: '0.7rem' },
                             textTransform: 'uppercase',
-                            letterSpacing: '0.5px'
+                            letterSpacing: '0.03125rem'
                           }}
                         >
                           Ngày
@@ -963,10 +1013,10 @@ export default function EventGroup() {
                     <Box sx={{ textAlign: 'center' }}>
                       <Box sx={{ 
                         bgcolor: 'white',
-                        borderRadius: 2,
-                        p: 1.5,
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                        minHeight: '64px',
+                        borderRadius: { xs: 1, md: 2 },
+                        p: { xs: 1, md: 1.5 },
+                        boxShadow: '0 0.25rem 0.75rem rgba(0,0,0,0.15)',
+                        minHeight: { xs: '3rem', sm: '3.5rem', md: '4rem' },
                         display: 'flex',
                         flexDirection: 'column',
                         justifyContent: 'center'
@@ -977,7 +1027,8 @@ export default function EventGroup() {
                           sx={{ 
                             color: '#49BBBD',
                             lineHeight: 1,
-                            fontFamily: 'monospace'
+                            fontFamily: 'monospace',
+                            fontSize: { xs: '1.25rem', sm: '1.5rem', md: '1.75rem' }
                           }}
                         >
                           {String(countdown.hours).padStart(2, '0')}
@@ -990,9 +1041,9 @@ export default function EventGroup() {
                           display: 'block',
                           color: 'white',
                           fontWeight: 600,
-                          fontSize: '0.7rem',
+                          fontSize: { xs: '0.625rem', md: '0.7rem' },
                           textTransform: 'uppercase',
-                          letterSpacing: '0.5px'
+                          letterSpacing: '0.03125rem'
                         }}
                       >
                         Giờ
@@ -1003,10 +1054,10 @@ export default function EventGroup() {
                     <Box sx={{ textAlign: 'center' }}>
                       <Box sx={{ 
                         bgcolor: 'white',
-                        borderRadius: 2,
-                        p: 1.5,
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                        minHeight: '64px',
+                        borderRadius: { xs: 1, md: 2 },
+                        p: { xs: 1, md: 1.5 },
+                        boxShadow: '0 0.25rem 0.75rem rgba(0,0,0,0.15)',
+                        minHeight: { xs: '3rem', sm: '3.5rem', md: '4rem' },
                         display: 'flex',
                         flexDirection: 'column',
                         justifyContent: 'center'
@@ -1017,7 +1068,8 @@ export default function EventGroup() {
                           sx={{ 
                             color: '#49BBBD',
                             lineHeight: 1,
-                            fontFamily: 'monospace'
+                            fontFamily: 'monospace',
+                            fontSize: { xs: '1.25rem', sm: '1.5rem', md: '1.75rem' }
                           }}
                         >
                           {String(countdown.minutes).padStart(2, '0')}
@@ -1030,9 +1082,9 @@ export default function EventGroup() {
                           display: 'block',
                           color: 'white',
                           fontWeight: 600,
-                          fontSize: '0.7rem',
+                          fontSize: { xs: '0.625rem', md: '0.7rem' },
                           textTransform: 'uppercase',
-                          letterSpacing: '0.5px'
+                          letterSpacing: '0.03125rem'
                         }}
                       >
                         Phút
@@ -1043,10 +1095,10 @@ export default function EventGroup() {
                     <Box sx={{ textAlign: 'center' }}>
                       <Box sx={{ 
                         bgcolor: 'white',
-                        borderRadius: 2,
-                        p: 1.5,
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                        minHeight: '64px',
+                        borderRadius: { xs: 1, md: 2 },
+                        p: { xs: 1, md: 1.5 },
+                        boxShadow: '0 0.25rem 0.75rem rgba(0,0,0,0.15)',
+                        minHeight: { xs: '3rem', sm: '3.5rem', md: '4rem' },
                         display: 'flex',
                         flexDirection: 'column',
                         justifyContent: 'center'
@@ -1057,7 +1109,8 @@ export default function EventGroup() {
                           sx={{ 
                             color: '#49BBBD',
                             lineHeight: 1,
-                            fontFamily: 'monospace'
+                            fontFamily: 'monospace',
+                            fontSize: { xs: '1.25rem', sm: '1.5rem', md: '1.75rem' }
                           }}
                         >
                           {String(countdown.seconds).padStart(2, '0')}
@@ -1070,9 +1123,9 @@ export default function EventGroup() {
                           display: 'block',
                           color: 'white',
                           fontWeight: 600,
-                          fontSize: '0.7rem',
+                          fontSize: { xs: '0.625rem', md: '0.7rem' },
                           textTransform: 'uppercase',
-                          letterSpacing: '0.5px'
+                          letterSpacing: '0.03125rem'
                         }}
                       >
                         Giây
@@ -1083,16 +1136,16 @@ export default function EventGroup() {
                   {/* COUNTDOWN LABEL */}
                   <Box sx={{ 
                     bgcolor: 'rgba(255,255,255,0.2)',
-                    borderRadius: 2,
-                    p: 1.5,
-                    mt: 2
+                    borderRadius: { xs: 1, md: 2 },
+                    p: { xs: 1.25, md: 1.5 },
+                    mt: { xs: 1.5, md: 2 }
                   }}>
                     <Typography 
                       variant="body2" 
                       sx={{ 
                         color: 'white',
                         fontWeight: 500,
-                        fontSize: '0.85rem',
+                        fontSize: { xs: '0.75rem', sm: '0.8rem', md: '0.85rem' },
                         textAlign: 'center'
                       }}
                     >
@@ -1103,14 +1156,14 @@ export default function EventGroup() {
 
                 {/* TRẠNG THÁI SỰ KIỆN */}
                 <Box sx={{ 
-                  p: 2.5, 
+                  p: { xs: 2, md: 2.5 }, 
                   bgcolor: 'rgba(255,255,255,0.1)',
                   borderTop: '1px solid rgba(255,255,255,0.2)'
                 }}>
                   <Typography 
                     variant="subtitle2" 
                     fontWeight="bold" 
-                    sx={{ mb: 1.5, color: 'white', textAlign: 'center' }}
+                    sx={{ mb: 1.5, color: 'white', textAlign: 'center', fontSize: { xs: '0.875rem', md: '1rem' } }}
                   >
                     Trạng thái sự kiện
                   </Typography>
@@ -1125,15 +1178,15 @@ export default function EventGroup() {
                       }
                       sx={{ 
                         fontWeight: 'bold', 
-                        fontSize: '0.85rem',
+                        fontSize: { xs: '0.75rem', sm: '0.8rem', md: '0.85rem' },
                         bgcolor: 'white',
                         color: autoEventStatus === 'upcoming' ? '#1976d2' :
                                autoEventStatus === 'ongoing' ? '#2e7d32' :
                                autoEventStatus === 'completed' ? '#757575' :
                                autoEventStatus === 'cancelled' ? '#d32f2f' :
                                '#1976d2',
-                        px: 2,
-                        py: 1.5,
+                        px: { xs: 1.5, md: 2 },
+                        py: { xs: 1.25, md: 1.5 },
                         '& .MuiChip-label': {
                           px: 1
                         }
@@ -1144,7 +1197,7 @@ export default function EventGroup() {
 
                 {/* THÔNG TIN THỜI GIAN */}
                 <Box sx={{ 
-                  p: 2.5, 
+                  p: { xs: 2, md: 2.5 }, 
                   bgcolor: 'rgba(0,0,0,0.2)',
                   borderTop: '1px solid rgba(255,255,255,0.1)'
                 }}>
@@ -1154,12 +1207,12 @@ export default function EventGroup() {
                       alignItems: 'center',
                       bgcolor: 'rgba(255,255,255,0.1)',
                       borderRadius: 1.5,
-                      p: 1.5
+                      p: { xs: 1.25, md: 1.5 }
                     }}>
-                      <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.9)', flex: 1 }}>
+                      <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.9)', flex: 1, fontSize: { xs: '0.7rem', md: '0.75rem' } }}>
                         <b>Bắt đầu:</b>
                       </Typography>
-                      <Typography variant="caption" sx={{ color: 'white', fontWeight: 600 }}>
+                      <Typography variant="caption" sx={{ color: 'white', fontWeight: 600, fontSize: { xs: '0.7rem', md: '0.75rem' } }}>
                         {new Date(eventData.date).toLocaleDateString('vi-VN')}
                         {eventData.startTime && ` ${eventData.startTime}`}
                       </Typography>
@@ -1169,12 +1222,12 @@ export default function EventGroup() {
                       alignItems: 'center',
                       bgcolor: 'rgba(255,255,255,0.1)',
                       borderRadius: 1.5,
-                      p: 1.5
+                      p: { xs: 1.25, md: 1.5 }
                     }}>
-                      <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.9)', flex: 1 }}>
+                      <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.9)', flex: 1, fontSize: { xs: '0.7rem', md: '0.75rem' } }}>
                         <b>Kết thúc:</b>
                       </Typography>
-                      <Typography variant="caption" sx={{ color: 'white', fontWeight: 600 }}>
+                      <Typography variant="caption" sx={{ color: 'white', fontWeight: 600, fontSize: { xs: '0.7rem', md: '0.75rem' } }}>
                         {new Date(eventData.endDate || eventData.date).toLocaleDateString('vi-VN')}
                         {eventData.endTime && ` ${eventData.endTime}`}
                       </Typography>
@@ -1188,26 +1241,42 @@ export default function EventGroup() {
 
         {/* TAB 1: THÔNG TIN */}
         {currentTab === 1 && (
-          <Paper sx={{ mt: 2, p: 2 }} variant="outlined">
+          <Paper sx={{ mt: { xs: 1.5, md: 2 }, p: { xs: 2, md: 3 } }} variant="outlined">
             {/* Header & Edit Button */}
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography variant="h6">Thông tin sự kiện</Typography>
+            <Box sx={{ 
+              display: 'flex', 
+              flexDirection: { xs: 'column', sm: 'row' },
+              justifyContent: 'space-between', 
+              alignItems: { xs: 'flex-start', sm: 'center' },
+              gap: { xs: 1.5, sm: 0 }
+            }}>
+              <Typography variant="h6" sx={{ fontSize: { xs: '1.125rem', md: '1.25rem' } }}>Thông tin sự kiện</Typography>
               {isOwner && (
-                <Button startIcon={<EditIcon />} variant="contained" size="small" onClick={handleEditClick} sx={{ bgcolor: '#49BBBD' }}>
+                <Button 
+                  startIcon={<EditIcon />} 
+                  variant="contained" 
+                  size="small" 
+                  onClick={handleEditClick} 
+                  sx={{ 
+                    bgcolor: '#49BBBD',
+                    width: { xs: '100%', sm: 'auto' },
+                    fontSize: { xs: '0.8rem', sm: '0.875rem' }
+                  }}
+                >
                   Chỉnh sửa
                 </Button>
               )}
             </Box>
             
-            <Divider sx={{ my: 2 }} />
+            <Divider sx={{ my: { xs: 1.5, md: 2 } }} />
 
             {/* --- BANNER SECTION --- */}
-            <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }}>Banner sự kiện</Typography>
+            <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold', fontSize: { xs: '0.9rem', md: '1rem' } }}>Banner sự kiện</Typography>
             <Box
               sx={{
-                width: '20vw',
-                height: '20vh',
-                mb: 2,
+                width: { xs: '100%', sm: '80%', md: '60%', lg: '50%' },
+                height: { xs: '15rem', sm: '18rem', md: '20rem' },
+                mb: { xs: 1.5, md: 2 },
                 borderRadius: 1,
                 overflow: 'hidden',
                 bgcolor: '#f5f5f5',
@@ -1230,12 +1299,12 @@ export default function EventGroup() {
             </Box>
 
             {/* --- BADGE SECTION (Moved Here) --- */}
-            <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }}>Badge sự kiện</Typography>
+            <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold', fontSize: { xs: '0.9rem', md: '1rem' } }}>Badge sự kiện</Typography>
             <Box 
               sx={{ 
-                width: '20vw', // Badge thường hình vuông hoặc nhỏ hơn banner
-                height: '20vh',
-                mb: 2, 
+                width: { xs: '100%', sm: '60%', md: '40%', lg: '30%' },
+                height: { xs: '12rem', sm: '15rem', md: '18rem' },
+                mb: { xs: 1.5, md: 2 }, 
                 bgcolor: '#f5f5f5', 
                 borderRadius: 1, 
                 overflow: 'hidden', 
@@ -1252,26 +1321,26 @@ export default function EventGroup() {
               )}
             </Box>
             
-            <Divider sx={{ my: 2 }} />
+            <Divider sx={{ my: { xs: 1.5, md: 2 } }} />
             
             {/* --- DETAILS SECTION --- */}
-            <Stack spacing={1}>
-                <Typography><b>Tên sự kiện:</b> {eventData.name}</Typography>
-                <Typography sx={{ whiteSpace: 'pre-wrap', mb: 2 }}><b>Mô tả:</b> {eventData.description}</Typography>
-                <Typography><b>Địa điểm:</b> {eventData.location}</Typography>
-                <Typography><b>Ngày tổ chức:</b> {new Date(eventData.date).toLocaleDateString('vi-VN')}</Typography>
-                <Typography><b>Quyền riêng tư:</b> {eventData.privacy === 'Private' ? 'Riêng tư' : 'Công khai'}</Typography>
-                <Typography><b>Trạng thái:</b> {
+            <Stack spacing={{ xs: 1, md: 1.5 }}>
+                <Typography sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}><b>Tên sự kiện:</b> {eventData.name}</Typography>
+                <Typography sx={{ whiteSpace: 'pre-wrap', mb: { xs: 1.5, md: 2 }, fontSize: { xs: '0.875rem', md: '1rem' } }}><b>Mô tả:</b> {eventData.description}</Typography>
+                <Typography sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}><b>Địa điểm:</b> {eventData.location}</Typography>
+                <Typography sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}><b>Ngày tổ chức:</b> {new Date(eventData.date).toLocaleDateString('vi-VN')}</Typography>
+                <Typography sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}><b>Quyền riêng tư:</b> {eventData.privacy === 'Private' ? 'Riêng tư' : 'Công khai'}</Typography>
+                <Typography sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}><b>Trạng thái:</b> {
                   autoEventStatus === 'upcoming' ? 'Sắp diễn ra' :
                   autoEventStatus === 'ongoing' ? 'Đang diễn ra' :
                   autoEventStatus === 'completed' ? 'Đã hoàn thành' :
                   autoEventStatus === 'cancelled' ? 'Đã bị hủy' :
                   'Sắp diễn ra'
                 }</Typography>
-                <Typography><b>Người tạo:</b> {eventData.createdBy?.username || "Không xác định"}</Typography>
+                <Typography sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}><b>Người tạo:</b> {eventData.createdBy?.username || "Không xác định"}</Typography>
                 
                 {isOwner && eventData.privacy === 'Private' && eventData.question && (
-                    <Typography sx={{ mt: 1 }}><b>Câu hỏi tham gia:</b> {eventData.question}</Typography>
+                    <Typography sx={{ mt: 1, fontSize: { xs: '0.875rem', md: '1rem' } }}><b>Câu hỏi tham gia:</b> {eventData.question}</Typography>
                 )}
             </Stack>
           </Paper>
@@ -1279,9 +1348,9 @@ export default function EventGroup() {
 
         {/* TAB 2: THÀNH VIÊN */}
         {currentTab === 2 && (
-          <Paper sx={{ mt: 2, p: 2 }} variant="outlined">
-            <Typography variant="h6">Thành viên ({eventData?.volunteers?.length || 0})</Typography>
-            <Divider sx={{ mb: 2 }} />
+          <Paper sx={{ mt: { xs: 1.5, md: 2 }, p: { xs: 2, md: 3 } }} variant="outlined">
+            <Typography variant="h6" sx={{ fontSize: { xs: '1.125rem', md: '1.25rem' } }}>Thành viên ({eventData?.volunteers?.length || 0})</Typography>
+            <Divider sx={{ mb: { xs: 1.5, md: 2 } }} />
             <List>
                 {eventData.volunteers?.map((member) => {
                     const memberId = member._id || member;
@@ -1380,15 +1449,37 @@ export default function EventGroup() {
 
         {/* TAB 3: YÊU CẦU THAM GIA */}
         {currentTab === 3 && isOwner && (
-          <Paper sx={{ mt: 2 }} variant="outlined">
-            <Typography variant="h6" sx={{ p: 2 }}>Yêu cầu ({pendingRequests.length})</Typography>
-            <Divider />
+          <Paper sx={{ mt: { xs: 1.5, md: 2 }, p: { xs: 2, md: 3 } }} variant="outlined">
+            <Typography variant="h6" sx={{ fontSize: { xs: '1.125rem', md: '1.25rem' } }}>Yêu cầu ({pendingRequests.length})</Typography>
+            <Divider sx={{ mb: { xs: 1.5, md: 2 } }} />
             <List>
               {pendingRequests.map(req => (
                 <ListItem key={req._id} secondaryAction={
-                  <Stack direction="row" spacing={1}>
-                    <Button variant="contained" size="small" sx={{ bgcolor: "#49BBBD" }} onClick={() => handleRespondToRequest(req._id, "approve")}>Duyệt</Button>
-                    <Button variant="outlined" color="error" size="small" onClick={() => handleRespondToRequest(req._id, 'reject')}>Từ chối</Button>
+                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+                    <Button 
+                      variant="contained" 
+                      size="small" 
+                      sx={{ 
+                        bgcolor: "#49BBBD",
+                        fontSize: { xs: '0.75rem', sm: '0.8125rem' },
+                        minWidth: { xs: '5rem', sm: 'auto' }
+                      }} 
+                      onClick={() => handleRespondToRequest(req._id, "approve")}
+                    >
+                      Duyệt
+                    </Button>
+                    <Button 
+                      variant="outlined" 
+                      color="error" 
+                      size="small" 
+                      sx={{
+                        fontSize: { xs: '0.75rem', sm: '0.8125rem' },
+                        minWidth: { xs: '5rem', sm: 'auto' }
+                      }}
+                      onClick={() => handleRespondToRequest(req._id, 'reject')}
+                    >
+                      Từ chối
+                    </Button>
                   </Stack>
                 }>
                    <ListItemAvatar>
@@ -1398,12 +1489,11 @@ export default function EventGroup() {
                 </ListItem>
               ))}
               {pendingRequests.length === 0 && (
-                  <Typography textAlign="center" sx={{p: 2, color: 'text.secondary'}}>Không có yêu cầu nào.</Typography>
+                  <Typography textAlign="center" sx={{ p: { xs: 1.5, md: 2 }, color: 'text.secondary', fontSize: { xs: '0.875rem', md: '1rem' } }}>Không có yêu cầu nào.</Typography>
               )}
             </List>
           </Paper>
         )}
-      </Box>
 
       {/* MODAL JOIN */}
       <Dialog open={openJoinModal} onClose={() => setOpenJoinModal(false)} maxWidth="sm" fullWidth>
@@ -1420,13 +1510,13 @@ export default function EventGroup() {
 
       {/* DIALOG XÁC NHẬN THAY ĐỔI BADGE */}
       <Dialog open={badgeConfirmOpen} onClose={handleCancelBadgeUpload} maxWidth="sm" fullWidth>
-        <DialogTitle>Bạn có chắc chắn muốn thay đổi Badge sự kiện?</DialogTitle>
+        <DialogTitle sx={{ fontSize: { xs: '1rem', md: '1.25rem' } }}>Bạn có chắc chắn muốn thay đổi Badge sự kiện?</DialogTitle>
         <DialogContent>
-          <Box sx={{ textAlign: 'center', py: 2 }}>
+          <Box sx={{ textAlign: 'center', py: { xs: 1.5, md: 2 } }}>
             {pendingBadgePreview ? (
-              <img src={pendingBadgePreview} alt="Preview" style={{ maxWidth: '100%', maxHeight: 300 }} />
+              <img src={pendingBadgePreview} alt="Preview" style={{ maxWidth: '100%', maxHeight: '18.75rem' }} />
             ) : (
-              <Typography>Không có ảnh để xem trước</Typography>
+              <Typography sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>Không có ảnh để xem trước</Typography>
             )}
           </Box>
         </DialogContent>
@@ -1664,6 +1754,7 @@ export default function EventGroup() {
           eventOwnerId={eventData?.createdBy?._id || eventData?.createdBy}
         />
       )}
-    </Container>
+      </Container>
+    </Box>
   );
 }

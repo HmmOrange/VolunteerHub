@@ -1,27 +1,43 @@
+/* Responsive breakpoints using media queries */
+/* Mobile first approach */
+
 /* Giấy chứa các Tab */
 .event-group-tabs-paper {
   border-radius: 0.5rem !important;
-  margin-bottom: 1rem; /* Khoảng cách giữa Tab và nội dung */
+  margin-bottom: 1rem;
 }
 
-/* Box tạm cho bài đăng */
+/* Box tạm cho bài đăng - fully responsive */
 .temp-post-box {
-  width: min(50vw, 50rem);
-  height: min(37.5vh, 37.5rem);
-  /* Tự động căn giữa */
+  width: 100%;
+  max-width: 50rem;
+  height: auto;
+  min-height: 20rem;
   margin-left: auto;
   margin-right: auto;
-  /* Responsive */
-  max-width: 100%; 
-  
   padding: 1rem;
   border-radius: 0.5rem !important;
-  margin-bottom: 1rem; 
+  margin-bottom: 1rem;
 }
 
-/* Style riêng cho tab Thông tin (không cần chiều cao 600px) */
+/* Tablet and above */
+@media (min-width: 48rem) {
+  .temp-post-box {
+    min-height: 25rem;
+  }
+}
+
+/* Desktop and above */
+@media (min-width: 64rem) {
+  .temp-post-box {
+    width: 50vw;
+    min-height: 30rem;
+  }
+}
+
+/* Style riêng cho tab Thông tin */
 .info-tab {
   height: auto;
-  width: auto;
+  width: 100%;
   max-width: 100%;
 }

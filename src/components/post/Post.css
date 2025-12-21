@@ -1,17 +1,8 @@
 /* === BOX ĐƠN GIẢN (TRIGGER) === */
 .create-post-trigger-paper {
   width: 100%;
-  max-width: min(50rem, 100%);
-  margin-left: auto;
-  margin-right: auto;
   border-radius: 0.5rem !important;
   margin-bottom: 1rem;
-}
-
-@media (min-width: 900px) {
-  .create-post-trigger-paper {
-    width: min(50vw, 50rem);
-  }
 }
 .fake-input-button {
   flex-grow: 1;
@@ -33,19 +24,10 @@
 /* === FORM ĐẦY ĐỦ (EXPANDED) === */
 .create-post-paper {
   width: 100%;
-  max-width: min(50rem, 100%);
-  margin-left: auto;
-  margin-right: auto;
   
   padding: 1rem;
   border-radius: 0.5rem !important;
   margin-bottom: 1rem;
-}
-
-@media (min-width: 900px) {
-  .create-post-paper {
-    width: min(50vw, 50rem);
-  }
 }
 .create-post-header {
   position: relative;
@@ -81,9 +63,6 @@
 /* === POST CARD (Hiển thị) === */
 .post-card-paper {
   width: 100%;
-  max-width: min(50rem, 100%);
-  margin-left: auto;
-  margin-right: auto;
   border-radius: 0.5rem !important;
   margin-bottom: 1rem;
   padding: 1rem 1rem 0 1rem; 
@@ -93,12 +72,6 @@
   .post-card-paper {
     padding: 0.75rem 0.75rem 0 0.75rem;
     margin-bottom: 0.75rem;
-  }
-}
-
-@media (min-width: 900px) {
-  .post-card-paper {
-    width: min(50vw, 50rem);
   }
 }
 .post-header {
