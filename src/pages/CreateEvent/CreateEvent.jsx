@@ -148,7 +148,7 @@ export default function CreateEvent() {
 
   return (
     <Container maxWidth="sm">
-      <Paper elevation={3} sx={{ p: 4, mt: 12 }}>
+      <Paper elevation={3} sx={{ p: 4, mt: 12, mb: 4 }}>
         <Typography
           variant="h5"
           textAlign="center"
