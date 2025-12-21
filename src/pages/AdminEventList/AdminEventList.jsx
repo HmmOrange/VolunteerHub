@@ -16,7 +16,16 @@ import {
   MenuItem,
   Select,
   FormControl,
+  TableContainer,
+  TablePagination,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton,
+  Box,
 } from "@mui/material";
+import CloseIcon from '@mui/icons-material/Close';
 
 const API_BASE = "http://localhost:5000/api/events";
 
@@ -66,6 +75,11 @@ export default function AdminEventList() {
 
   // ===== EXPORT STATE =====
   const [exportType, setExportType] = useState("csv");
+  // pagination / details state (must be declared unconditionally)
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState(null);
   // === HÀM TÍNH TRẠNG THÁI TỰ ĐỘNG ===
   const calculateEventStatus = (event) => {
     if (!event) return 'upcoming';
@@ -125,7 +139,7 @@ export default function AdminEventList() {
   // ===== EXPORT =====
   const handleExport = () => {
     if (allEvents.length === 0) {
-      alert("Không có sự kiện để export.");
+      alert("Không có sự kiện để xuất.");
       return;
     }
 
@@ -194,29 +208,26 @@ export default function AdminEventList() {
     return (
       <Table size="small">
         <TableHead>
-          <TableRow>
-            <TableCell>Tên sự kiện</TableCell>
-            <TableCell>Người tạo</TableCell>
-            <TableCell>Ngày</TableCell>
-            <TableCell>Địa điểm</TableCell>
-            <TableCell>Riêng tư</TableCell>
-            <TableCell>Phê duyệt</TableCell>
-            <TableCell>Trạng thái</TableCell>
+          <TableRow className="table-header">
+            <TableCell width="30%">Tên sự kiện</TableCell>
+            <TableCell width="18%">Người tạo</TableCell>
+            <TableCell width="12%">Ngày</TableCell>
+            <TableCell width="15%">Địa điểm</TableCell>
+            <TableCell width="8%">Riêng tư</TableCell>
+            <TableCell width="10%">Phê duyệt</TableCell>
+            <TableCell width="7%">Trạng thái</TableCell>
             {showActions && <TableCell align="right">Hành động</TableCell>}
           </TableRow>
         </TableHead>
         <TableBody>
           {events.map((e) => (
-            <TableRow key={e._id}>
-              <TableCell>{e.name}</TableCell>
+            <TableRow key={e._id} hover sx={{ cursor: 'pointer' }} onClick={() => openEventDetails(e)}>
+              <TableCell sx={{ maxWidth: 240, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.name}</TableCell>
               <TableCell>{e.createdBy?.username}</TableCell>
-              <TableCell>
-                {new Date(e.date).toLocaleDateString("vi-VN")}
-              </TableCell>
-              <TableCell>{e.location}</TableCell>
+              <TableCell>{new Date(e.date).toLocaleDateString("vi-VN")}</TableCell>
+              <TableCell sx={{ maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.location}</TableCell>
               <TableCell>{e.privacy}</TableCell>
               <TableCell>
-                {/* ✅ FIX: render by status */}
                 <Chip
                   size="small"
                   label={
@@ -254,22 +265,8 @@ export default function AdminEventList() {
               {showActions && (
                 <TableCell align="right">
                   <Stack direction="row" spacing={1} justifyContent="flex-end">
-                    <Button
-                      size="small"
-                      variant="contained"
-                      color="success"
-                      onClick={() => handleApprove(e._id)}
-                    >
-                      Duyệt
-                    </Button>
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      color="error"
-                      onClick={() => handleReject(e._id)}
-                    >
-                      Từ chối
-                    </Button>
+                    <Button size="small" variant="contained" color="success" onClick={(ev) => { ev.stopPropagation(); handleApprove(e._id); }}>Duyệt</Button>
+                    <Button size="small" variant="outlined" color="error" onClick={(ev) => { ev.stopPropagation(); handleReject(e._id); }}>Từ chối</Button>
                   </Stack>
                 </TableCell>
               )}
@@ -279,6 +276,68 @@ export default function AdminEventList() {
       </Table>
     );
   };
+
+  // ===== PAGINATION + DETAILS HANDLERS =====
+  const handleChangePage = (event, newPage) => setPage(newPage);
+  const handleChangeRowsPerPage = (e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); };
+
+  const openEventDetails = (event) => { setSelectedEvent(event); setDetailOpen(true); };
+  const closeEventDetails = () => { setSelectedEvent(null); setDetailOpen(false); };
+
+  const renderPaginatedTable = (items, showActions = false, keyPrefix = 'table') => {
+    const start = page * rowsPerPage;
+    const end = start + rowsPerPage;
+    const pageItems = items.slice(start, end);
+
+    return (
+      <>
+        <TableContainer>
+          {renderEventTable(pageItems, showActions)}
+        </TableContainer>
+
+        <TablePagination
+          component="div"
+          count={items.length}
+          page={page}
+          onPageChange={handleChangePage}
+          rowsPerPage={rowsPerPage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
+          rowsPerPageOptions={[5, 10, 25, 50]}
+        />
+      </>
+    );
+  };
+
+  // Details dialog content
+  const EventDetailsDialog = () => (
+    <Dialog open={detailOpen} onClose={closeEventDetails} fullWidth maxWidth="md">
+      <DialogTitle>
+        {selectedEvent?.name}
+        <IconButton aria-label="close" onClick={closeEventDetails} sx={{ position: 'absolute', right: 8, top: 8 }}>
+          <CloseIcon />
+        </IconButton>
+      </DialogTitle>
+      <DialogContent dividers>
+        {selectedEvent ? (
+          <Box>
+            <Box sx={{ mb: 2 }}>
+              <img src={selectedEvent.banner ? (selectedEvent.banner.startsWith('http') ? selectedEvent.banner : `http://localhost:5000${selectedEvent.banner}`) : ''} alt="banner" style={{ width: '100%', maxHeight: 300, objectFit: 'cover', borderRadius: 6 }} />
+            </Box>
+
+            <Typography variant="subtitle1"><b>Người tạo:</b> {selectedEvent.createdBy?.username}</Typography>
+            <Typography variant="subtitle1"><b>Ngày bắt đầu:</b> {new Date(selectedEvent.date).toLocaleString('vi-VN')}</Typography>
+            <Typography variant="subtitle1"><b>Ngày kết thúc:</b> {selectedEvent.endDate ? new Date(selectedEvent.endDate).toLocaleString('vi-VN') : '-'}</Typography>
+            <Typography variant="subtitle1"><b>Địa điểm:</b> {selectedEvent.location || '-'}</Typography>
+            <Typography variant="subtitle1" sx={{ mt: 2 }}><b>Mô tả:</b></Typography>
+            <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>{selectedEvent.description || '-'}</Typography>
+          </Box>
+        ) : null}
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={closeEventDetails}>Đóng</Button>
+      </DialogActions>
+    </Dialog>
+  );
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4 }}>
@@ -293,7 +352,7 @@ export default function AdminEventList() {
             Không có sự kiện nào đang chờ duyệt.
           </Typography>
         ) : (
-          renderEventTable(pendingEvents, true)
+          renderPaginatedTable(pendingEvents, true, 'pending')
         )}
       </Paper>
 
@@ -322,7 +381,7 @@ export default function AdminEventList() {
           </FormControl>
 
           <Button variant="contained" onClick={handleExport}>
-            Export
+            Xuất
           </Button>
         </Stack>
       </Stack>
@@ -333,9 +392,10 @@ export default function AdminEventList() {
             Chưa có sự kiện nào.
           </Typography>
         ) : (
-          renderEventTable(allEvents, false)
+          renderPaginatedTable(allEvents, false, 'all')
         )}
       </Paper>
+      {EventDetailsDialog()}
     </Container>
   );
 }
