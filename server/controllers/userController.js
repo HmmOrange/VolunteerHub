@@ -174,7 +174,6 @@ export const getProfile = async (req, res) => {
       return res.status(404).json({ message: "Không tìm thấy người dùng" });
     }
 
-    // If user has badges, fetch corresponding events to get endDate
     const badges = Array.isArray(user.badges) ? user.badges : [];
     const eventIds = badges
       .map(b => (b && b.eventId ? (b.eventId._id ? b.eventId._id : b.eventId) : null))
@@ -249,8 +248,6 @@ export const updateAvatar = async (req, res) => {
 
     const avatarPath = `/uploads/avatars/${req.file.filename}`;
 
-    // Sử dụng findByIdAndUpdate với validateBeforeSave: false
-    // để tránh validate các field required khác (như fullName)
     const user = await User.findByIdAndUpdate(
       req.user._id,
       { avatar: avatarPath },
@@ -324,7 +321,6 @@ export const importUsers = async (req, res) => {
         isEmailVerified,
       } = u;
 
-      // REQUIRED CORE FIELDS
       if (!username || !email || !password) {
         skipped++;
         continue;
@@ -346,7 +342,6 @@ export const importUsers = async (req, res) => {
         email,
         password: hashedPassword,
 
-        // 🔑 REQUIRED BY SCHEMA — DEFAULT IF MISSING
         fullName: fullName?.trim() || username,
 
         // OPTIONAL FIELDS

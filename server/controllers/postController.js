@@ -49,7 +49,6 @@ export const createPost = async (req, res) => {
 
     let finalImageUrl = imageUrl;
 
-    // Nếu imageUrl là banner path, copy sang thư mục post-images
     if (imageUrl && imageUrl.startsWith("/uploads/banners/")) {
       try {
         const postImagesDir = path.join(__dirname, "../uploads/post-images");
@@ -61,12 +60,11 @@ export const createPost = async (req, res) => {
         const fileName = path.basename(imageUrl);
         const destPath = path.join(postImagesDir, fileName);
 
-        // Copy file thay vì move
         fs.copyFileSync(sourcePath, destPath);
         finalImageUrl = `/uploads/post-images/${fileName}`;
       } catch (copyErr) {
         console.error("Error copying banner to post-images:", copyErr);
-        // Nếu copy lỗi, vẫn dùng imageUrl gốc
+        
       }
     }
 
@@ -78,18 +76,16 @@ export const createPost = async (req, res) => {
     
     const populatedPost = await newPost.populate("createdBy", "username avatar role");
     
-    // --- THÔNG BÁO: Gửi thông báo cho các thành viên của event (ngoại trừ người tạo bài) ---
     try {
       const event = await Event.findById(eventId).select("volunteers name createdBy");
       if (event) {
-        // Tập hợp recipient: tất cả volunteers và cả event creator
         const recipientSet = new Set();
         if (Array.isArray(event.volunteers)) {
           event.volunteers.forEach(v => recipientSet.add(v.toString()));
         }
         if (event.createdBy) recipientSet.add(event.createdBy.toString());
 
-        // Loại bỏ người tạo bài
+        
         recipientSet.delete(user._id.toString());
 
         const message = `${user.username} đã đăng bài mới trong sự kiện "${event.name || 'Sự kiện'}"`;
@@ -139,15 +135,12 @@ export const likePost = async (req, res) => {
       post.likes = post.likes.filter(id => id.toString() !== userId.toString());
     } else {
       post.likes.push(userId);
-      
-      // --- THÔNG BÁO: User like bài viết ---
+
       if (post.createdBy.toString() !== userId.toString()) {
         await createNotificationInternal({
           recipientId: post.createdBy,
           type: "POST_LIKED",
           message: `${user.username} đã thích bài viết của bạn.`,
-          
-          // [SỬA] Trỏ thẳng về Event
           relatedId: post.eventId, 
           relatedModel: "Event"
         });
@@ -262,14 +255,11 @@ export const deletePost = async (req, res) => {
       return res.status(403).json({ message: "Bạn không có quyền xóa bài đăng này" });
     }
 
-    // --- THÔNG BÁO: Nếu bài bị xóa bởi người khác ---
     if (!isPostOwner) {
        await createNotificationInternal({
          recipientId: post.createdBy,
          type: "POST_DELETED_BY_OWNER",
          message: `Bài viết của bạn trong sự kiện "${event ? event.name : 'Unknown'}" đã bị quản trị viên xóa.`,
-         
-         // [ĐÚNG RỒI] Vẫn giữ nguyên trỏ về Event
          relatedId: post.eventId, 
          relatedModel: "Event"
        });
@@ -320,15 +310,12 @@ export const getPostsByEvents = async (req, res) => {
       return res.status(400).json({ message: "Missing eventIds parameter" });
     }
 
-    // Parse eventIds (có thể là string hoặc array)
     const eventIdsArray = Array.isArray(eventIds) ? eventIds.split(',') : eventIds.split(',');
     
     const skip = (parseInt(page) - 1) * parseInt(limit);
     
-    // Đếm tổng số posts
     const total = await Post.countDocuments({ eventId: { $in: eventIdsArray } });
     
-    // Lấy posts với pagination
     const posts = await Post.find({ eventId: { $in: eventIdsArray } })
       .populate("createdBy", "username avatar role")
       .populate("eventId", "name slug _id")
@@ -336,7 +323,6 @@ export const getPostsByEvents = async (req, res) => {
       .skip(skip)
       .limit(parseInt(limit));
 
-    // Thêm commentCount cho mỗi post
     const postsWithCommentCount = await Promise.all(
       posts.map(async (post) => {
         const commentCount = await Comment.countDocuments({ postId: post._id });
@@ -365,14 +351,10 @@ export const getPostsByEvents = async (req, res) => {
 export const getAllPublicPosts = async (req, res) => {
   try {
     const { page = 1, limit = 10, userId } = req.query;
-    
     const skip = (parseInt(page) - 1) * parseInt(limit);
-    
-    // Lấy tất cả events đã approved
     const approvedEvents = await Event.find({ status: "approved" }).select('_id volunteers');
     const approvedEventIds = approvedEvents.map(e => e._id);
     
-    // Tìm events mà user đã join (nếu có userId)
     let joinedEventIds = [];
     if (userId) {
       joinedEventIds = approvedEvents
@@ -380,21 +362,15 @@ export const getAllPublicPosts = async (req, res) => {
         .map(e => e._id);
     }
     
-    // Query để lấy posts:
-    // 1. Bài đăng announcement (isEventAnnouncement = true) từ mọi event → hiển thị cho tất cả
-    // 2. Bài đăng thường từ events mà user đã join → chỉ hiển thị cho user đó
     let query;
     
     if (userId && joinedEventIds.length > 0) {
-      // Nếu user đã đăng nhập và join events
       query = {
         $or: [
-          // Bài announcement từ TẤT CẢ events approved
           {
             eventId: { $in: approvedEventIds },
             isEventAnnouncement: true
           },
-          // Bài thường từ events đã join (bao gồm cả null/undefined/false)
           {
             eventId: { $in: joinedEventIds },
             $or: [
@@ -406,34 +382,29 @@ export const getAllPublicPosts = async (req, res) => {
         ]
       };
     } else {
-      // Nếu chưa đăng nhập hoặc chưa join event nào
       query = {
         eventId: { $in: approvedEventIds },
-        isEventAnnouncement: true // Chỉ hiển thị announcement
+        isEventAnnouncement: true
       };
     }
     
-    // Đếm tổng số posts
     const total = await Post.countDocuments(query);
-    
-    // Lấy posts với pagination, ưu tiên announcement
+
     const posts = await Post.find(query)
       .populate("createdBy", "username avatar role")
       .populate("eventId", "name slug _id volunteers")
       .sort({ 
-        isEventAnnouncement: -1, // Ưu tiên announcement lên trước
+        isEventAnnouncement: -1, 
         createdAt: -1 
       })
       .skip(skip)
       .limit(parseInt(limit));
 
-    // Thêm commentCount và check xem user đã join event chưa
     const postsWithCommentCount = await Promise.all(
       posts.map(async (post) => {
         const commentCount = await Comment.countDocuments({ postId: post._id });
         const postObj = post.toObject();
         
-        // Check nếu user đã join event
         if (userId && postObj.eventId.volunteers) {
           postObj.userJoinedEvent = postObj.eventId.volunteers.some(
             v => v.toString() === userId
