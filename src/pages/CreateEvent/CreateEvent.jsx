@@ -19,6 +19,7 @@ import {
 } from "@mui/material";
 
 import "./CreateEvent.css";
+import validators from "../../utils/validators";
 
 const PRIMARY_COLOR = "#49BBBD";
 
@@ -79,6 +80,10 @@ export default function CreateEvent() {
       navigate("/login");
       return;
     }
+
+    // basic validation
+    const nameErr = validators.isRequired(form.name);
+    if (nameErr) { alert(nameErr); return; }
 
     if (!form.date || !form.endDate) {
       alert("Ngày bắt đầu và ngày kết thúc là bắt buộc.");
