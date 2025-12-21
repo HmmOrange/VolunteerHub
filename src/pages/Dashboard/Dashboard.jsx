@@ -97,10 +97,13 @@ export default function Dashboard() {
         } : p.event
       }));
       
+      // Shuffle posts ngẫu nhiên
+      const shuffledPosts = [...postsWithEventInfo].sort(() => Math.random() - 0.5);
+      
       // Thêm vào mảng với deduplication dựa trên _id
       setFeedPosts(prev => {
         const existingIds = new Set(prev.map(p => p._id));
-        const newPosts = postsWithEventInfo.filter(p => !existingIds.has(p._id));
+        const newPosts = shuffledPosts.filter(p => !existingIds.has(p._id));
         return [...prev, ...newPosts];
       });
       

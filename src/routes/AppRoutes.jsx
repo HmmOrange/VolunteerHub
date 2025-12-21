@@ -9,6 +9,7 @@ import CreateEvent from "../pages/CreateEvent/CreateEvent";
 import EventGroup from "../pages/EventGroup/EventGroup";
 import UserList from "../pages/AdminUserList/AdminUserList";
 import Events from "../pages/Events/Events";
+import Discovery from "../pages/Discovery/Discovery";
 import Profile from "../pages/Profile/Profile";
 import AdminEventList from "../pages/AdminEventList/AdminEventList";
 import SearchResults from "../pages/SearchResults/SearchResults";
@@ -22,6 +23,7 @@ export default function AppRoutes() {
         <Route element={<Layout />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/events" element={<Events />} />
+          <Route path="/discover" element={<Discovery />} />
           <Route path="/event/create" element={<CreateEvent />} />
           <Route path="/event/:slug" element={<EventGroup />} />
           <Route path="/admin/users" element={<UserList />} />

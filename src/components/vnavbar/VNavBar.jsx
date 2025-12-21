@@ -48,7 +48,7 @@ export default function VNavBar({ isOpen, drawerWidth, drawerVariant, onClose })
         <ListItem disablePadding>
           <ListItemButton onClick={() => handleNavigate("/events")}>
             <ListItemIcon><EventOutlined /></ListItemIcon>
-            <ListItemText primary="Sự kiện" sx={{ mt: 0.95 }} />
+            <ListItemText primary="Sự kiện của bạn" sx={{ mt: 0.95 }} />
           </ListItemButton>
         </ListItem>
 
