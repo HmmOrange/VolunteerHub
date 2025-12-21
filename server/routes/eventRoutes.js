@@ -17,14 +17,14 @@ import {
   searchEvents,
   getUserEvents
 } from "../controllers/eventController.js";
-import { protect } from "../middleware/authMiddleware.js";
+import { protect, adminOnly, optionalAuth } from "../middleware/authMiddleware.js";
 import { uploadBanner } from "../middleware/uploadBanner.js";
 
 const router = express.Router();
 
 // ... (Các route cũ giữ nguyên) ...
 router.post("/create", createEvent);
-router.get("/all", getAllEvents);
+router.get("/all", optionalAuth, getAllEvents); // Sử dụng optionalAuth
 router.get("/search", searchEvents); // Route search mới
 router.put("/update", updateEvent);
 router.delete("/delete", deleteEvent);
@@ -35,21 +35,17 @@ router.post("/request/respond", respondToJoinRequest);
 router.get("/:eventId/requests", getPendingRequests);
 
 // ===== ADMIN =====
-// (Giữ nguyên logic debug của bạn tôi không sửa)
-router.get("/admin/pending", async (req, res) => {
-  req.query.role = "admin";
-  req.query.status = "pending";
+// Bảo vệ với protect và adminOnly middleware
+router.get("/admin/pending", protect, adminOnly, async (req, res) => {
+  req.query.status = "pending"; // Chỉ cần set status
   return getAllEvents(req, res);
 });
 
-router.get("/admin/all", async (req, res) => {
-  req.query.role = "admin";
-  return getAllEvents(req, res);
-});
+router.get("/admin/all", protect, adminOnly, getAllEvents); // Gọi trực tiếp
 
 // 2. SỬA ĐOẠN NÀY: Tách ra để gửi đúng thông báo
-router.put("/admin/:id/approved", approveEvent); // Gọi hàm duyệt (gửi thông báo chúc mừng)
-router.put("/admin/:id/rejected", rejectEvent);  // Gọi hàm từ chối (gửi thông báo chia buồn)
+router.put("/admin/:id/approved", protect, adminOnly, approveEvent); // Gọi hàm duyệt (gửi thông báo chúc mừng)
+router.put("/admin/:id/rejected", protect, adminOnly, rejectEvent);  // Gọi hàm từ chối (gửi thông báo chia buồn)
 
 // Route cập nhật trạng thái tham gia
 router.put("/:slug/attendance", updateMemberAttendance);

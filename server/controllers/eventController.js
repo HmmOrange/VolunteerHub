@@ -1,9 +1,77 @@
 import Event from "../models/Event.js";
 import User from "../models/User.js";
 import JoinRequest from "../models/JoinRequest.js";
+import Post from "../models/Post.js";
 import slugify from "slugify";
 import mongoose from "mongoose";
 import { createNotificationInternal } from "../controllers/notificationController.js"; // Import Notification
+
+// ---------------------- HELPER: TỰ ĐỘNG TẠO BÀI ĐĂNG CHO SỰ KIỆN ----------------------
+const createEventPost = async (event) => {
+  try {
+    // Kiểm tra xem đã có bài announcement cho event này chưa
+    const existingAnnouncement = await Post.findOne({
+      eventId: event._id,
+      isEventAnnouncement: true
+    });
+    
+    if (existingAnnouncement) {
+      console.log(`Bài announcement cho sự kiện ${event.name} đã tồn tại, bỏ qua tạo mới.`);
+      return existingAnnouncement;
+    }
+    
+    // Tạo nội dung bài đăng từ thông tin sự kiện
+    const startDate = new Date(event.date);
+    const endDate = new Date(event.endDate);
+    
+    const formatDate = (date) => {
+      return date.toLocaleDateString('vi-VN', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    };
+    
+    const formatTime = (time) => {
+      return time || '';
+    };
+    
+    let content = `🎉 Sự kiện mới: ${event.name}\n\n`;
+    
+    if (event.description) {
+      content += `📝 Mô tả: ${event.description}\n\n`;
+    }
+    
+    content += `📅 Thời gian bắt đầu: ${formatDate(startDate)} lúc ${formatTime(event.startTime)}\n`;
+    content += `📅 Thời gian kết thúc: ${formatDate(endDate)} lúc ${formatTime(event.endTime)}\n\n`;
+    
+    if (event.location) {
+      content += `📍 Địa điểm: ${event.location}\n\n`;
+    }
+    
+    content += `Hãy tham gia cùng chúng tôi! 💪`;
+    
+    // Tạo bài đăng công khai
+    const newPost = new Post({
+      content,
+      imageUrl: event.banner || null,
+      isAnonymous: false,
+      isEventAnnouncement: true, // Đánh dấu là bài đăng tự động
+      eventId: event._id,
+      createdBy: event.createdBy,
+      likes: []
+    });
+    
+    await newPost.save();
+    console.log(`Đã tạo bài đăng tự động cho sự kiện: ${event.name}`);
+    
+    return newPost;
+  } catch (error) {
+    console.error("Lỗi khi tạo bài đăng tự động:", error);
+    // Không throw error để không làm gián đoạn việc tạo event
+  }
+};
 
 // ---------------------- CREATE EVENT (CÓ THÔNG BÁO CHO ADMIN) ----------------------
 export const createEvent = async (req, res) => {
@@ -76,6 +144,16 @@ export const createEvent = async (req, res) => {
     await newEvent.save();
 
     // ============================================================
+    // 🎉 TỰ ĐỘNG TẠO BÀI ĐĂNG CÔNG KHAI CHO SỰ KIỆN (MỚI THÊM)
+    // ============================================================
+    try {
+      await createEventPost(newEvent);
+    } catch (postError) {
+      console.error("Lỗi tạo bài đăng cho sự kiện:", postError);
+      // Không làm gián đoạn việc tạo event
+    }
+
+    // ============================================================
     // 🔔 GỬI THÔNG BÁO CHO ADMIN (MỚI THÊM)
     // ============================================================
     try {
@@ -122,22 +200,26 @@ export const createEvent = async (req, res) => {
 // Sửa lại để hỗ trợ lọc theo status cho Admin
 export const getAllEvents = async (req, res) => {
   try {
-    const { status, role } = req.query; 
+    const { status } = req.query;
     let filter = {};
+    
+    // Kiểm tra user role từ req.user (được set bởi protect middleware)
+    const isAdmin = req.user && req.user.role === "admin";
     
     // Nếu có status (ví dụ admin truyền "pending") thì lọc
     if (status) {
       filter.status = status;
-    } else if (role !== "admin") {
+    } else if (!isAdmin) {
       // Nếu không phải admin và không chỉ định status, chỉ lấy approved
       filter.status = "approved";
     }
+    // Nếu là admin và không có status, lấy tất cả
 
     const events = await Event.find(filter)
       .populate("createdBy", "username role avatar")
       .sort({ createdAt: -1 });
 
-    console.log(`getAllEvents - filter:`, filter, `- found ${events.length} events`);
+    console.log(`getAllEvents - isAdmin: ${isAdmin}, filter:`, filter, `- found ${events.length} events`);
     res.json(events);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -963,6 +1045,26 @@ export const uploadEventBanner = async (req, res) => {
     const bannerPath = `/uploads/banners/${req.file.filename}`;
     event.banner = bannerPath;
     await event.save();
+
+    // ============================================================
+    // 🎉 CẬP NHẬT BÀI ĐĂNG TỰ ĐỘNG VỚI BANNER MỚI
+    // ============================================================
+    try {
+      // Tìm bài đăng tự động (announcement) của sự kiện
+      const eventPost = await Post.findOne({
+        eventId: event._id,
+        isEventAnnouncement: true
+      });
+
+      if (eventPost) {
+        eventPost.imageUrl = bannerPath;
+        await eventPost.save();
+        console.log(`Đã cập nhật banner cho bài đăng announcement của sự kiện: ${event.name}`);
+      }
+    } catch (postUpdateError) {
+      console.error("Lỗi cập nhật bài đăng với banner:", postUpdateError);
+      // Không làm gián đoạn việc upload banner
+    }
 
     res.json({
       message: "Cập nhật banner thành công",

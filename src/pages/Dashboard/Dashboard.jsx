@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom"; 
 import { getAllEvents } from "../../api/Events";
-import { getPostsByEventsPaginated } from "../../api/Posts";
+import { getAllPublicPosts } from "../../api/Posts";
 import {
   Card,
   CardContent,
@@ -78,13 +78,13 @@ export default function Dashboard() {
     return 'completed';
   };
 
-  // Hàm load posts với pagination
+  // Hàm load posts với pagination - HIỂN THỊ TẤT CẢ POSTS CÔNG KHAI
   const loadMorePosts = useCallback(async () => {
-    if (loadingPosts || !hasMorePosts || joinedEventIds.length === 0) return;
+    if (loadingPosts || !hasMorePosts) return;
     
     setLoadingPosts(true);
     try {
-      const response = await getPostsByEventsPaginated(joinedEventIds, postsPage, 5);
+      const response = await getAllPublicPosts(postsPage, 5, userId);
       
       // Map posts để thêm event info
       const postsWithEventInfo = response.posts.map(p => ({
@@ -97,7 +97,13 @@ export default function Dashboard() {
         } : p.event
       }));
       
-      setFeedPosts(prev => [...prev, ...postsWithEventInfo]);
+      // Thêm vào mảng với deduplication dựa trên _id
+      setFeedPosts(prev => {
+        const existingIds = new Set(prev.map(p => p._id));
+        const newPosts = postsWithEventInfo.filter(p => !existingIds.has(p._id));
+        return [...prev, ...newPosts];
+      });
+      
       setHasMorePosts(response.hasMore);
       setPostsPage(prev => prev + 1);
     } catch (error) {
@@ -105,7 +111,7 @@ export default function Dashboard() {
     } finally {
       setLoadingPosts(false);
     }
-  }, [loadingPosts, hasMorePosts, joinedEventIds, postsPage]);
+  }, [loadingPosts, hasMorePosts, postsPage, userId]);
 
   useEffect(() => {
     if (!userId) return;
@@ -250,12 +256,12 @@ export default function Dashboard() {
     })();
   }, [userId]);
 
-  // Load posts ban đầu khi có joinedEventIds
+  // Load posts ban đầu - TẤT CẢ POSTS CÔNG KHAI
   useEffect(() => {
-    if (joinedEventIds.length > 0 && feedPosts.length === 0) {
+    if (feedPosts.length === 0 && userId) {
       loadMorePosts();
     }
-  }, [joinedEventIds]);
+  }, [userId]);
 
   // Intersection Observer cho infinite scroll
   useEffect(() => {

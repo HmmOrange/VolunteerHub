@@ -15,6 +15,10 @@ const postSchema = new Schema(
       type: Boolean,
       default: false,
     },
+    isEventAnnouncement: {
+      type: Boolean,
+      default: false, // true nếu là bài đăng tự động từ sự kiện
+    },
     createdBy: {
       type: Schema.Types.ObjectId,
       ref: "User", // Tham chiếu đến model 'User'

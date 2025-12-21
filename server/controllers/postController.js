@@ -244,7 +244,7 @@ export const getPostsByEvents = async (req, res) => {
     }
 
     // Parse eventIds (có thể là string hoặc array)
-    const eventIdsArray = Array.isArray(eventIds) ? eventIds : eventIds.split(',');
+    const eventIdsArray = Array.isArray(eventIds) ? eventIds.split(',') : eventIds.split(',');
     
     const skip = (parseInt(page) - 1) * parseInt(limit);
     
@@ -264,6 +264,101 @@ export const getPostsByEvents = async (req, res) => {
       posts.map(async (post) => {
         const commentCount = await Comment.countDocuments({ postId: post._id });
         return { ...post.toObject(), commentCount: commentCount };
+      })
+    );
+
+    res.status(200).json({
+      posts: postsWithCommentCount,
+      currentPage: parseInt(page),
+      totalPages: Math.ceil(total / parseInt(limit)),
+      total,
+      hasMore: skip + posts.length < total
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// 9. Lấy tất cả bài đăng công khai (cho Dashboard) - bao gồm cả bài từ events chưa join
+export const getAllPublicPosts = async (req, res) => {
+  try {
+    const { page = 1, limit = 10, userId } = req.query;
+    
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    
+    // Lấy tất cả events đã approved
+    const approvedEvents = await Event.find({ status: "approved" }).select('_id volunteers');
+    const approvedEventIds = approvedEvents.map(e => e._id);
+    
+    // Tìm events mà user đã join (nếu có userId)
+    let joinedEventIds = [];
+    if (userId) {
+      joinedEventIds = approvedEvents
+        .filter(event => event.volunteers && event.volunteers.some(v => v.toString() === userId))
+        .map(e => e._id);
+    }
+    
+    // Query để lấy posts:
+    // 1. Bài đăng announcement (isEventAnnouncement = true) từ mọi event → hiển thị cho tất cả
+    // 2. Bài đăng thường từ events mà user đã join → chỉ hiển thị cho user đó
+    let query;
+    
+    if (userId && joinedEventIds.length > 0) {
+      // Nếu user đã đăng nhập và join events
+      query = {
+        $or: [
+          // Bài announcement từ TẤT CẢ events approved
+          {
+            eventId: { $in: approvedEventIds },
+            isEventAnnouncement: true
+          },
+          // Bài thường từ events đã join (bao gồm cả null/undefined/false)
+          {
+            eventId: { $in: joinedEventIds },
+            $or: [
+              { isEventAnnouncement: { $exists: false } },
+              { isEventAnnouncement: null },
+              { isEventAnnouncement: false }
+            ]
+          }
+        ]
+      };
+    } else {
+      // Nếu chưa đăng nhập hoặc chưa join event nào
+      query = {
+        eventId: { $in: approvedEventIds },
+        isEventAnnouncement: true // Chỉ hiển thị announcement
+      };
+    }
+    
+    // Đếm tổng số posts
+    const total = await Post.countDocuments(query);
+    
+    // Lấy posts với pagination, ưu tiên announcement
+    const posts = await Post.find(query)
+      .populate("createdBy", "username avatar role")
+      .populate("eventId", "name slug _id volunteers")
+      .sort({ 
+        isEventAnnouncement: -1, // Ưu tiên announcement lên trước
+        createdAt: -1 
+      })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    // Thêm commentCount và check xem user đã join event chưa
+    const postsWithCommentCount = await Promise.all(
+      posts.map(async (post) => {
+        const commentCount = await Comment.countDocuments({ postId: post._id });
+        const postObj = post.toObject();
+        
+        // Check nếu user đã join event
+        if (userId && postObj.eventId.volunteers) {
+          postObj.userJoinedEvent = postObj.eventId.volunteers.some(
+            v => v.toString() === userId
+          );
+        }
+        
+        return { ...postObj, commentCount };
       })
     );
 

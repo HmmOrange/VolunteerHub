@@ -55,7 +55,8 @@ export default function AdminEventList() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/all`, {
+      // Sử dụng endpoint admin để lấy tất cả events
+      const res = await fetch(`${API_BASE}/admin/all`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
