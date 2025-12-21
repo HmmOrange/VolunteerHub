@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import {
   Box, Typography, Paper, Divider, Tabs, Tab, Container, Button,
   CircularProgress, List, ListItem, ListItemAvatar, Avatar, ListItemText,
@@ -23,6 +23,7 @@ import PostCard from "../../components/post/PostCard";
 import PostModal from "../../components/post/PostModal";
 import eventGroupAvatar from "../../assets/img/event_group.jpg";
 
+import EventGroupVNavBar from "./EventGroupVNavBar";
 import "./EventGroup.css";
 
 export default function EventGroup() {
@@ -31,6 +32,7 @@ export default function EventGroup() {
   
   const currentUserId = localStorage.getItem("userId");
   const currentUserUsername = localStorage.getItem("username"); 
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // === STATE ===
   const [eventData, setEventData] = useState(null);
@@ -226,6 +228,13 @@ export default function EventGroup() {
       })();
     }
   }, [eventData, currentTab, isJoined]);
+
+  // Sync tab from query param (?tab=)
+  useEffect(() => {
+    const t = parseInt(searchParams.get('tab') || '0', 10);
+    if (!isNaN(t) && t !== currentTab) setCurrentTab(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   useEffect(() => {
     if (eventData?.slug && isOwner && currentTab === 3) {
@@ -762,7 +771,14 @@ export default function EventGroup() {
       {/* HEADER TABS */}
       <Paper className="event-group-tabs-paper" elevation={0} variant="outlined" sx={{ mb: 2 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 2 }}>
-          <Tabs value={currentTab} onChange={(e, v) => setCurrentTab(v)} sx={{ flexGrow: 1, '& .Mui-selected': { color: '#49BBBD !important' }, '& .MuiTabs-indicator': { backgroundColor: '#49BBBD' } }}>
+          <Tabs
+            value={currentTab}
+            onChange={(e, v) => {
+              setCurrentTab(v);
+              try { setSearchParams({ tab: String(v) }); } catch (e) { /* ignore */ }
+            }}
+            sx={{ flexGrow: 1, '& .Mui-selected': { color: '#49BBBD !important' }, '& .MuiTabs-indicator': { backgroundColor: '#49BBBD' } }}
+          >
             <Tab label="Bài đăng" />
             <Tab label="Thông tin" />
             <Tab label="Thành viên" />

@@ -47,7 +47,7 @@ const eventSchema = new mongoose.Schema(
     description: String,
     banner: {
       type: String,
-      default: null,
+      default: "/uploads/banners/default.jpg",
     },
 
     // --- QUYỀN RIÊNG TƯ ---
