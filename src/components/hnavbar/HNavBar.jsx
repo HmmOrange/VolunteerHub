@@ -151,11 +151,6 @@ export default function HNavbar({ onToggleVNavBar }) {
   }
 
   const handleAddEvent = () => navigate("/event/create");
-  
-  const handleUserList = () => {
-    handleProfileMenuClose();
-    navigate("/admin/users");
-  };
 
   // === HANDLERS SEARCH ===
   const handleSearchChange = (e) => {
