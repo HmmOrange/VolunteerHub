@@ -14,7 +14,8 @@ import {
   rejectEvent,
   updateMemberAttendance,
   uploadEventBanner,
-  searchEvents
+  searchEvents,
+  getUserEvents
 } from "../controllers/eventController.js";
 import { protect } from "../middleware/authMiddleware.js";
 import { uploadBanner } from "../middleware/uploadBanner.js";
@@ -52,6 +53,9 @@ router.put("/admin/:id/rejected", rejectEvent);  // Gọi hàm từ chối (gử
 
 // Route cập nhật trạng thái tham gia
 router.put("/:slug/attendance", updateMemberAttendance);
+
+// Route lấy các sự kiện user đã tham gia
+router.get("/user/:userId", getUserEvents);
 
 // Route upload banner (file upload)
 router.put("/:slug/banner", protect, uploadBanner.single("banner"), uploadEventBanner);

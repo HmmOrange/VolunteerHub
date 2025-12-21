@@ -972,3 +972,31 @@ export const uploadEventBanner = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+// ---------------------- GET USER'S JOINED EVENTS ----------------------
+export const getUserEvents = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    if (!userId) {
+      return res.status(400).json({ message: "User ID is required" });
+    }
+
+    // Tìm tất cả events mà user đã join (có trong volunteers array)
+    const events = await Event.find({
+      volunteers: userId,
+      status: "approved" // Chỉ lấy events đã được duyệt
+    })
+      .populate("createdBy", "username email avatar role")
+      .sort({ date: 1 }); // Sắp xếp theo ngày tăng dần
+
+    res.json({
+      message: "Lấy danh sách sự kiện thành công",
+      events
+    });
+  } catch (err) {
+    console.error("Get User Events Error:", err);
+    res.status(500).json({ message: err.message });
+  }
+};
+

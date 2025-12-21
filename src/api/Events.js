@@ -212,3 +212,14 @@ export const uploadBanner = async (slug, file) => {
   }
   return res.json();
 };
+
+// --- GET USER'S JOINED EVENTS ---
+export const getUserEvents = async (userId) => {
+  const res = await fetch(`${API_URL}/user/${userId}`, {
+    method: "GET",
+    headers: getHeaders(),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.message || "Lỗi khi tải sự kiện của người dùng");
+  return json;
+};
