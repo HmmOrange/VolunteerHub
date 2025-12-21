@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Layout from "../components/layout/Layout"; 
 import Landing from "../pages/Landing/Landing";
 import Register from "../pages/Register/Register";
-import Login from "../pages/Login/Login";
+import Login from "../pages/login/Login";
 import Dashboard from "../pages/Dashboard/Dashboard";
 import CreateEvent from "../pages/CreateEvent/CreateEvent";
 import EventGroup from "../pages/EventGroup/EventGroup";

@@ -1417,9 +1417,6 @@ export default function EventGroup() {
                     
                     // Kiểm tra trạng thái sự kiện để hiển thị attendance options
                     const currentEventStatus = autoEventStatus || calculateEventStatus(eventData);
-                    // Only allow marking attendance after the event is completed
-                    const canMarkAttendance = isOwner && memberId !== currentUserId &&
-                                             (currentEventStatus === 'completed');
 
                     return (
                         <ListItem key={memberId} secondaryAction={

@@ -588,6 +588,50 @@ export const updateEvent = async (req, res) => {
         { new: true } 
     );
 
+    // Nếu sự kiện được chuyển sang trạng thái 'completed', tự động trao badge cho chủ sự kiện
+    try {
+      const becameCompleted = (updateFields.eventStatus && updateFields.eventStatus === 'completed') || (updatedEvent.eventStatus === 'completed');
+      if (becameCompleted) {
+        const owner = await User.findById(updatedEvent.createdBy);
+        if (owner) {
+          owner.badges = owner.badges || [];
+          const existing = owner.badges.find(b => b.eventId && b.eventId.toString() === updatedEvent._id.toString());
+          const eventBadge = updatedEvent.badge || null;
+          if (!existing) {
+            owner.badges.push({
+              eventId: updatedEvent._id,
+              eventName: updatedEvent.name,
+              level: 1,
+              image: eventBadge,
+              visible: true,
+              eventEndDate: updatedEvent.endDate || updatedEvent.date
+            });
+          } else {
+            existing.image = eventBadge;
+            existing.eventName = updatedEvent.name;
+            existing.eventEndDate = updatedEvent.endDate || updatedEvent.date;
+            existing.level = existing.level || 1;
+          }
+          await owner.save();
+
+          // Tạo thông báo cho owner
+          try {
+            await createNotificationInternal({
+              recipientId: owner._id,
+              type: 'AWARDED_BADGE',
+              message: `Bạn đã nhận được Badge cho sự kiện "${updatedEvent.name}".`,
+              relatedId: updatedEvent._id,
+              relatedModel: 'Event'
+            });
+          } catch (e) {
+            console.warn('Failed to notify owner about badge award:', e);
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Error awarding badge to event owner on completion:', e);
+    }
+
     res.json(updatedEvent);
   } catch (err) {
     res.status(500).json({ message: err.message });
