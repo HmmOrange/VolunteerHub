@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useToast } from "../../context/ToastContext";
 import { useNavigate } from "react-router-dom";
 import {
   Dialog, DialogContent, Box, Avatar, Typography, IconButton, CardMedia, Button, Divider,
@@ -22,6 +23,7 @@ export default function PostModal({ open, onClose, post, onPostDeleted, onPostUp
 
   const currentUserId = localStorage.getItem("userId"); 
   const currentUsername = localStorage.getItem("username");
+  const { showToast } = useToast();
 
   const [likes, setLikes] = useState(post?.likes || []); 
   const isLiked = likes.includes(currentUserId);
@@ -112,7 +114,7 @@ export default function PostModal({ open, onClose, post, onPostDeleted, onPostUp
   };
 
   const handleLike = async () => {
-    if (!currentUserId) return alert("Cần đăng nhập");
+    if (!currentUserId) { showToast("Cần đăng nhập", 'warning'); return; }
     const newLikes = isLiked ? likes.filter(id => id !== currentUserId) : [...likes, currentUserId]; 
     setLikes(newLikes);
     try { await likePost(post._id, currentUsername); } 
@@ -131,7 +133,7 @@ export default function PostModal({ open, onClose, post, onPostDeleted, onPostUp
         onClose();
       } catch (error) {
         console.error("Lỗi xóa:", error); 
-        alert("Xóa thất bại.");
+        showToast("Xóa thất bại.", 'error');
       }
     }
   };
@@ -147,7 +149,7 @@ export default function PostModal({ open, onClose, post, onPostDeleted, onPostUp
       setIsEditing(false); 
     } catch (error) { 
       console.error("Lỗi update:", error); 
-      alert("Update thất bại."); 
+      showToast("Update thất bại.", 'error'); 
     }
   };
 

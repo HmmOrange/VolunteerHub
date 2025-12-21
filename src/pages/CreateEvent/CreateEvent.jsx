@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useToast } from "../../context/ToastContext";
 import { useNavigate } from "react-router-dom";
 import { createEvent, uploadBanner } from "../../api/Events";
 import {
@@ -27,6 +28,7 @@ export default function CreateEvent() {
   const navigate = useNavigate();
   const username = localStorage.getItem("username");
   const role = localStorage.getItem("role");
+  const { showToast } = useToast();
 
   const [form, setForm] = useState({
     name: "",
@@ -71,27 +73,27 @@ export default function CreateEvent() {
     e.preventDefault();
 
     if (role !== "manager" && role !== "admin") {
-      alert("Bạn cần là manager để tạo sự kiện.");
+      showToast("Bạn cần là manager để tạo sự kiện.", "warning");
       return;
     }
 
     if (!username) {
-      alert("Vui lòng đăng nhập lại.");
+      showToast("Vui lòng đăng nhập lại.", "warning");
       navigate("/login");
       return;
     }
 
     // basic validation
     const nameErr = validators.isRequired(form.name);
-    if (nameErr) { alert(nameErr); return; }
+    if (nameErr) { showToast(nameErr, "warning"); return; }
 
     if (!form.date || !form.endDate) {
-      alert("Ngày bắt đầu và ngày kết thúc là bắt buộc.");
+      showToast("Ngày bắt đầu và ngày kết thúc là bắt buộc.", "warning");
       return;
     }
 
     if (!form.startTime || !form.endTime) {
-      alert("Giờ bắt đầu và giờ kết thúc là bắt buộc.");
+      showToast("Giờ bắt đầu và giờ kết thúc là bắt buộc.", "warning");
       return;
     }
 
@@ -99,17 +101,17 @@ export default function CreateEvent() {
     const endDateTime = new Date(`${form.endDate}T${form.endTime}`);
 
     if (isNaN(startDateTime) || isNaN(endDateTime)) {
-      alert("Thời gian không hợp lệ.");
+      showToast("Thời gian không hợp lệ.", "error");
       return;
     }
 
     if (endDateTime <= startDateTime) {
-      alert("Thời gian kết thúc phải sau thời gian bắt đầu.");
+      showToast("Thời gian kết thúc phải sau thời gian bắt đầu.", "warning");
       return;
     }
 
     if (form.recurrence.enabled && !form.recurrence.endDate) {
-      alert("Vui lòng chọn ngày kết thúc lặp.");
+      showToast("Vui lòng chọn ngày kết thúc lặp.", "warning");
       return;
     }
 
@@ -133,14 +135,14 @@ export default function CreateEvent() {
       }
 
       if (role === "admin") {
-        alert("Sự kiện đã được tạo.");
+        showToast("Sự kiện đã được tạo.", "success");
         navigate(`/event/${res.slug}`);
       } else {
-        alert("Sự kiện đã gửi chờ duyệt.");
+        showToast("Sự kiện đã gửi chờ duyệt.", "success");
         navigate("/events");
       }
     } catch (err) {
-      alert(err.message);
+      showToast(err.message, "error");
     }
   };
 
@@ -264,7 +266,7 @@ export default function CreateEvent() {
                       // Kiểm tra kích thước file (2MB = 2 * 1024 * 1024 bytes)
                       const maxSize = 2 * 1024 * 1024;
                       if (file.size > maxSize) {
-                        alert('Ảnh quá lớn! Vui lòng chọn ảnh nhỏ hưn 2MB.');
+                        showToast('Ảnh quá lớn! Vui lòng chọn ảnh nhỏ hưn 2MB.', 'error');
                         e.target.value = ''; // Reset input
                         return;
                       }

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useToast } from "../../context/ToastContext";
 import { useNavigate } from "react-router-dom";
 import {
   Paper,
@@ -30,6 +31,7 @@ export default function CreatePost({ eventId, onPostCreated }) {
   const username = localStorage.getItem("username") || "Người dùng";
   const avatar = localStorage.getItem("avatar"); 
   const role = localStorage.getItem("role"); // Lấy thêm role để tô màu
+  const { showToast } = useToast();
   // ==========================================
     
   const [isExpanded, setIsExpanded] = useState(false); 
@@ -121,12 +123,12 @@ export default function CreatePost({ eventId, onPostCreated }) {
 
   const handleSubmit = async () => {
     if (!eventId) {
-      alert("Đang tải dữ liệu sự kiện, vui lòng thử lại sau giây lát.");
+      showToast("Đang tải dữ liệu sự kiện, vui lòng thử lại sau giây lát.", "warning");
       return;
     }
     // validate post content
     if (!postContent || !postContent.trim()) {
-      alert('Nội dung bài viết không được để trống');
+      showToast('Nội dung bài viết không được để trống', 'warning');
       return;
     }
 
@@ -154,7 +156,7 @@ export default function CreatePost({ eventId, onPostCreated }) {
 
     } catch (error) {
       console.error("Không thể tạo bài đăng:", error);
-      alert("Không thể tạo bài đăng, vui lòng thử lại.");
+      showToast("Không thể tạo bài đăng, vui lòng thử lại.", "error");
     }
     
     setIsLoading(false);

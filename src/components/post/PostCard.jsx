@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useToast } from "../../context/ToastContext";
 import { useNavigate } from "react-router-dom";
 import {
   Paper, Box, Avatar, Typography, IconButton, CardMedia, Button, Divider,
@@ -22,6 +23,7 @@ export default function PostCard({ post, onPostDeleted, onPostUpdated, eventOwne
 
   const currentUserId = localStorage.getItem("userId"); 
   const currentUsername = localStorage.getItem("username");
+  const { showToast } = useToast();
 
   const [likes, setLikes] = useState(post.likes || []); 
   const isLiked = likes.includes(currentUserId);
@@ -123,7 +125,7 @@ export default function PostCard({ post, onPostDeleted, onPostUpdated, eventOwne
 
   const handleLike = async (e) => {
     e.stopPropagation();
-    if (!currentUserId) return alert("Cần đăng nhập");
+    if (!currentUserId) { showToast("Cần đăng nhập", 'warning'); return; }
     const newLikes = isLiked ? likes.filter(id => id !== currentUserId) : [...likes, currentUserId]; 
     setLikes(newLikes);
     try { await likePost(post._id, currentUsername); } 
@@ -162,7 +164,7 @@ export default function PostCard({ post, onPostDeleted, onPostUpdated, eventOwne
         await deletePost(post._id, currentUsername);
         onPostDeleted(post._id); 
       } catch (error) {
-        console.error("Lỗi xóa:", error); alert("Xóa thất bại.");
+        console.error("Lỗi xóa:", error); showToast("Xóa thất bại.", 'error');
       }
     }
   };
@@ -175,7 +177,7 @@ export default function PostCard({ post, onPostDeleted, onPostUpdated, eventOwne
     try {
       const updatedPost = await updatePost(post._id, currentUsername, editedContent);
       onPostUpdated(updatedPost); setIsEditing(false); 
-    } catch (error) { console.error("Lỗi update:", error); alert("Update thất bại."); }
+    } catch (error) { console.error("Lỗi update:", error); showToast("Update thất bại.", 'error'); }
   };
 
   const displayName = post.isAnonymous ? "Người dùng ẩn danh" : post.createdBy?.username;

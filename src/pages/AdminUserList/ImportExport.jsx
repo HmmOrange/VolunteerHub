@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useToast } from "../../context/ToastContext";
 import {
   Box,
   Button,
@@ -64,12 +65,13 @@ const usersToCSV = (users) => {
 export default function ImportExport({ users, onImported, showExport = true }) {
   const [file, setFile] = useState(null);
   const [exportType, setExportType] = useState("csv");
+  const { showToast } = useToast();
 
   /* ================= EXPORT ================= */
 
   const handleExport = () => {
     if (!users || users.length === 0) {
-      alert("Không có user để export.");
+      showToast("Không có user để export.", "info");
       return;
     }
 
@@ -88,13 +90,13 @@ export default function ImportExport({ users, onImported, showExport = true }) {
 
   const handleImport = async () => {
     if (!file) {
-      alert("Vui lòng chọn file CSV hoặc JSON.");
+      showToast("Vui lòng chọn file CSV hoặc JSON.", "warning");
       return;
     }
 
     const token = localStorage.getItem("token");
     if (!token) {
-      alert("Bạn chưa đăng nhập.");
+      showToast("Bạn chưa đăng nhập.", "warning");
       return;
     }
 
@@ -115,11 +117,11 @@ export default function ImportExport({ users, onImported, showExport = true }) {
         throw new Error(err.message || "Import thất bại");
       }
 
-      alert("Import thành công.");
+      showToast("Import thành công.", "success");
       setFile(null);
       onImported && onImported();
     } catch (err) {
-      alert(err.message);
+      showToast(err.message, "error");
     }
   };
 

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useToast } from "../../context/ToastContext";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import {
   Box, Typography, Paper, Divider, Tabs, Tab, Container, Button,
@@ -29,6 +30,7 @@ import "./EventGroup.css";
 export default function EventGroup() {
   const { slug } = useParams();
   const navigate = useNavigate();
+  const { showToast } = useToast();
   
   const currentUserId = localStorage.getItem("userId");
   const currentUserUsername = localStorage.getItem("username"); 
@@ -360,7 +362,7 @@ export default function EventGroup() {
 
   const handleUpdateEvent = async () => {
     try {
-      if (!isOwner) return alert("Bạn không có quyền chỉnh sửa.");
+      if (!isOwner) { showToast("Bạn không có quyền chỉnh sửa.", "error"); return; }
       let questionToSend = editForm.question;
       if (editForm.privacy === 'Private' && (!questionToSend || questionToSend.trim() === "")) {
           questionToSend = "Tại sao bạn muốn tham gia sự kiện này?";
@@ -447,32 +449,32 @@ export default function EventGroup() {
       setBannerPreview(null);
       
       setOpenEditModal(false);
-      alert("Cập nhật thành công!");
+      showToast("Cập nhật thành công!", "success");
       window.location.reload();
-    } catch (error) { alert("Lỗi: " + error.message); }
+    } catch (error) { showToast("Lỗi: " + error.message, "error"); }
   };
 
   const handleJoinClick = () => {
-    if (!currentUserId) return alert("Bạn cần đăng nhập.");
+    if (!currentUserId) { showToast("Bạn cần đăng nhập.", "warning"); return; }
     if (eventData.privacy === 'Private') setOpenJoinModal(true);
     else callJoinAPI("");
   };
 
   const callJoinAPI = async (answer) => {
-    if (eventData.privacy === 'Private' && eventData.question && !answer.trim()) return alert("Vui lòng trả lời câu hỏi");
+    if (eventData.privacy === 'Private' && eventData.question && !answer.trim()) { showToast("Vui lòng trả lời câu hỏi", "warning"); return; }
     try {
       const res = await joinEvent({ slug: eventData.slug, userId: currentUserId, answer });
       if (res.status === 'pending') {
-        alert(res.message);
+        showToast(res.message, 'info');
         setRequestStatus('pending');
       } else {
-        alert("Tham gia thành công!");
+        showToast("Tham gia thành công!", 'success');
         setIsJoined(true);
         setRequestStatus('joined');
         window.location.reload();
       }
       setOpenJoinModal(false);
-    } catch (error) { alert(error.message); }
+    } catch (error) { showToast(error.message, 'error'); }
   };
 
   const handleLeaveEvent = async () => {
@@ -484,16 +486,16 @@ export default function EventGroup() {
       )) return;
       try {
         await updateEvent({ slug: eventData.slug, privacy: 'Public', username: currentUserUsername });
-      } catch (err) { return alert("Lỗi chuyển đổi trạng thái nhóm."); }
+      } catch (err) { showToast("Lỗi chuyển đổi trạng thái nhóm.", 'error'); return; }
     } else {
       if (!window.confirm("Bạn chắc chắn muốn rời sự kiện này?")) return;
     }
 
     try { 
       await leaveEvent({ slug: eventData.slug, userId: currentUserId }); 
-      alert("Đã rời sự kiện.");
+      showToast("Đã rời sự kiện.", 'success');
       window.location.reload();
-    } catch(e) { alert(e.message); }
+    } catch(e) { showToast(e.message, 'error'); }
   };
 
   const handleRespondToRequest = async (requestId, action) => {
@@ -504,7 +506,7 @@ export default function EventGroup() {
             const d = await getEventBySlug({ slug, userId: currentUserId }); 
             setEventData(d); 
         }
-    } catch (error) { alert(error.message); }
+    } catch (error) { showToast(error.message, 'error'); }
   };
 
   const handleSetContribution = (memberId, value) => {
@@ -517,7 +519,7 @@ export default function EventGroup() {
   const handleBadgeFileChange = (file) => {
     if (!file) return;
     const maxSize = 2 * 1024 * 1024;
-    if (file.size > maxSize) { alert('Ảnh quá lớn! Vui lòng chọn ảnh nhỏ hơn 2MB.'); return; }
+    if (file.size > maxSize) { showToast('Ảnh quá lớn! Vui lòng chọn ảnh nhỏ hơn 2MB.', 'error'); return; }
     setPendingBadgeFile(file);
     setPendingBadgePreview(URL.createObjectURL(file));
     setBadgeConfirmOpen(true);
@@ -533,9 +535,9 @@ export default function EventGroup() {
       setPendingBadgeFile(null);
       setPendingBadgePreview(null);
       setBadgeConfirmOpen(false);
-      alert('Badge đã được cập nhật.');
+      showToast('Badge đã được cập nhật.', 'success');
     } catch (err) {
-      alert(err.message || 'Upload thất bại');
+      showToast(err.message || 'Upload thất bại', 'error');
     }
   };
 
@@ -564,9 +566,9 @@ export default function EventGroup() {
       const res = await saveContributions(eventData.slug, contributions);
       setEventData(res.event || res);
       setIsEditingContributions(false);
-      alert('Đã lưu mức độ đóng góp.');
+      showToast('Đã lưu mức độ đóng góp.', 'success');
     } catch (err) {
-      alert(err.message || 'Lỗi khi lưu đóng góp');
+      showToast(err.message || 'Lỗi khi lưu đóng góp', 'error');
     }
   };
 
@@ -575,7 +577,7 @@ export default function EventGroup() {
         try { 
             await removeMember({ slug: eventData.slug, memberId, managerId: currentUserId }); 
             setEventData(p => ({...p, volunteers: p.volunteers.filter(v => (v._id || v) !== memberId)})); 
-        } catch(e){ alert(e.message) }
+        } catch(e){ showToast(e.message, 'error') }
     }
   };
 
@@ -608,7 +610,7 @@ export default function EventGroup() {
         )
       }));
     } catch (error) {
-      alert(error.message);
+      showToast(error.message, 'error');
     }
 
     handleCloseAttendanceMenu();
@@ -635,9 +637,9 @@ export default function EventGroup() {
       });
       setEventData(prev => ({ ...prev, eventStatus: updated.eventStatus }));
       handleCloseActionsMenu();
-      alert('Đã hủy sự kiện!');
+      showToast('Đã hủy sự kiện!', 'success');
     } catch (error) {
-      alert('Lỗi: ' + error.message);
+      showToast('Lỗi: ' + error.message, 'error');
     }
   };
 
@@ -659,15 +661,16 @@ export default function EventGroup() {
         endTime: updated.endTime
       }));
       handleCloseActionsMenu();
-      alert('Đã kết thúc sự kiện!');
+      showToast('Đã kết thúc sự kiện!', 'success');
     } catch (error) {
-      alert('Lỗi: ' + error.message);
+      showToast('Lỗi: ' + error.message, 'error');
     }
   };
 
   const handleExtendEvent = async () => {
     if (!extendHours || extendHours <= 0) {
-      return alert('Vui lòng nhập số giờ hợp lệ');
+      showToast('Vui lòng nhập số giờ hợp lệ', 'warning');
+      return;
     }
     
     try {
@@ -684,9 +687,9 @@ export default function EventGroup() {
       }));
       setOpenExtendDialog(false);
       handleCloseActionsMenu();
-      alert(`Đã gia hạn sự kiện thêm ${extendHours} giờ!`);
+      showToast(`Đã gia hạn sự kiện thêm ${extendHours} giờ!`, 'success');
     } catch (error) {
-      alert('Lỗi: ' + error.message);
+      showToast('Lỗi: ' + error.message, 'error');
     }
   };
 
@@ -1582,7 +1585,7 @@ export default function EventGroup() {
                       // Kiểm tra kích thước file (2MB = 2 * 1024 * 1024 bytes)
                       const maxSize = 2 * 1024 * 1024;
                       if (file.size > maxSize) {
-                        alert('Ảnh quá lớn! Vui lòng chọn ảnh nhỏ hưn 2MB.');
+                        showToast('Ảnh quá lớn! Vui lòng chọn ảnh nhỏ hưn 2MB.', 'error');
                         e.target.value = ''; // Reset input
                         return;
                       }
@@ -1639,7 +1642,7 @@ export default function EventGroup() {
                     if (file) {
                       const maxSize = 2 * 1024 * 1024;
                       if (file.size > maxSize) {
-                        alert('Ảnh quá lớn! Vui lòng chọn ảnh nhỏ hơn 2MB.');
+                        showToast('Ảnh quá lớn! Vui lòng chọn ảnh nhỏ hơn 2MB.', 'error');
                         e.target.value = '';
                         return;
                       }
