@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useToast } from "../../context/ToastContext";
 import {
   Container,
   Typography,
@@ -80,6 +81,7 @@ export default function AdminEventList() {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [detailOpen, setDetailOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const { showToast } = useToast();
   // === HÀM TÍNH TRẠNG THÁI TỰ ĐỘNG ===
   const calculateEventStatus = (event) => {
     if (!event) return 'upcoming';
@@ -139,7 +141,7 @@ export default function AdminEventList() {
   // ===== EXPORT =====
   const handleExport = () => {
     if (allEvents.length === 0) {
-      alert("Không có sự kiện để xuất.");
+      showToast("Không có sự kiện để xuất.", "info");
       return;
     }
 

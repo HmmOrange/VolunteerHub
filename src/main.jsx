@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import AppRoutes from "./routes/AppRoutes";
+import { ToastProvider } from "./context/ToastContext";
 import { ThemeProvider, createTheme, CssBaseline } from "@mui/material";
 import { viVN } from "@mui/material/locale";
 import "./index.css";
@@ -25,7 +26,9 @@ ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <AppRoutes />
+      <ToastProvider>
+        <AppRoutes />
+      </ToastProvider>
     </ThemeProvider>
   </React.StrictMode>
 );

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useToast } from "../../context/ToastContext";
 import { useNavigate } from "react-router-dom";
 import {
   AppBar,
@@ -36,6 +37,7 @@ import "./HNavBar.css";
 
 export default function HNavbar({ onToggleVNavBar }) {
   const navigate = useNavigate();
+  const { showToast } = useToast();
 
   // Lấy thông tin từ LocalStorage
   const userId = localStorage.getItem("_id"); 
@@ -139,6 +141,7 @@ export default function HNavbar({ onToggleVNavBar }) {
   const handleLogout = () => {
     handleProfileMenuClose();
     localStorage.clear();
+    showToast("Đăng xuất thành công!", "success");
     navigate("/");
   };
 
@@ -275,9 +278,9 @@ export default function HNavbar({ onToggleVNavBar }) {
 
       if (targetId) {
           navigate(`/event/${targetId}`);
-      } else {
-          alert("Sự kiện này không còn tồn tại.");
-      }
+        } else {
+          showToast("Sự kiện này không còn tồn tại.", "error");
+        }
       
       handleNotiMenuClose();
     } catch (err) {

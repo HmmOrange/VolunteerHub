@@ -39,6 +39,7 @@ import {
   Search as SearchIcon,
 } from "@mui/icons-material";
 import CloseIcon from '@mui/icons-material/Close';
+import { useToast } from "../../context/ToastContext";
 
 import {
   getAllUsers,
@@ -64,6 +65,7 @@ const modalStyle = {
 };
 
 export default function AdminUserList() {
+  const { showToast } = useToast();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -132,7 +134,7 @@ export default function AdminUserList() {
 
   const handleExportUsers = () => {
     if (!users || users.length === 0) {
-      alert('Không có user để export.');
+      showToast('Không có user để export.', 'info');
       return;
     }
 
@@ -161,7 +163,7 @@ export default function AdminUserList() {
         )
       );
     } catch (error) {
-      alert(error.message);
+      showToast(error.message, 'error');
     }
   };
 
@@ -176,7 +178,7 @@ export default function AdminUserList() {
         )
       );
     } catch (error) {
-      alert(error.message);
+      showToast(error.message, 'error');
     }
   };
 
@@ -186,12 +188,12 @@ export default function AdminUserList() {
     const { username, email, fullName, password, confirmPassword } = form;
 
     if (!username || !email || !password || !confirmPassword) {
-      alert("Username, email và mật khẩu là bắt buộc.");
+      showToast("Username, email và mật khẩu là bắt buộc.", 'warning');
       return;
     }
 
     if (password !== confirmPassword) {
-      alert("Mật khẩu nhập lại không khớp.");
+      showToast("Mật khẩu nhập lại không khớp.", 'warning');
       return;
     }
 
@@ -203,7 +205,7 @@ export default function AdminUserList() {
         fullName,
       });
 
-      alert("Tạo tài khoản Manager thành công.");
+      showToast("Tạo tài khoản Manager thành công.", 'success');
       setOpen(false);
       setForm({
         username: "",
@@ -214,7 +216,7 @@ export default function AdminUserList() {
       });
       fetchUsers();
     } catch (err) {
-      alert(err.message);
+      showToast(err.message, 'error');
     }
   };
 
