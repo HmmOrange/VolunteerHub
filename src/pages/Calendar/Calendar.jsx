@@ -147,10 +147,10 @@ export default function CalendarPage() {
   const eventStyleGetter = (event) => {
     const style = {
       backgroundColor: '#1976d2',
-      borderRadius: '5px',
+      borderRadius: '0.3125rem',
       opacity: 0.8,
       color: 'white',
-      border: '0px',
+      border: '0rem',
       display: 'block'
     };
     return { style };
@@ -173,6 +173,7 @@ export default function CalendarPage() {
         justifyContent="center" 
         alignItems="center" 
         minHeight="70vh"
+        sx={{ mt: { xs: 6, sm: 7, md: 8 } }}
       >
         <CircularProgress />
       </Box>
@@ -187,9 +188,14 @@ export default function CalendarPage() {
         justifyContent="center" 
         alignItems="center" 
         minHeight="70vh"
+        sx={{ mt: { xs: 6, sm: 7, md: 8 } }}
       >
-        <EventOutlined sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-        <Typography variant="h6" color="text.secondary">
+        <EventOutlined sx={{ fontSize: { xs: 48, sm: 56, md: 64 }, color: 'text.secondary', mb: 2 }} />
+        <Typography 
+          variant="h6" 
+          color="text.secondary"
+          sx={{ fontSize: { xs: '1rem', sm: '1.1rem', md: '1.25rem' } }}
+        >
           {error}
         </Typography>
       </Box>
@@ -197,20 +203,56 @@ export default function CalendarPage() {
   }
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
-        <EventOutlined sx={{ fontSize: 32, color: 'primary.main' }} />
-        <Typography variant="h4" component="h1">
+    <Box sx={{ 
+      p: { xs: 2, sm: 2.5, md: 3 },
+      mt: { xs: 6, sm: 7, md: 8 },
+      maxWidth: '100vw',
+      overflow: 'hidden'
+    }}>
+      <Box sx={{ 
+        mb: { xs: 2, sm: 2.5, md: 3 }, 
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: { xs: 1, sm: 1.5, md: 2 },
+        flexWrap: 'wrap'
+      }}>
+        <EventOutlined sx={{ 
+          fontSize: { xs: 24, sm: 28, md: 32 }, 
+          color: 'primary.main' 
+        }} />
+        <Typography 
+          variant="h4" 
+          component="h1"
+          sx={{
+            fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' }
+          }}
+        >
           Lịch Sự Kiện
         </Typography>
         <Chip 
           label={`${events.length} sự kiện`} 
           color="primary" 
           variant="outlined"
+          sx={{
+            fontSize: { xs: '0.75rem', sm: '0.8125rem', md: '0.875rem' }
+          }}
         />
       </Box>
 
-      <Paper elevation={2} sx={{ p: 2, height: 'calc(100vh - 200px)', minHeight: '500px' }}>
+      <Paper 
+        elevation={2} 
+        sx={{ 
+          p: { xs: 0.5, sm: 1.5, md: 2 }, 
+          height: { 
+            xs: 'calc(100vh - 10rem)',
+            sm: 'calc(100vh - 14rem)', 
+            md: 'calc(100vh - 16rem)' 
+          }, 
+          minHeight: { xs: '22rem', sm: '31.25rem', md: '37.5rem' },
+          overflow: 'auto',
+          borderRadius: { xs: 1, sm: 1.5, md: 2 }
+        }}
+      >
         <Calendar
           localizer={localizer}
           events={events}
